@@ -4,6 +4,12 @@
 #include <stdlib.h>
 #include <time.h>
 
+int generate_number(void)
+{
+	srand(time(NULL));
+	return rand() % 10;
+}
+
 int main(void)
 {
 	int num, rdm;
@@ -12,9 +18,7 @@ int main(void)
 	scanf("%d", &num);
 	// No range checks for input implemented
 
-	srand(time(NULL));
-	rdm = rand() % 10;
-
+	rdm = generate_number();
 	printf("The number is %d\nYou entered %d\n", rdm, num);
 
 	if (num != rdm) {
