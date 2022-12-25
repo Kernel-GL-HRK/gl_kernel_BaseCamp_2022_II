@@ -5,7 +5,7 @@ DEST_DIR_NAME=guessanumber
 DEST_DIR=/tmp/$DEST_DIR_NAME
 RELEASE_DIR=./release
 
-FILES=`find $SOURCE_DIR -name *.c`
+FILES=`find $SOURCE_DIR -name '*.c' -or -name '*.h'`
 
 mkdir -p $DEST_DIR 2> /dev/null
 mkdir -p $RELEASE_DIR 2> /dev/null
