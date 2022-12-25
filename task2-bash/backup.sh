@@ -1,7 +1,8 @@
 #!/bin/bash
 
 SOURCE_DIR=../task1-simple-program
-DEST_DIR=/tmp/guessanumber
+DEST_DIR_NAME=guessanumber
+DEST_DIR=/tmp/$DEST_DIR_NAME
 RELEASE_DIR=./release
 
 FILES=`find $SOURCE_DIR -name *.c`
@@ -15,3 +16,4 @@ if [[ ! -d $RELEASE_DIR ]]
 then
 	mkdir -p $RELEASE_DIR
 fi
+
