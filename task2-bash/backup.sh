@@ -18,3 +18,5 @@ then
 fi
 
 cp $FILES $DEST_DIR
+
+tar -czvf $RELEASE_DIR/$DEST_DIR_NAME.gz $DEST_DIR
