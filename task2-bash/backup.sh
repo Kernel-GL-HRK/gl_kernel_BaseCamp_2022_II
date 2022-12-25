@@ -6,16 +6,9 @@ DEST_DIR=/tmp/$DEST_DIR_NAME
 RELEASE_DIR=./release
 
 FILES=`find $SOURCE_DIR -name *.c`
-echo $FILES
-if [[ ! -d "$DEST_DIR" ]]
-then
-	mkdir -p $DEST_DIR
-fi
 
-if [[ ! -d $RELEASE_DIR ]]
-then
-	mkdir -p $RELEASE_DIR
-fi
+mkdir -p $DEST_DIR 2> /dev/null
+mkdir -p $RELEASE_DIR 2> /dev/null
 
 cp $FILES $DEST_DIR
 
