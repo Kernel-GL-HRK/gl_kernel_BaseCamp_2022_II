@@ -36,7 +36,7 @@ do
 	help
 	read ask
 	case $ask in
-		[yY] )
+		[yY]|[yY][eE][sS] )
 			if $EXEC_PATH/$EXEC_FILENAME
 			then
 				let success=$success+1
@@ -47,7 +47,7 @@ do
 			fi
 		;;
 
-		[nN] )
+		[nN]|[nN][oO] )
 			break
 		;;
 
