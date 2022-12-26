@@ -34,11 +34,11 @@ int main(void)
 			printf("Can't find libfunc.so\n");
 		}
 
-   		(*get_a_rand_num)(0, 9);
+   		machine_n = get_a_rand_num(0, 9);
 	#else
 		machine_n = get_a_rand_num(0, 9);
 	#endif
-	//printf("%u %u\n", machine_n, user_n);
+	printf("%u %u\n", machine_n, user_n);
 
 	if (user_n == machine_n) {
 		printf("You win\n");
