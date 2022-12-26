@@ -11,6 +11,13 @@ ask=""
 
 repeats=1
 
+help () {
+	echo
+	echo ") type y to run pogram once"
+	echo ") type number to run program number times without a prompt"
+	echo ") type n to exit"
+}
+
 
 if [[ ! -f "$EXEC_PATH/$EXEC_FILENAME" ]]
 then
@@ -26,7 +33,8 @@ fi
 
 while true
 do
-	read -p "if you want to proceed type y or type number of iters to execute program, otherwise n: " ask
+	help
+	read ask
 	case $ask in
 		y )
 			if $EXEC_PATH/$EXEC_FILENAME
