@@ -38,5 +38,9 @@ do
 				echo "Wish a good luck next time"
 			fi
 		;;
+
+		n )
+			break
+		;;
 	esac
 done
