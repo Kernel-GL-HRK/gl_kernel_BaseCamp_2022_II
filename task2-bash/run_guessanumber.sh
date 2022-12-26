@@ -42,5 +42,9 @@ do
 		n )
 			break
 		;;
+
+		* )
+			echo "Unknown command"
+		;;
 	esac
 done
