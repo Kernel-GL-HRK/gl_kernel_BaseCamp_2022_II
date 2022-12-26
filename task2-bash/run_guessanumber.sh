@@ -27,4 +27,16 @@ fi
 while true
 do
 	read -p "if you want to proceed type y or type number of iters to execute program, otherwise n: " ask
+	case $ask in
+		y )
+			if $EXEC_PATH/$EXEC_FILENAME
+			then
+				let success=$success+1
+				echo "Good job"
+				echo "Successful attempts: $success"
+			else
+				echo "Wish a good luck next time"
+			fi
+		;;
+	esac
 done
