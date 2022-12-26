@@ -3,6 +3,10 @@
 EXEC_PATH=../task1-simple-program
 EXEC_FILENAME=a.out
 
+COLOR_OFF='\033[0m'
+COLOR_RED='\033[0;31m'
+COLOR_GREEN='\033[0;32m'
+
 #Counter of number successful attempts
 success=0
 
@@ -40,10 +44,10 @@ do
 			if $EXEC_PATH/$EXEC_FILENAME
 			then
 				let success=$success+1
-				echo "Good job"
+				echo -e $COLOR_GREEN"Good job"$COLOR_OFF
 				echo "Successful attempts: $success"
 			else
-				echo "Wish a good luck next time"
+				echo -e $COLOR_RED"Wish a good luck next time"$COLOR_OFF
 			fi
 		;;
 
@@ -59,10 +63,10 @@ do
 					if $EXEC_PATH/$EXEC_FILENAME
 					then
 						let success=$success+1
-						echo "Good job"
+						echo -e $COLOR_GREEN"Good job"$COLOR_OFF
 						echo "Successful attempts: $success"
 					else
-						echo "Wish a good luck next time"
+						echo -e $COLOR_RED"Wish a good luck next time"$COLOR_OFF
 					fi
 				done
 			else
