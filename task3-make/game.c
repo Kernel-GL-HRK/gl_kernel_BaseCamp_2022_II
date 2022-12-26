@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-//#define  dynlink 
+#define  dynlink
 
 #ifdef dynlink
 	#include <dlfcn.h>
@@ -19,7 +19,7 @@ int main(void)
 	printf("Enter a number (0-9):\n");
 	scanf("%u", &user_n);
 	#ifdef dynlink
-		puts("dyn");
+
 		void *handle = dlopen("libfunc.so", RTLD_LAZY);
 		if(!handle)
 		{

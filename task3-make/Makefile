@@ -1,21 +1,29 @@
 CC=gcc
+#required "export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH" to work with .so n the local directory 
 
-flag_lib = "stat"
-
-ifeq "${flag_lib}" "stat"
+#dynlib has to be mentioned as a dependencies the in target all
+#libs - as an option at linking
+libs = 
+dynlib = 
+flag_lib = 
+ifeq (${flag_lib}, dyn)
+	mreq = game.o
+	libs = -L./ -lfunc
+	dynlib = libfunc.so
+else ifeq (${flag_lib}, stat)
 	mreq = game.o func.a
 else
-	mreq = game.o func.a
+	mreq = game.o func.o
 endif
 
 target:
 	@echo "To build use make all"
 
-all: ${mreq}
-	${CC} $^ -o game.out
+all:${mreq} ${dynlib}
+	${CC} ${mreq} -o game.out -Wall ${libs}
 
-main.o:game.c
-	${CC} -c $^ -Wall
+game.o:game.c
+	${CC} -c game.c -Wall
 
 func.o:func.c
 	${CC} -c $^ -Wall
@@ -24,5 +32,11 @@ func.a:func.o
 	${CC} -Wall -c func.c
 	ar rsc func.a func.o
 
+#create  dynlink lib
+libfunc.so:func.o
+	@echo "Making dynlink lib"
+	${CC} -shared -Wl,-soname,libfunc.so.1 -o libfunc.so.1.0   func.o
+	ln -sf libfunc.so.1.0 libfunc.so.1
+	ln -sf libfunc.so.1.0 libfunc.so
 clean:
-	rm *.o  *.a *.out
+	rm *.o  *.a *.out *.so*
