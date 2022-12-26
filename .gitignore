@@ -1,13 +1,5 @@
-# Prerequisites
-*.d
-
 # Object files
 *.o
-
-# Linker output
-*.ilk
-*.map
-*.exp
 
 # Libraries
 *.lib
@@ -21,3 +13,7 @@
 
 # Executables
 *.out
+
+#text and logs
+*.txt
+*.log
