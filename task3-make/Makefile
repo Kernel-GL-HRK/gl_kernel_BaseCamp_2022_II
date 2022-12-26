@@ -6,6 +6,11 @@ CC=gcc
 libs = 
 dynlib = 
 flag_lib = 
+
+#ccheck = 
+#ccheck_flags = 
+ccheck = cppcheck
+ccheck_flags = --enable=all --output-file="check.log"
 ifeq (${flag_lib}, dyn)
 	mreq = game.o
 	libs = -L./ -lfunc
@@ -16,6 +21,8 @@ else
 	mreq = game.o func.o
 endif
 
+ccheck:
+	${ccheck} ${ccheck_flags} *.c *.h
 target:
 	@echo "To build use make all"
 
