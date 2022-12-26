@@ -1,14 +1,19 @@
 #!/bin/bash
 game="../task1-simple-program/game.out"
+wins=0;
+losses=0;
 
 game_func()
 {
 	$game
 	if [[ $? -eq 0 ]]; then
 		echo "Good job"
+		wins=$(($wins+1))
 	else
 		echo "Wish a good luck next time"
+		losses=$(($losses+1))
 	fi
+	echo "Your rating (wins:looses):  ${wins}:${losses}"
 }
 
 choise='y'
