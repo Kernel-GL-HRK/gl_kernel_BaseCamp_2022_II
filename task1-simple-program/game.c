@@ -19,9 +19,9 @@ int main(void)
 	printf("Enter a number (0-9):\n");
 	scanf("%u", &user_n);
 
-	srand(time(NULL));
 	machine_n = get_a_rand_num(0, 9);
 	//printf("%u %u\n", machine_n, user_n);
+
 	if (user_n == machine_n) {
 		printf("You win\n");
 		return 0;
