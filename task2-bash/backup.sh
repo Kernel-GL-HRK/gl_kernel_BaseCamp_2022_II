@@ -12,4 +12,4 @@ mkdir -p $RELEASE_DIR 2> /dev/null
 
 cp $FILES $DEST_DIR
 
-tar -czvf $RELEASE_DIR/$DEST_DIR_NAME.gz $DEST_DIR
+tar -czvf $RELEASE_DIR/$DEST_DIR_NAME.tar.gz $DEST_DIR
