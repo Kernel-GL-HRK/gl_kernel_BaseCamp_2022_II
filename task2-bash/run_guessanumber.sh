@@ -44,7 +44,22 @@ do
 		;;
 
 		* )
-			echo "Unknown command"
+			if [[ $ask =~ ^[0-9]+$ ]]
+			then
+				for ((repeats=$ask; repeats > 0; repeats--))
+				do
+					if $EXEC_PATH/$EXEC_FILENAME
+					then
+						let success=$success+1
+						echo "Good job"
+						echo "Successful attempts: $success"
+					else
+						echo "Wish a good luck next time"
+					fi
+				done
+			else
+				echo "Unknown command"
+			fi
 		;;
 	esac
 done
