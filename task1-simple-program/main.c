@@ -2,11 +2,13 @@
 #include <stdlib.h>
 #include <time.h>
 
-int get_random_number(int lower, int upper) {
+int get_random_number(int lower, int upper)
+{
 	return rand() % (upper - lower + 1) + lower;
 }
 
-int main() {
+int main(void)
+{
 	const int upper = 9;
 	const int lower = 0;
 
@@ -26,8 +28,7 @@ int main() {
 	if (input == random) {
 		printf("You win %d = %d\n", input, random);
 		return 0;
-	}
-	else {
+	} else {
 		printf("You loose %d != %d\n", input, random);
 		return 1;
 	}
