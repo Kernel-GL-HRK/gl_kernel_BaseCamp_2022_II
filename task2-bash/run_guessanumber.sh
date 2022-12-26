@@ -24,3 +24,7 @@ then
 	exit -1
 fi
 
+while true
+do
+	read -p "if you want to proceed type y or type number of iters to execute program, otherwise n: " ask
+done
