@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source_dir="/tmp/guesanumber/"
+source_dir="/tmp/guesanumber"
 
 #check if source_dir  exist, if not - create
 if [[ ! -d $source_dir ]]; then
@@ -16,3 +16,12 @@ cd $source_dir
 tar -cvf "../$(basename $source_dir).tar"  "../$(basename $source_dir)"
 tar -czvf "../$(basename $source_dir).tar.gz"  "../$(basename $source_dir)" 
 cd $OLDPWD
+
+
+r_dir="../release"
+
+if [[ ! -d $r_dir ]]; then
+        mkdir -p $r_dir
+fi
+
+cp "${source_dir}.tar.gz" -t $r_dir
