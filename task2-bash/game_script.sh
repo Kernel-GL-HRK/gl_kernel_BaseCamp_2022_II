@@ -18,5 +18,13 @@ while [[ $choise != 'n' ]]; do
 		game_func
 	elif [[ $choise = 'n' || $choise = 'N' ]]; then
 		echo "Bye bye"
+#check if choise is a number
+	elif [[ "$choise" =~ ^[0-9]+$ ]]; then
+#if yes then run the cycle
+			while [[ $choise -gt 0 ]]; do
+				game_func
+				choise=$(($choise-1))
+			done
+
 	fi
 done
