@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0+
 #include <stdio.h>
 #include <stdlib.h>
-int get_random_numeric(int);
+int get_random_numeric(int user_choice)
+{
+srand(user_choice);
+return rand()%10;
+}
 
 int main(void)
 {
@@ -23,7 +27,3 @@ return 1;
 }
 
 
-int get_random_numeric(int user_choice){
-srand(user_choice);
-return rand()%10;
-}
