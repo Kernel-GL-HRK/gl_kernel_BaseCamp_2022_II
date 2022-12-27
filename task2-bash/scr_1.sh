@@ -21,3 +21,10 @@ cd ${TMP_DIR}
 tar -cvf "../$(basename ${TMP_DIR}).tar" "../$(basename ${TMP_DIR})" 
 tar -czvf "../$(basename ${TMP_DIR}).tar.gz" "../$(basename ${TMP_DIR})"
 cd $OLDPWD
+
+#Check if RLS_DIR= exist. If no - create it
+if [[ ! -d ${RLS_DIR} ]]; then
+        mkdir -p ${RLS_DIR}
+fi
+#Copy the compressed file into RLS_DIR
+cp "${TMP_DIR}.tar.gz" -t ${RLS_DIR}
