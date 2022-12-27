@@ -48,8 +48,8 @@ int main(void)
 	if (userNumber == randomNumber) {
 		printf("You guess the number %d!\n", userNumber);
 		return 0;
-	} else {
-		printf("You lose. Number was %d!\n", randomNumber);
-		return -1;
 	}
+
+	printf("You lose. Number was %d!\n", randomNumber);
+	return -1;
 }
