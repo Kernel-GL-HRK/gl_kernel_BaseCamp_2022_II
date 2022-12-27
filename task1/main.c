@@ -2,7 +2,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-static const int LOW = 0;
+static const int LOW; // default to 0
 static const int HIGH = 9;
 
 // generates random number in range [low, high]
