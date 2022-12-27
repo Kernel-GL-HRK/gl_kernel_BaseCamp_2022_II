@@ -4,7 +4,7 @@ CC = gcc
 CFLAG = -Wall
 LDFLAG = 
 LIBFLAG =
- 
+
 ifeq "${LINKFLAG}" "stat"
 	MREQ = game.o libfunc.a
 	#LDFLAG = -L. -lfunc
@@ -34,7 +34,7 @@ libfunc.so:
 	gcc -shared -Wl,-soname,libfunc.so.1 -o libfunc.so.1.0   func.o -lc
 	ln -sf libfunc.so.1.0 libfunc.so.1
 	ln -sf libfunc.so.1.0 libfunc.so
-
+#	@export LD_LIBRARY_PATH=${PWD}
 check:
 	@./checkpatch.pl -f --no-tree *.c *.h > checkpatch.log
 	@cppcheck  --enable=all --output-file=check.log *.c *.h
@@ -42,4 +42,4 @@ check:
 
 .PHONY:clean
 clean:
-	rm *.o *.a *.out *.so*
+	rm *.o *.a *.out *.so* *.log
