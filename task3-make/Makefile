@@ -1,10 +1,24 @@
+
+LINKFLAG =
 CC = gcc
 CFLAG = -Wall
-mreq = game.o func.o
+LDFLAG = 
 
-all: ${mreq}
-	${CC} ${CFLAG} $^ -o game.out
+ifeq "${LINKFLAG}" "stat"
+	MREQ = game.o libfunc.a
+	#LDFLAG = -L. -lfunc
+	LDFLAG = -static
+else
+	MREQ = game.o func.o
+endif
+
+all: ${MREQ}
+	${CC} ${CFLAG} $^ -o game.out ${LDFLAG}
 game.o:game.c
 	${CC} ${CFLAG} -c  $^
 func.o:func.c
 	${CC} ${CFLAG} -c  $^
+libfunc.a:func.o
+	@echo "Creating static library $@"
+	${CC} -Wall -c func.c
+	ar rsc libfunc.a func.o
