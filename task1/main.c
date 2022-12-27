@@ -45,6 +45,7 @@ int main(void)
 	printf("Enter number (%d - %d):\n", LOW, HIGH);
 	const int userNumber = getUserNumber(LOW, HIGH);
 	const int randomNumber = getRandomNumber(LOW, HIGH);
+
 	if (userNumber == randomNumber) {
 		printf("You guess the number %d!\n", userNumber);
 		return 0;
