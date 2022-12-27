@@ -8,12 +8,18 @@
 #include <time.h>
 #include <stdlib.h>
 
-int main(void)
+unsigned short get_random_number(void)
 {
 	srand(time(NULL)); // Seed
-	unsigned short randomNumber = rand() % 10; // Generate random number form 0 to 9
+	return rand() % 10; // Generate random number form 0 to 9
+}
+
+int main(void)
+{
+	unsigned short randomNumber = 0;
 	unsigned short userNumber = 0;
 
+	randomNumber = get_random_number();
 	printf("Enter the number beetwen 0 and 9:\n");
 	scanf("%hu", &userNumber); // Read number from console
 	if (userNumber != randomNumber) {
