@@ -1,14 +1,25 @@
 #!/usr/bin/bash
+
+RED="\e[31m"
+GREEN="\e[32m"
+ENDCOLOR="\e[0m"
+
+wins=0
+losses=0
 game="../task1-simple-program/game.out"
 
 call_game(){
 	$game
 	if  [[ $? -eq 0 ]]; then
-		echo "Good job"
+		echo -e "${GREEN}Good job${ENDCOLOR}"
+		wins=$((${wins}+1))
 	else
-		echo "Wish a good luck next time"
+		echo -e "${RED}Wish a good luck next time${ENDCOLOR}"
+		losses=$((${losses}+1))
 	fi
+	echo "Your rating (wins:losses):  ${wins}:${losses}"
 }
+
 
 while true; do
 	read -p "Wanna play a game?:  " choice
