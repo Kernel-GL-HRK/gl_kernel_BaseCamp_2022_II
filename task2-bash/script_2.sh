@@ -16,6 +16,10 @@ new_game(){
 
 
 while true; do
+	echo "Press:"
+	echo "'y'      - to continue"
+	echo "'number' - to play without asking 'y' or 'n'"
+	echo "'n'      - to exit the game. Print how many times you win"
 	read INPUT
 	if [ $INPUT = "y" ]; then
 		new_game
