@@ -9,6 +9,7 @@ static const int HIGH = 9;
 int getRandomNumber(int low, int high)
 {
     int result = 0, low_num = 0, hi_num = 0;
+
     if (low < high) {
         low_num = low;
         hi_num = high + 1; // include max_num in output
