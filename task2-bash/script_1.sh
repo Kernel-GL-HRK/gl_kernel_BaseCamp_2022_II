@@ -1,7 +1,9 @@
 #! /bin/bash
 
 SOURCE="../task1-simple-program"
-TARGET="/tmp/guessanumber"
+FOLDER="guessanumber"
+TARGET="/tmp/"$FOLDER
+
 
 echo "Creating folder $TARGET . . ."
 mkdir $TARGET
@@ -22,3 +24,19 @@ then
 else
 	echo "Copying is FAILED!"
 fi
+
+RELEASE=$(pwd)/release
+ARCHIVE=$TARGET.tar.gz
+
+tar czvf $ARCHIVE $TARGET
+
+mkdir release
+
+if [ $? -eq 0 ]
+then
+	echo "Folder created SUCCESSFULLY."
+else
+	echo "Creating folder is FAILED!"
+fi
+
+cp $ARCHIVE $RELEASE/
