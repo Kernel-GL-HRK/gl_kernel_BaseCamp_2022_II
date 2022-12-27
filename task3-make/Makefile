@@ -1,7 +1,7 @@
 
 LINKFLAG = 
 CC = gcc
-CFLAG = -Wall
+CFLAG = -Wall -g -O1
 LDFLAG = 
 LIBFLAG =
 
