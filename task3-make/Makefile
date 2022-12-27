@@ -22,3 +22,7 @@ libfunc.a:func.o
 	@echo "Creating static library $@"
 	${CC} -Wall -c func.c
 	ar rsc libfunc.a func.o
+
+.PHONY:clean
+clean:
+	rm *.o *.a *.out
