@@ -40,7 +40,7 @@ int getUserNumber(int low, int high)
 	return userNumber;
 }
 
-int main()
+int main(void)
 {
 	printf("Enter number (%d - %d):\n", LOW, HIGH);
 	const int userNumber = getUserNumber(LOW, HIGH);
