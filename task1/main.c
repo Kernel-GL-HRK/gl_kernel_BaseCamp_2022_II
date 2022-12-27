@@ -27,6 +27,7 @@ int getRandomNumber(int low, int high)
 int getUserNumber(int low, int high)
 {
 	int userNumber = -1;
+
 	do {
 		scanf("%d", &userNumber);
 		if (userNumber < low || userNumber > high) {
