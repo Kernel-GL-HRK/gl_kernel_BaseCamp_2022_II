@@ -24,3 +24,7 @@ $(NAME): $(OBJ)
 
 %.o: %.c
 	$(CC) -c $(FLAGS) -o $@ $<
+
+#checkpatch.pl should be instaled to the /bin folder
+check:
+	checkpatch.pl --no-tree -f *.c *.h
