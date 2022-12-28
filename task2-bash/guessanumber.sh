@@ -13,3 +13,9 @@ then
 	exit -1
 fi
 
+if [[ ! -x "$EXEC_PATH/$EXEC_FILENAME" ]]
+then
+	echo "Doesn't have execution permissions" >&2
+	exit -1
+fi
+
