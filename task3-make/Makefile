@@ -5,10 +5,10 @@
 #							     #
 #************************************************************#
 
-
 NAME = game
 FLAGS = -Wall -Wextra -Werror
-CC = gcc
+#Chhose compile option here "gcc" or "clang"
+CC = clang
 
 SRC = guess_a_number.c\
       random_number_function.c
