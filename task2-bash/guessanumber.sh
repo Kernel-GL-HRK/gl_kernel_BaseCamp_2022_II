@@ -19,3 +19,10 @@ then
 	exit -1
 fi
 
+while [[ "$ask" != n ]]
+do
+	echo ")type y to run program once"
+	echo ")type number to run program number times without a prompt"
+	echo ")type n to exit"
+	read ask
+done
