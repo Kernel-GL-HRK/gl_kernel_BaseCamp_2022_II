@@ -10,13 +10,13 @@ repeats=1
 if [[ ! -f "$EXEC_PATH/$EXEC_FILENAME" ]]
 then
 	echo "$EXEC_FILENAME doesn't exist" >&2
-#	exit -1
+	exit -1
 fi
 
 if [[ ! -x "$EXEC_PATH/$EXEC_FILENAME" ]]
 then
 	echo "Doesn't have execution permissions" >&2
-#	exit -1
+	exit -1
 fi
 
 while [[ "$ask" != n ]]
@@ -36,5 +36,18 @@ do
 		else
 			echo "Wish a good luck next time"
 		fi
+	elif [[ $ask =~ ^[0-9]+$ ]]
+	then
+		for ((repeats=$ask; repeats > 0; repeats--))
+		do
+			if $EXEC_PATH/$EXEC_FILENAME
+			then
+				let success=$success+1
+				echo "Good job"
+				echo "Success attempts: $success"
+			else
+				echo "Wish a good luck next time"
+			fi
+		done
 	fi
 done
