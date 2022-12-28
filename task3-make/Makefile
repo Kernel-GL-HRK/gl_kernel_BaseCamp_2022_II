@@ -7,19 +7,20 @@
 
 NAME = game
 FLAGS = -Wall -Wextra -Werror
-#Chhose compile option here "gcc" or "clang"
+#Choose compile option here "gcc" or "clang"
 CC = clang
 
 SRC = guess_a_number.c\
       random_number_function.c
 OBJ = $(SRC:.c=.o)
-
+#Choose the library what you need to add to compiling .a or .so
+LIB = examplelib.a
 
 all: $(NAME)
 
 $(NAME): $(OBJ)
 	@echo Compiling game . . .
-	$(CC) $(FLAGS) $(OBJ) -o $(NAME)
+	$(CC) $(FLAGS) $(OBJ) -o $(NAME) $(LIB)
 
 %.o: %.c
 	$(CC) -c $(FLAGS) -o $@ $<
