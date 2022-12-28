@@ -13,3 +13,5 @@ mkdir -p $TMP_DIR 2>/dev/null
 mkdir -p $RELEASE 2>/dev/null
 
 cp $FILES $TMP_DIR
+
+tar -czvf $RELEASE/$AR_NAME.tar.gz $TMP_DIR
