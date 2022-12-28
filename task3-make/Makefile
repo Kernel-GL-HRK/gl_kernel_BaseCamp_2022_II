@@ -35,3 +35,17 @@ $(NAME): $(OBJ)
 #checkpatch.pl should be instaled to the /bin folder
 check:
 	checkpatch.pl --no-tree -f *.c *.h
+
+clean:
+	@rm -f $(OBJ)
+	@echo "Cleaned all oblect .o files"
+
+fclean:
+	@rm -f $(NAME)
+	@make clean
+	@echo "Cleaned out file"
+
+re:
+	@make fclean
+	@make all
+	@echo "Rebuild project"
