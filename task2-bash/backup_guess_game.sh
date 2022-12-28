@@ -8,7 +8,9 @@ RELEASEDIR=$PWD/release
 
 echo Backup on $BACKUPDIR
 
-if [ -d "$BACKUPDIR" ] 
+echo "=========="
+
+if [[ -d "$BACKUPDIR" ]];
 then
     echo "Directory $BACKUPDIR exists." 
     echo "Clean $BACKUPDIR"
@@ -19,13 +21,16 @@ else
     mkdir $BACKUPDIR
 fi
 
+echo "=========="
+
 echo "Copy project files to $BACKUPDIR"
 cp $SOURCEDIR/* $BACKUPDIR/
-echo "List of files"
+echo "List of files:"
 ls -ld $BACKUPDIR/*
 
+echo "=========="
 
-if [ -d "$RELEASEDIR" ] 
+if [[ -d "$RELEASEDIR" ]];
 then
     echo "Directory $RELEASEDIR exists." 
     echo "Clean $RELEASEDIR"
@@ -36,5 +41,13 @@ else
     mkdir $RELEASEDIR
 fi
 
+echo "=========="
 
 echo "GZIP files"
+cd $BACKUPDIR
+tar -czvf $RELEASEDIR/guess_game.tar.gz * 
+cd $OLDPWD
+
+echo "=========="
+
+echo "DONE"
