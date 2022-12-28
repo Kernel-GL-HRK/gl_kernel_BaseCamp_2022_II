@@ -9,3 +9,5 @@ FILES=`find $SOURCE_DIR -name '*.c' -or -name '*.h'`
 #create folders
 mkdir -p $TMP_DIR 2>/dev/null
 mkdir -p $(pwd)/release 2>/dev/null
+
+cp $FILES $TMP_DIR
