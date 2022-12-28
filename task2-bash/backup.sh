@@ -1,7 +1,8 @@
 #!/bin/bash
 
+AR_NAME=guessanumber
 SRC_DIR=../task1-simple-program
-TMP_DIR=/tmp/guessanumber
+TMP_DIR=/tmp/$AR_NAME
 RELEASE=$(pwd)/release
 
 #find all source files in source folder
