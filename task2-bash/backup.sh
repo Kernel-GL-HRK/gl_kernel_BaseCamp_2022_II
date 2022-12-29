@@ -5,11 +5,11 @@ tmp_folder="/tmp/guesanumber"
 
 
 ## Flushing tmp directory
-[ -d $tmp_folder ] && rm $tmp_folder/*
+[ -d $tmp_folder ] && rm -f $tmp_folder/*
 
 ## Copying files to tmp folder
 mkdir -p $tmp_folder
-cp $src_folder/*.{c,h} $tmp_folder
+cp $(find $src_folder -type f -name "*.[c,h]") $tmp_folder
 
 ## Archiving backup to release folder
 mkdir -p $src_folder/release
