@@ -43,7 +43,9 @@ $(SRC_DIR)/libguess.a: $(LIB_OBJ)
 	ar rcs $@ $^
 
 $(SRC_DIR)/libguess.so: $(LIB_OBJ)
-	
+	$(CC) -shared -Wl,-soname,$@.1 -o $@1.0 $^ -lc
+	ln -s $@1.0 $@.1
+	ln -s $@.1 $@
 
 .PHONY: clean
 
