@@ -5,10 +5,12 @@ OBJECTS = $(SOURCES:.c=.o)
 
 EXEC_PROG = $(SRC_DIR)/guessanumber
 
+CC=gcc
+
 all: $(EXEC_PROG)
 
 $(EXEC_PROG): $(OBJECTS)
-	gcc $^ -o $@
+	$(CC) $^ -o $@
 
 $(SRC_DIR)/%.o:%.c
-	gcc -c $<
+	$(CC) -c $<
