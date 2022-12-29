@@ -6,7 +6,7 @@ OBJECTS = $(SOURCES:.c=.o)
 EXEC_PROG = $(SRC_DIR)/guessanumber
 
 CC=gcc
-CFLAGS=-Wall
+CFLAGS=-Wall -g
 
 all: $(EXEC_PROG)
 
