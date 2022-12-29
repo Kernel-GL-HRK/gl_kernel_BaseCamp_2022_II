@@ -5,6 +5,7 @@ MAIN_OBJ = $(MAIN_SRC:.c=.o)
 OBJ = $(addprefix $(SRC_DIR)/, $(MAIN_OBJ))
 SOURCES = $(shell find $(SRC_DIR) -name '*.c' ! -name '$(MAIN_SRC)')
 OBJECTS = $(SOURCES:.c=.o)
+ALL_SOURCES = $(shell find $(SRC_DIR) -name '*.c')
 
 EXEC_PROG = $(SRC_DIR)/guessanumber
 
@@ -47,7 +48,10 @@ $(SRC_DIR)/libguess.so: $(LIB_OBJ)
 	ln -sf $@.1.0 $@.1
 	ln -sf $@.1 $@
 
-.PHONY: clean help
+.PHONY: clean help check
+
+check:
+	@$(foreach var,$(ALL_SOURCES),$(SRC_DIR)/checkpatch.pl --no-tree -f $(var);)
 
 help:
 	@echo "Usage: make or make LIB_TYPE=option"
