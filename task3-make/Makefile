@@ -10,12 +10,27 @@ EXEC_PROG = $(SRC_DIR)/guessanumber
 
 CC=gcc
 CFLAGS=-Wall -g
-LIB=
+DEP_LIB=
+LIBS=
+LDFLAGS=$(LIBS) -L./
+LIB_TYPE=no
+
+ifeq ($(LIB_TYPE), static)
+DEP_LIB=guess.a
+LIBS=-lguess
+OBJECTS=
+endif
+
+ifeq ($(LIB_TYPE), shared)
+DEP_LIB=guess.so
+LIBS=-lguess
+OBJECTS=
+endif
 
 all: $(EXEC_PROG)
 
-$(EXEC_PROG): $(OBJ) $(OBJECTS) $(LIB)
-	$(CC) $^ -o $@
+$(EXEC_PROG): $(OBJ) $(OBJECTS) $(DEP_LIB)
+	$(CC) $(OBJ) $(OBJECTS) $(LDFLAGS) -o $@
 
 $(SRC_DIR)/%.o:%.c
 	$(CC) $(CFLAGS) -c $<
