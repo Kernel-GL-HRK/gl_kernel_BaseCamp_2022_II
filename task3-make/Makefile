@@ -15,3 +15,8 @@ $(EXEC_PROG): $(OBJECTS)
 
 $(SRC_DIR)/%.o:%.c
 	$(CC) $(CFLAGS) -c $<
+
+.PHONY: clean
+
+clean:
+	rm $(SRC_DIR)/*.o
