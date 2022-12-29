@@ -2,6 +2,7 @@
 
 src_folder="../task1-simple-program"
 tmp_folder="/tmp/guesanumber"
+release_folder="$src_folder/release"
 
 
 ## Flushing tmp directory
@@ -12,7 +13,7 @@ mkdir -p $tmp_folder
 cp $(find $src_folder -type f -name "*.[c,h]") $tmp_folder
 
 ## Archiving backup to release folder
-mkdir -p $src_folder/release
+mkdir -p $release_folder
 tar --directory=$(dirname $tmp_folder) -cvzf \
-	$src_folder/release/$(basename $tmp_folder).tar.gz \
+	$release_folder/$(basename $tmp_folder).tar.gz \
 	$(basename $tmp_folder)
