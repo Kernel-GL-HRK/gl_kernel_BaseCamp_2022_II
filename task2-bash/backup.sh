@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash
 
 src_folder="../task1-simple-program"
 tmp_folder="/tmp/guesanumber"
