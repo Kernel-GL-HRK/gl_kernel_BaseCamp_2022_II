@@ -15,5 +15,5 @@ cp $(find $src_folder -type f -name "*.[c,h]") $tmp_folder
 ## Archiving backup to release folder
 mkdir -p $release_folder
 tar --directory=$(dirname $tmp_folder) -cvzf \
-	$release_folder/$(basename $tmp_folder).tar.gz \
+	$release_folder/$(basename $tmp_folder).$(date "+%F.%H-%M-%S").tar.gz \
 	$(basename $tmp_folder)
