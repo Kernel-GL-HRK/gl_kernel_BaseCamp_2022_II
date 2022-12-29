@@ -10,15 +10,14 @@ echo Backup on $BACKUPDIR
 
 echo "=========="
 
-if [[ -d "$BACKUPDIR" ]];
-then
-    echo "Directory $BACKUPDIR exists." 
-    echo "Clean $BACKUPDIR"
-    rm -rf $BACKUPDIR/*
+if [[ -d "$BACKUPDIR" ]]; then
+	echo "Directory $BACKUPDIR exists."
+	echo "Clean $BACKUPDIR"
+	rm -rf $BACKUPDIR/*
 else
-    echo "Directory $BACKUPDIR does not exists."
-    echo "Create $BACKUPDIR"
-    mkdir $BACKUPDIR
+	echo "Directory $BACKUPDIR does not exists."
+	echo "Create $BACKUPDIR"
+	mkdir $BACKUPDIR
 fi
 
 echo "=========="
@@ -30,22 +29,21 @@ ls -ld $BACKUPDIR/*
 
 echo "=========="
 
-if [[ -d "$RELEASEDIR" ]];
-then
-    echo "Directory $RELEASEDIR exists." 
-    echo "Clean $RELEASEDIR"
-    rm -rf $RELEASEDIR/*
+if [[ -d "$RELEASEDIR" ]]; then
+	echo "Directory $RELEASEDIR exists."
+	echo "Clean $RELEASEDIR"
+	rm -rf $RELEASEDIR/*
 else
-    echo "Directory $RELEASEDIR does not exists."
-    echo "Create $RELEASEDIR"
-    mkdir $RELEASEDIR
+	echo "Directory $RELEASEDIR does not exists."
+	echo "Create $RELEASEDIR"
+	mkdir $RELEASEDIR
 fi
 
 echo "=========="
 
 echo "GZIP files"
 cd $BACKUPDIR
-tar -czvf $RELEASEDIR/guess_game.tar.gz * 
+tar -czvf $RELEASEDIR/guess_game.tar.gz *
 cd $OLDPWD
 
 echo "=========="
