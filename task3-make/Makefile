@@ -50,4 +50,4 @@ $(SRC_DIR)/libguess.so: $(LIB_OBJ)
 .PHONY: clean
 
 clean:
-	rm $(SRC_DIR)/*.o
+	rm -f $(SRC_DIR)/*.o $(SRC_DIR)/*.a $(SRC_DIR)/*.so*
