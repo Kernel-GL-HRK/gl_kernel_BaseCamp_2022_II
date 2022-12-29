@@ -12,18 +12,21 @@ CC=gcc
 CFLAGS=-Wall -g
 DEP_LIB=
 LIBS=
-LDFLAGS=$(LIBS) -L./
+LIB_OBJ=
+LDFLAGS=$(LIBS) -L$(SRC_DIR)
 LIB_TYPE=no
 
 ifeq ($(LIB_TYPE), static)
-DEP_LIB=guess.a
+DEP_LIB=$(SRC_DIR)/libguess.a
 LIBS=-lguess
+LIB_OBJ:=$(OBJECTS)
 OBJECTS=
 endif
 
 ifeq ($(LIB_TYPE), shared)
-DEP_LIB=guess.so
+DEP_LIB=$(SRC_DIR)/libguess.so
 LIBS=-lguess
+LIB_OBJ:=$(OBJECTS)
 OBJECTS=
 endif
 
@@ -34,6 +37,9 @@ $(EXEC_PROG): $(OBJ) $(OBJECTS) $(DEP_LIB)
 
 $(SRC_DIR)/%.o:%.c
 	$(CC) $(CFLAGS) -c $<
+
+$(SRC_DIR)/libguess.a: $(LIB_OBJ)
+	ar rcs $@ $^
 
 .PHONY: clean
 
