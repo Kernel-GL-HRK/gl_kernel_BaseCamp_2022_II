@@ -6,6 +6,7 @@ OBJECTS = $(SOURCES:.c=.o)
 EXEC_PROG = $(SRC_DIR)/guessanumber
 
 CC=gcc
+CFLAGS=-Wall
 
 all: $(EXEC_PROG)
 
@@ -13,4 +14,4 @@ $(EXEC_PROG): $(OBJECTS)
 	$(CC) $^ -o $@
 
 $(SRC_DIR)/%.o:%.c
-	$(CC) -c $<
+	$(CC) $(CFLAGS) -c $<
