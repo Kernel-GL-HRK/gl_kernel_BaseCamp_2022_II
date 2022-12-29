@@ -47,7 +47,14 @@ $(SRC_DIR)/libguess.so: $(LIB_OBJ)
 	ln -sf $@.1.0 $@.1
 	ln -sf $@.1 $@
 
-.PHONY: clean
+.PHONY: clean help
+
+help:
+	@echo "Usage: make or make LIB_TYPE=option"
+	@echo "There are the next options:\n"
+	@echo "\tstatic\tcreate and use static library\n"
+	@echo "\tshared\tcreate and use shared library\n"
+	@echo "By default no libraries are used"
 
 clean:
 	rm -f $(SRC_DIR)/*.o $(SRC_DIR)/*.a $(SRC_DIR)/*.so*
