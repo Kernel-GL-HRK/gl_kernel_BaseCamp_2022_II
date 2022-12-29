@@ -28,6 +28,7 @@ DEP_LIB=$(SRC_DIR)/libguess.so
 LIBS=-lguess
 LIB_OBJ:=$(OBJECTS)
 OBJECTS=
+CFLAGS+=-fPIC
 endif
 
 all: $(EXEC_PROG)
@@ -40,6 +41,9 @@ $(SRC_DIR)/%.o:%.c
 
 $(SRC_DIR)/libguess.a: $(LIB_OBJ)
 	ar rcs $@ $^
+
+$(SRC_DIR)/libguess.so: $(LIB_OBJ)
+	
 
 .PHONY: clean
 
