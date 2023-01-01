@@ -6,45 +6,55 @@ SRC = src
 # Build dir
 BUILD = build
 
-# release dir for archive
-RELEASE_DIR = release/
+# distribution or archive dir
+DIST = dist
 
 # compiler option
 
 TARGET = guess_game
 
-OBJS = guess_game.o guess_lib.o
+OBJS = $(BUILD)/guess_game.o $(BUILD)/guess_lib.o
 
 CC = gcc
+CFLAGS = -Wall
 
-
-.PHONY: format
+.PHONY: format all clean check backup
 
 # Format source code
 format:
 	$(CLANG_FORMAT) -i src/*.[ch]
 
+# Check of format source code
 check:
 	utils/checkpatch.pl --no-tree -f src/*.[ch]
 
-backup:
-	echo TODO backup
+backup: $(DIST)
+	tar -czvf $(DIST)/guess_game.tar.gz ./src/*
 
-release: guess_game
-	echo TODO release
 
-all: $(TARGET)
-	echo TODO all
+all: $(BUILD)/$(TARGET)
 
-$(TARGET): $(OBJS)
-	echo TODO
+$(BUILD)/$(TARGET): $(OBJS)
+	echo Build target
+	$(CC) $(CFLAGS) $(OBJS) -o $@
 
-%.o: $(SRC)/%.c
-	echo TODO
+$(BUILD)/%.o: $(SRC)/%.c $(BUILD)
+	$(CC) $(CFLAGS) -g -o $@ -c $<
 
-build:
-	echo TODO build
+
+release: $(DIST) $(BUILD)/$(TARGET)
+	echo DIST
+	cp $(BUILD)/$(TARGET) $(DIST)/$(TARGET)
 
 clean:
-	rm -f *.o
+	rm -rf $(BUILD)
+	rm -rf $(DIST)
+
+$(DIST):
+	echo Creating $(DIST) dir
+	mkdir $(DIST)
+
+$(BUILD):
+	echo Creating $(BUILD) dir
+	mkdir $(BUILD)
 
