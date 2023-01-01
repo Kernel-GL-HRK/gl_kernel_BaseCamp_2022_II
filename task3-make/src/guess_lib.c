@@ -1,17 +1,19 @@
+// SPDX-License-Identifier: GPL-2.0
+
 #include "guess_lib.h"
 
-const char WinMessage[] = "You win!";
-const char LooseMessage[] = "You loose!";
+static const char WinMessage[] = "You win!";
+static const char LooseMessage[] = "You loose!";
 
 int get_user_input(char *message, char *variants)
 {
 	char user_input = 0;
+
 	printf("%s : ", message);
 	scanf(" %c", &user_input);
 	for (int i = 0; i < strlen(variants); i++) {
-		if (user_input == variants[i]) {
+		if (user_input == variants[i])
 			return i;
-		}
 	}
 	puts("Wrong input");
 	return -1;
@@ -41,7 +43,9 @@ int guess_game(void)
 	if (user_input == comp_input) {
 		puts(WinMessage);
 		return 0;
-	} else {
+	}
+
+	if (user_input != comp_input) {
 		puts(LooseMessage);
 		return 1;
 	}

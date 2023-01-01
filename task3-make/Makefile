@@ -20,6 +20,7 @@ CC = gcc
 
 .PHONY: format
 
+# Format source code
 format:
 	$(CLANG_FORMAT) -i src/*.[ch]
 

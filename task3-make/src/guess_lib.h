@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0 */
+
 #ifndef GUESS_LIB
 #define GUESS_LIB
 
@@ -5,9 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
-extern const char WinMessage[];
-extern const char LooseMessage[];
 
 int get_user_input(char *message, char *variants);
 int get_comp_input(void);
