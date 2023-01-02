@@ -11,12 +11,17 @@
 #define NUM_MAX  9
 #define RETURN_FALSE   -1
 
+unsigned short get_random(void)
+{
+ 	 srand(time(NULL));
+  	 return rand()%(NUM_MAX+1);
+}
+
 int main(void)
 
 {
 	int number_fromUser;
 
-	srand(time(NULL));
 
 do	{
 	printf("Please imput some number from 0 to 9: ");
@@ -24,7 +29,8 @@ do	{
 	}
 while ((number_fromUser > NUM_MAX) || (number_fromUser < NUM_MIN));
 
-if (rand()%(NUM_MAX+1) == number_fromUser) {
+if (get_random() == number_fromUser) {
 	printf("You win\n");
 	return 0;
+	}
 }
