@@ -1,3 +1,5 @@
+CC	= gcc
+
 PROGRAM	= guess
 OBJS	= guess.o game.o
 
@@ -7,10 +9,10 @@ OBJS	= guess.o game.o
 all: $(PROGRAM)
 
 $(PROGRAM): $(OBJS)
-	gcc $^ -o $(PROGRAM)
+	$(CC) $^ -o $(PROGRAM)
 
 *.o: *.c
-	gcc -c $^
+	$(CC) -c $^
 
 clean:
 	rm $(PROGRAM) *.o
