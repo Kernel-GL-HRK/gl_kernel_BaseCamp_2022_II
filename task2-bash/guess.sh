@@ -12,6 +12,12 @@ elif [ ! -x "$game_path/$game_name" ]; then
 	exit 2
 fi
 
+purple='\033[1;35m'
+green='\033[1;32m'
+yellow='\033[1;33m'
+cyan='\033[0;36m'
+no_color='\033[0m'
+
 total_tries=0
 win_tries=0
 
@@ -20,11 +26,11 @@ run_game() {
 	$game_path/$game_name
 	
 	if [ $? -eq "0" ]; then
-		echo "Good job!"
+		echo -e "${green}Good job!${no_color}"
 		((total_tries++))
 		((win_tries++))
 	elif [ $? -eq "1" ]; then
-		echo "Good luck next time!"
+		echo -e "${yellow}Good luck next time!${no_color}"
 		((total_tries++))
 	else
 		echo "Something goes wrong..."
@@ -32,7 +38,7 @@ run_game() {
 	fi
 }
 
-echo "Guess the number!"
+echo -e "${purple}Guess the number!${no_color}"
 echo
 
 run_game
@@ -40,7 +46,7 @@ run_game
 while true; do
 
 	echo
-	echo "Wanna another try?"
+	echo -e "${cyan}Wanna another try?${no_color}"
 	read -p "Yes, No or Number of tries without this prompt (Y/n/0..99): " ans
 	
 	case $ans in
@@ -61,4 +67,3 @@ echo
 echo "Lucky tries: $win_tries"
 echo "Total tries: $total_tries"
 echo "Bye!"
-
