@@ -34,7 +34,7 @@ run_game() {
 		((total_tries++))
 	else
 		echo "Something goes wrong..."
-		exit 2;
+		exit 10;
 	fi
 }
 
