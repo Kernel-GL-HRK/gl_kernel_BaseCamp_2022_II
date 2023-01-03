@@ -5,6 +5,7 @@ LIBFLAG =
 
 PROGRAM	= guess
 
+sources = *.c *.h
 deps	=
 objs	= $(PROGRAM).o game.o
 
@@ -19,7 +20,7 @@ ifeq ($(LIBFLAG),shared)
 	deps = game.o libgame.so
 endif
 
-.PHONY: all clean
+.PHONY: all check clean
 
 
 all: $(PROGRAM)
@@ -37,6 +38,9 @@ lib%.so: %.o
 	$(CC) -shared -Wl,-soname,$@.1 -o $@.1.0.1 $< -lc
 	ln -s $@.1.0.1 $@.1
 	ln -s $@.1 $@
+
+check:
+	checkpatch.pl --no-tree -f $(sources)
 
 clean:
 	rm -f $(PROGRAM) *.o *.a *.so*
