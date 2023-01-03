@@ -15,5 +15,14 @@ int main(void)
 {
 	srand((unsigned int)time(NULL));
 
+	printf("Enter your number: ");
+	scanf("%hhu", &user_number);
+
+	if (user_number > MAX_NUMBER) {
+		fprintf(stderr, "Number not between %d and %d\n",
+			MIN_NUMBER, MAX_NUMBER);
+		return 2;
+	}
+
 	return 0;
 }
