@@ -15,6 +15,8 @@ int main(void)
 {
 	srand((unsigned int)time(NULL));
 
+	uint8_t user_number = 0;
+
 	printf("Enter your number: ");
 	scanf("%hhu", &user_number);
 
@@ -24,5 +26,11 @@ int main(void)
 		return 2;
 	}
 
-	return 0;
+	if (user_number == generate_number()) {
+		printf("You win\n");
+		return 0;
+	}
+
+	printf("You loose\n");
+	return 1;
 }
