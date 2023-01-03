@@ -11,15 +11,15 @@
 #define EXIT_FAIL_1	1
 #define EXIT_FAIL_2	2
 
+static inline unsigned int random_gen(void);
+
 int main(void)
 {
 	unsigned int random_number;
 	unsigned int user_number;
 	int exit_code = 0;
 
-	srand((unsigned int) time(NULL));
-	random_number = random() % 10;
-
+	random_number = random_gen();
 	printf("Please enter the number from 0 to 9: ");
 	scanf("%d", &user_number);
 
@@ -37,4 +37,11 @@ int main(void)
 	}
 
 	return exit_code;
+}
+
+
+static inline unsigned int random_gen(void)
+{
+	srand((unsigned int) time(NULL));
+	return random() % 10;
 }
