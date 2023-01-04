@@ -1,0 +1,19 @@
+#files being edited
+*~
+
+# Object files
+*.o
+
+# Libraries
+*.a
+
+# Shared objects (inc. Windows DLLs)
+*.so
+*.so.*
+
+# Executables
+task*/*
+!task*/*.c
+
+# Linux
+*~
