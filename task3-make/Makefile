@@ -14,7 +14,7 @@ LIBFLAG =
 # Executable file name
 PROGRAM = guess
 
-sources = *.c *.h
+sources = $(wildcard *.[ch])
 objs = $(PROGRAM).o game.o
 deps =
 
