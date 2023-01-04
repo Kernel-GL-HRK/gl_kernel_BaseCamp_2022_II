@@ -1,13 +1,14 @@
-CC 	= gcc
-CFLAGS	=
-LDFLAGS	=
+CC = gcc
+CFLAGS =
+LDFLAGS =
 LIBFLAG =
 
-PROGRAM	= guess
+PROGRAM = guess
 
 sources = *.c *.h
-deps	=
-objs	= $(PROGRAM).o game.o
+objs = $(PROGRAM).o game.o
+deps =
+
 
 ifeq ($(LIBFLAG),static)
 	objs = $(PROGRAM).o libgame.a
@@ -15,7 +16,7 @@ endif
 
 ifeq ($(LIBFLAG),shared)
 	CFLAGS += -fPIC
-	LDFLAGS += -lgame -L ./
+	LDFLAGS += $(CFLAGS) -lgame -L ./
 	objs = $(PROGRAM).c
 	deps = game.o libgame.so
 endif
@@ -24,6 +25,9 @@ endif
 
 
 all: $(PROGRAM)
+
+debug: CFLAGS = -DDEBUG -O0 -g
+debug: $(PROGRAM)
 
 $(PROGRAM): $(objs) $(deps)
 	$(CC) $(objs) $(LDFLAGS) -o $(PROGRAM)
