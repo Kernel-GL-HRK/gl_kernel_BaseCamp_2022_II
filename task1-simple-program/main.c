@@ -1,7 +1,14 @@
 #include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+
+int get_rand(){
+	srand(time(NULL));
+	return rand() % 10;
+}
 
 int main(void){
-	printf("helo\n");
+	
 	return 0;
 }
 
