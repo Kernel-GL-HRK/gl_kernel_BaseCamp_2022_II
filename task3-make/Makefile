@@ -1,6 +1,9 @@
 # Compiler
 CC = gcc
 
+# Pre-processor options
+CPPFLAGS = -Wall -Werror
+
 # Compiler options
 CFLAGS =
 
@@ -17,7 +20,6 @@ PROGRAM = guess
 sources = $(wildcard *.[ch])
 objs = $(PROGRAM).o game.o
 deps =
-
 
 ifeq ($(LIBFLAG),static)
 	objs = $(PROGRAM).o libgame.a
@@ -42,7 +44,7 @@ $(PROGRAM): $(objs) $(deps)
 	$(CC) $(objs) $(LDFLAGS) -o $(PROGRAM)
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c $^
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $^
 
 lib%.a: %.o
 	ar rcs $@ $^
