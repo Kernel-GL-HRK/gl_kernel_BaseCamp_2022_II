@@ -1,8 +1,17 @@
+# Compiler
 CC = gcc
+
+# Compiler options
 CFLAGS =
+
+# Options used in linking
 LDFLAGS =
+
+# Type of library to use (static or shared)
+# Will be linked in regular way if not specified
 LIBFLAG =
 
+# Executable file name
 PROGRAM = guess
 
 sources = *.c *.h
