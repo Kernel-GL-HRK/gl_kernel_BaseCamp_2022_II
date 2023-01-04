@@ -1,5 +1,11 @@
 #! bin/bash
 
+PATH=../task1-simple-program
+
+if [[ ! -f ${PATH}/main.out ]]; then
+        gcc ${PATH}/main.c -o ${PATH}/main.out
+fi
+
 counter=1
 wins=0
 looses=0
@@ -8,7 +14,7 @@ until [[ $counter -eq 0 ]]; do
 	echo "Tries: ${counter}\t Wins: ${wins}\t Looses: ${looses}"
         ((--counter))
 
-        ../task1-simple-program/main.out
+        ${PATH}/main.out
         ret=$?
 
         if [ $ret -eq 0 ]; then
