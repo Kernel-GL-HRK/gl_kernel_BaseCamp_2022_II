@@ -5,6 +5,12 @@
 #include <time.h>
 #include <stdbool.h>
 
+int get_computer_number(void)
+{
+	srand(time(NULL));
+	return (rand() % 10);
+}
+
 int main(void)
 {
 	int user_number, computer_number;
@@ -14,8 +20,7 @@ int main(void)
 	scanf("%d", &user_number);
 
 	if (user_number >= 0 && user_number <= 9) {
-		srand(time(NULL));
-		computer_number = rand() % 10;
+		computer_number = get_computer_number();
 
 		//printf("Computer number: %d\n", computer_number);
 
