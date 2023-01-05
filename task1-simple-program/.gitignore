@@ -3,3 +3,7 @@
 
 # Executables
 *.out
+
+# Libraries
+*.so
+*.a
