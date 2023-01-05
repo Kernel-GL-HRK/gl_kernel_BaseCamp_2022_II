@@ -53,15 +53,15 @@ lib%.a:%.o
 	ar rcs $@ $^
 
 check:
-        $(foreach d,$(SOURCES),$(CHECKER) $(CHECKER_FLAGS) $(d))
+	$(foreach d,$(SOURCES),$(CHECKER) $(CHECKER_FLAGS) $(d))
 
 clean:
-        rm -f $(OBJS) $(PROGRAM) *.a *.so $(PROGRAM).out
+	rm -f $(OBJS) $(PROGRAM) *.a *.so $(PROGRAM).out
 
 help:
-        @echo 'Usage: make [TARGET]'
-        @echo 'TARGETS:'
-        @echo '  all       (=make) compile and link.'
-        @echo '  objs      compile only (no linking).'
-        @echo '  clean     clean objects and the executable file.'
-        @echo '  help      print this message.'
+	@echo 'Usage: make [TARGET]'
+	@echo 'TARGETS:'
+	@echo '  all       (=make) compile and link.'
+	@echo '  objs      compile only (no linking).'
+	@echo '  clean     clean objects and the executable file.'
+	@echo '  help      print this message.'
