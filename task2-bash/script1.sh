@@ -12,3 +12,7 @@ ARCHIVE=$FOLDER.tar.gzip
 
 cd $COPY_PATH/.. && tar -czf $ARCHIVE $FOLDER
 cd - > /dev/null
+
+mkdir -p release                                                                   
+                                                                                   
+cp $COPY_PATH.tar.gzip ./release/
