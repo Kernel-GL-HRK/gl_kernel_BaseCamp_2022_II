@@ -5,3 +5,5 @@
 *.exe
 *.out
 
+# Checkpatch.pl
+checkpatch.pl
