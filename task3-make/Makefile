@@ -1,5 +1,8 @@
 CC = gcc
 
+CHECKER = /scripts/checkpatch.pl
+CHECKER_FLAGS = --no-tree -f
+
 PROGRAM = main
 
 EXTRA_LDFLAGS =
@@ -48,3 +51,7 @@ lib%.so:%.o
 
 lib%.a:%.o
 	ar rcs $@ $^
+
+check:
+        $(foreach d,$(SOURCES),$(CHECKER) $(CHECKER_FLAGS) $(d))
+
