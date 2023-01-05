@@ -3,7 +3,8 @@
 #include <time.h>
 #include "randnum.h"
 
-int randNumber(void) {
+int randNumber(void) 
+{
     int n;
   /* Intializes random number generator */
     srand(time(NULL));
