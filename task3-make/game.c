@@ -5,15 +5,16 @@
 #include <time.h>
 #include "game.h"
 
-static int generate_number(void)
+static inline int generate_number(void)
 {
-	srand(time(NULL));
 	return rand() % 10;
 }
 
 void run_game(void)
 {
 	int num, rdm;
+
+	srand(time(NULL));
 
 	printf("Enter number from 0 to 9: ");
 	scanf("%d", &num);
