@@ -8,15 +8,15 @@ NC='\033[0m'
 
 PATH=../task1-simple-program
 
-if [[ ! -f ${PATH}/main.out ]]; then
-        gcc ${PATH}/main.c -o ${PATH}/main.out
+if ! [[ -f ${PATH}/main.out ]]; then
+        gcc ${PATH}/main.c ${PATH}/func.c -o ${PATH}/main.out
 fi
 
 counter=1
 wins=0
 looses=0
 
-until [[ $counter -eq 0 ]]; do
+while true; do
         echo -e ${BLUE}"Tries: ${counter}\t Wins: ${wins}\t Looses: ${looses}"${NC}
 
         ((--counter))
@@ -38,7 +38,7 @@ until [[ $counter -eq 0 ]]; do
 
                 case $reply in
 
-                No|NO|N|n) ;;
+                No|NO|N|n) break ;;
 
                 ("" | *[!0-9]*) ((++counter)) ;;
 
