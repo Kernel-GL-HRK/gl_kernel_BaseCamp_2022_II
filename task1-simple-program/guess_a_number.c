@@ -17,7 +17,7 @@ int main(void)
 
 	uint8_t user_number = 0;
 
-	printf("Enter your number: ");
+	printf("Enter number between %d and %d: ", MIN_NUMBER, MAX_NUMBER);
 	scanf("%hhu", &user_number);
 
 	if (user_number > MAX_NUMBER) {
