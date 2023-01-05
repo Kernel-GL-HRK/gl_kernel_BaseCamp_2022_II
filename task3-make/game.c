@@ -5,6 +5,8 @@
 #include <time.h>
 #include "game.h"
 
+#define EGG 42
+
 static inline int generate_number(void)
 {
 	return rand() % 10;
@@ -22,7 +24,8 @@ void run_game(void)
 	rdm = generate_number();
 	printf("The number is %d\nYou entered %d\n", rdm, num);
 
-	if (num != rdm) {
+	// Let's add easter egg to the game
+	if (num != rdm && num != EGG) {
 		puts("You lost!");
 		exit(1);
 	}
