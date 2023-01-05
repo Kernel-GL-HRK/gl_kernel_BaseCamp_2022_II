@@ -36,13 +36,13 @@ int main(int argc, char **argv) {
         if (a == rand_num) {
         printf("%s * %s\n%s * %s    %s         %sYOU WIN!!!          %s\n%s * %s\n",ON_IBLUE, RESET, ON_IBLUE, RESET, \
                                                                                 ON_IGREEN, BBLACK, RESET, ON_IBLUE, RESET);
-        printf("%s * %s%s            * Good job *            %s\n",ON_IBLACK ,RESET ,ON_IBLUE ,RESET);
+        printf("%s * %s%s                                    %s\n",ON_IBLACK ,RESET ,ON_IBLUE ,RESET);
         printf("%s * %s%s                                    %s\n",ON_IBLACK ,RESET ,ON_IBLUE ,RESET);
         return 0;
     } else {
         printf("%s * %s\n%s * %s    %s         %sYOU LOSE!!!         %s\n%s * %s\n",ON_IBLUE, RESET, ON_IBLUE, RESET, \
                                                                                 ON_IRED, BBLACK, RESET, ON_IBLUE, RESET);
-        printf("%s * %s%s   * Wish a good luck next time *   %s\n",ON_IBLACK ,RESET ,ON_IBLUE ,RESET);
+        printf("%s * %s%s                                    %s\n",ON_IBLACK ,RESET ,ON_IBLUE ,RESET);
         printf("%s * %s%s         random numer = %d           %s\n",ON_IBLACK ,RESET ,ON_IBLUE, rand_num, RESET);
         return 1;
     }
