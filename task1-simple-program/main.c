@@ -11,6 +11,14 @@ int main(int argc, char **argv) {
 
     rand_num = randNumber();
 
+    if (1 < argc) {
+        if ((0 == (strcmp(argv[1], "--test"))) || (0 == (strcmp(argv[1], "-t")))) {
+            printf("   %s random numer = %d  %s\n", WHITE_YELLO, rand_num, RESET);
+        }
+    } else {
+            printf("%s   %s -t   %s\n",WHITE_YELLO, argv[0], RESET);
+        }
+
     printf("%s * %s%s        GAME \"Guess number!\"        %s\n",ON_IBLACK ,RESET ,ON_IBLUE ,RESET);
     printf("%s * %s%s        guess the number *%sN%s%s*        %s\n",ON_IBLACK ,RESET ,ON_IBLUE ,BIWHITE, RESET, ON_IBLUE, RESET);
 
