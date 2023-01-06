@@ -62,15 +62,53 @@ total () {
   done
   echo
 }
-
-until [ $Stop = "N" ]; do
-  clear
-  program_guess
-  let try++
-  echo -e "   ${ON_IBLUE} *${try} ${NC}  ${ON_IGREEN} +${Win} ${NC}  ${ON_IRED} -${Lose} ${NC}"
-  read -p "exit n | N or Press [Enter] key / (5 seconds) to continue ..." -t 5 reply
-  Stop=`echo $reply | tr [:lower:] [:upper:]`
+clear
+echo ""
+echo "Game \"Guess a number\""
+echo "Startup type:"
+PS3='Choose an option: '
+select start in "loop" "run N" "quit" 
+do
+  case $REPLY in
+    1)
+        until [ $Stop = "N" ]; do
+        clear
+        program_guess
+        let try++
+        echo -e "   ${ON_IBLUE} *${try} ${NC}  ${ON_IGREEN} +${Win} ${NC}  ${ON_IRED} -${Lose} ${NC}"
+        #read -p "want to continue? (Y/N)" reply
+        read -p "exit n | N or Press [Enter] key / (5 seconds) to continue ..." -t 5 reply
+        Stop=`echo $reply | tr [:lower:] [:upper:]`
+        done
+        total
+        exit 0;;
+    2)
+        while [ True ]
+        do 
+          read -p "how many times to run the game from 1 to ${MAXNUM} : " counter;
+          if [[ $counter =~ ^[0-9]+$ && $counter -le ${MAXNUM} ]]; then
+            break 
+          fi
+        done
+        let try=counter
+        while [ $counter -gt 0 ] 
+        do 
+          clear
+          program_guess
+          let counter=$counter-1 
+          echo -e "   ${ON_IBLUE} Total:${try} *${counter} ${NC}  ${ON_IGREEN} +${Win} ${NC}  ${ON_IRED} -${Lose} ${NC}" 
+          read -s -p "Press any key to continue or wait 2 seconds..." -t 2
+        done
+        total
+        exit 0;;
+    3)
+      echo "Tschüss bis später."
+      exit 0;;
+    *) 
+      echo "Invalid entry $REPLY"
+      exit 0;;
+  esac
 done
-total
 
+echo "Ende!"
 exit 0
