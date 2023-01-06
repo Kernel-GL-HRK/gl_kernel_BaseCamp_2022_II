@@ -1,9 +1,12 @@
-CC=gcc
-CFLAGS=#-Wall -g
+CC=gcc #-clang
+CFLAGS= #-Wall -g
 TARGET = mains
 PREFIX = /usr/lib/
 myPROGRAM=progRegular
 flag_so= # -fPIC dynamic library 
+
+CPPCHECK = cppcheck
+CHECKFLAGS =--enable=all --inconclusive --check-config --template=gcc --suppress=missingIncludeSystem
 
 flag_lib=0
 ifeq ($(flag_lib),1)
@@ -15,8 +18,7 @@ ifeq ($(flag_lib),2)
 endif
 
 
-
-.PHONY: all libs libs_so install_so uninstall_so clean
+.PHONY: all libs libs_so install_so uninstall_so cppcheck clean
 
 all: ${myPROGRAM}
 
@@ -54,5 +56,8 @@ install_so:
 uninstall_so:
 	sudo rm ${PREFIX}libmylib.so
 
+cppcheck: *.c
+	$(CPPCHECK) $(CHECKFLAGS) $^ --xml > cppcheck.out.xml
+
 clean:
-	rm -f ${TARGET} *.o *.a *.so *.gch
+	rm -f ${TARGET} *.o *.a *.so *.gch *.xml
