@@ -1,10 +1,15 @@
 #include <time.h>
 #include <stdio.h>
 
-int main(void)
+int random(void)
 {
 	srand(time(NULL));
-	int r = rand() % 10;
+	return rand() % 10;
+}
+
+int main(void)
+{
+	int r = random();
 	int i;
 
 	do {
