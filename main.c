@@ -3,14 +3,19 @@
 #include <stdlib.h>
 #include <time.h>
 
+int range_rand(int min, int max)
+{
+srand(time(NULL));
+return (min + rand() % (max - min + 1));
+}
+
 int main(void)
 {
 int x, x_gues, ret_val;
 
-srand(time(NULL));
 printf("Enter your number in the range from 0 to 9\n");
 scanf("%u", &x_gues);
-x = rand() % 10;
+x = range_rand(0, 9);
 if (x == x_gues) {
 	printf("You Win!\n");
 	ret_val = 0;
