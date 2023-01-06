@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=#-Wall -g
-main_n = mains
+TARGET = mains
 myPROGRAM=progRegular
 flag_so= # -fPIC dynamic library 
 
@@ -11,16 +11,17 @@ endif
 
 
 
+
 .PHONY: all libs clean
 
 all: ${myPROGRAM}
 
 progRegular: main.o randnum.o
-	${CC} ${CFLAGS} $^ -o ${main_n}
+	${CC} ${CFLAGS} $^ -o ${TARGET}
 
 # Static library
 progStaticLib: main.o libmylib.a 
-	${CC}  -L. -o ${main_n} main.o -lmylib -lm
+	${CC}  -L. -o ${TARGET} main.o -lmylib -lm
 
 main.o: main.c main.h
 	${CC} ${CFLAGS} -c $^
@@ -34,4 +35,4 @@ libmylib.a: randnum.o
 libs: libmylib.a
 
 clean:
-	rm -f ${main_n} *.o *.a *.gch
+	rm -f ${TARGET} *.o *.a *.gch
