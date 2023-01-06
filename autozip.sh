@@ -1,6 +1,6 @@
 #!/bin/sh
 
-DIR="/tmp/guesanumber/"
+DIR="/tmp/guesanumber"
 
 if [ ! -d "$DIR" ]; then
     # If directory dosen't exist create it.
@@ -16,3 +16,4 @@ if [ -f *.h ]; then
     cp *.h "$DIR"
 fi
 
+tar -zcvf ""$DIR".tar.gz" "$DIR"
