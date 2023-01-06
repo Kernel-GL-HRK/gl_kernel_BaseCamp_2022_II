@@ -2,6 +2,7 @@
 
 src_dir=../task1-simple-program
 dest_dir=/tmp/guesanumber
+ar_name=guesanumber
 
 create_or_check_dir(){
     if [[ ! -e $1 ]]; then
@@ -13,4 +14,11 @@ create_or_check_dir(){
 
 create_or_check_dir "$dest_dir"
 
-#cp -R "$src_dir" "$dest_dir"
+cp -R "$src_dir"/src "$dest_dir"
+
+if [[ ! -e "$dest_dir"/src ]]; then
+    echo "Destination folder doesnt contain Src folder"
+else
+    tar -zcvf "$ar_name".tar.gz "$dest_dir"/src
+fi
+
