@@ -33,9 +33,11 @@ program_guess () {
   if [ "$result_game" -eq "0" ]; then
     let Win++
     let Try++
+    echo -e "   ${ON_IGREEN}            Good job!               ${NC}  "
   else
     let Lose++
     let Try++
+    echo -e "   ${ON_IRED}    Wish a good luck next time.     ${NC}"
   fi
 }
 
@@ -76,8 +78,7 @@ do
         program_guess
         let try++
         echo -e "   ${ON_IBLUE} *${try} ${NC}  ${ON_IGREEN} +${Win} ${NC}  ${ON_IRED} -${Lose} ${NC}"
-        #read -p "want to continue? (Y/N)" reply
-        read -p "exit n | N or Press [Enter] key / (5 seconds) to continue ..." -t 5 reply
+        read -p "exit n | N or Press [Enter] key / (10 seconds) to continue ..." -t 10 reply
         Stop=`echo $reply | tr [:lower:] [:upper:]`
         done
         total
@@ -97,7 +98,7 @@ do
           program_guess
           let counter=$counter-1 
           echo -e "   ${ON_IBLUE} Total:${try} *${counter} ${NC}  ${ON_IGREEN} +${Win} ${NC}  ${ON_IRED} -${Lose} ${NC}" 
-          read -s -p "Press any key to continue or wait 2 seconds..." -t 2
+          read -s -p "Press any key to continue or wait 3 seconds..." -t 3
         done
         total
         exit 0;;
