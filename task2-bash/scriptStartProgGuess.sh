@@ -39,3 +39,38 @@ program_guess () {
   fi
 }
 
+total () {
+  clear
+  echo -e "\n${ON_IBLACK} * ${NC}${ON_IBLUE}        GAME \"Guess number!\"        ${NC}"
+  echo -e "${ON_IBLACK} * ${NC}${ON_IBLUE}     Total      WIN       LOSE      ${NC}"
+  echo -e "   ${BWHITE}       $Try         $Win         $Lose    ${NC}"
+  for (( i=1; i<=Try; i++ ))
+  do
+    echo -en "${ON_IBLACK} * ${NC}     ${ON_IBLUE}      ${NC}  "
+    if [ "$Win" -gt 0 ]; then
+      echo -en "  ${ON_IGREEN}      ${NC}  "
+      let Win--
+    else
+        echo -en "          "
+    fi
+    if [ "$Lose" -gt 0 ]; then
+      echo -e "  ${ON_IRED}      ${NC}"
+      let Lose--
+    else
+      echo -e " "  
+    fi
+  done
+  echo
+}
+
+until [ $Stop = "N" ]; do
+  clear
+  program_guess
+  let try++
+  echo -e "   ${ON_IBLUE} *${try} ${NC}  ${ON_IGREEN} +${Win} ${NC}  ${ON_IRED} -${Lose} ${NC}"
+  read -p "exit n | N or Press [Enter] key / (5 seconds) to continue ..." -t 5 reply
+  Stop=`echo $reply | tr [:lower:] [:upper:]`
+done
+total
+
+exit 0
