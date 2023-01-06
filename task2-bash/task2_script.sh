@@ -3,6 +3,7 @@
 src_dir=../task1-simple-program
 dest_dir=/tmp/guesanumber
 ar_name=guesanumber
+realese_dir=./release
 
 create_or_check_dir(){
     if [[ ! -e $1 ]]; then
@@ -22,3 +23,6 @@ else
     tar -zcvf "$ar_name".tar.gz "$dest_dir"/src
 fi
 
+create_or_check_dir "$realese_dir"
+
+cp -R "$ar_name".tar.gz "$realese_dir"
