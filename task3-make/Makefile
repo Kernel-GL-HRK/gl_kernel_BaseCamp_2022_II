@@ -1,6 +1,7 @@
 CC=gcc
 CFLAGS=#-Wall -g
 TARGET = mains
+PREFIX = /usr/lib/
 myPROGRAM=progRegular
 flag_so= # -fPIC dynamic library 
 
@@ -15,7 +16,7 @@ endif
 
 
 
-.PHONY: all libs libs_so clean
+.PHONY: all libs libs_so install_so uninstall_so clean
 
 all: ${myPROGRAM}
 
@@ -45,6 +46,13 @@ libmylib.so: randnum.o
 	${CC} -shared -Wl,-soname,libmylib.so -o $@ $^ -lc
 
 libs_so: libmylib.so
+
+
+install_so:
+	sudo cp ./libmylib.so ${PREFIX}
+
+uninstall_so:
+	sudo rm ${PREFIX}libmylib.so
 
 clean:
 	rm -f ${TARGET} *.o *.a *.so *.gch
