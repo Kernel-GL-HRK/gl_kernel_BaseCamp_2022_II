@@ -7,3 +7,12 @@ if [ ! -d "$DIR" ]; then
     mkdir "$DIR"
 fi
 
+# If *.c files exist then copy them all.
+if [ -f *.c ]; then
+    cp *.c "$DIR"
+fi
+# If *.h files exist then copy them all.
+if [ -f *.h ]; then
+    cp *.h "$DIR"
+fi
+
