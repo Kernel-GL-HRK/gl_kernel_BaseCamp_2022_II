@@ -5,17 +5,43 @@ tar xf ./release/guessanumber.tar.gz  -C ./release/
 cd ./release/tmp/guessanumber/
 gcc guess.c -o game
 
+until [ "$guest" = "n" ]; do
 
+echo "	y) play"
+echo "	n) exit"
+echo " number) number of rounds"
 
-guest="y"
+read guest
 
-while [ $guest != "n" ]
-	do
+case $guest in
+	y)
 		./game
-		echo "Continue? y/n"
-		read guest
-	done
-echo "Bye!"
+		;;
+	n)
+		echo "Bye!"
+		exit 1
+		;;
+	[0-9]|[0-9][0-9])
+		wincounter=0
+		while [ "$guest" != 0 ] 
+		do
+			./game 
+			if [ $? == 0 ]
+			then
+				(( wincounter++ ))
+				echo "Good job!"
+			else
+				echo "Wish a good luck next time"
+			fi
+			(( guest-- ))
+		done 
+		echo You win $wincounter times
+		;;
+	*) 
+		echo "Invalid input" 
+		;;
+esac
+done
 
 rm game
 rm guess.c
