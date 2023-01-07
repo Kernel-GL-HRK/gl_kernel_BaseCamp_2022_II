@@ -19,7 +19,14 @@ case $guest in
 		;;
 	n)
 		echo "Bye!"
-		exit 1
+		rm game
+		rm guess.c
+		cd ..
+		rmdir guessanumber
+		cd ..
+		rmdir tmp
+		cd ..
+		exit 0
 		;;
 	[0-9]|[0-9][0-9])
 		wincounter=0
@@ -43,11 +50,6 @@ case $guest in
 esac
 done
 
-rm game
-rm guess.c
-cd ..
-rmdir guessanumber
-cd ..
-rmdir tmp
-cd ..
+
+
 
