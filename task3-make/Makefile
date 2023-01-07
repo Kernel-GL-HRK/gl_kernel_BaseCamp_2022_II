@@ -20,6 +20,7 @@ link_regular 	= main.o random.o
 link_static  	= main.o random.a
 link_dynamic 	= main.c random.o random.so
 
+CHECKPATCH_PATH = ./checkpatch.pl
 # compiler selection
 ifeq ($(CSEL), gcc)
 	COMPILER = $(CC)
@@ -44,9 +45,15 @@ else
 $(error Select link options for second file)
 endif
 
-.PHONY: all regular static dynamic
+.PHONY: all regular static dynamic cppcheck checkpatch
 
 all: $(prog)
+
+cppcheck:
+	cppcheck --enable=warning,style,performance,portability ./*.c ./*.h
+
+checkpatch:
+	$(CHECKPATCH_PATH) -f --no-tree ./*.c ./*.h
 
 regular: $(link_regular)
 	$(COMPILER) $(CFLAGS) $^ -o $(PROG)
