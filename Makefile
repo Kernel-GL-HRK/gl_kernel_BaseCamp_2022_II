@@ -1,17 +1,20 @@
 # Default compiler
-CC=gcc
+CC		=gcc
 # Default executable name
-PROGRAM = main.out
+PROGRAM 	= main.out
 # All sources and headers in project directory (non recursive)
-SOURCES = $(wildcard *.c)
-HEADERS = $(wildcard *.h)
+SOURCES 	= $(wildcard *.c)
+HEADERS 	= $(wildcard *.h)
 # Object files for all sources
-OBJS = $(addsuffix .o, $(basename $(SOURCES)))
+OBJS 		= $(addsuffix .o, $(basename $(SOURCES)))
+# C compiler flags
+CFLAGS 		= -Wall -Wextra -g
+CEXTFLAGS	= 
 
-COMPILE.c   = $(CC) -c
-LINK.c = $(CC)
+COMPILE.c   	= $(CC) $(CFLAGS) $(CEXTFLAGS) -c
+LINK.c 		= $(CC)
 
-RM = rm -f
+RM 		= rm -f
 
 .PHONY: all clean objs show target
 
