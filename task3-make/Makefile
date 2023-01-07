@@ -2,6 +2,7 @@ PROG		= main
 CC 		= gcc
 CLANG		= clang
 CFLAGS		=
+CFLAGS_EXTRA	= -Werror -Wall -Wextra -Wsign-conversion
 DEBUG		=
 DEBUG_EXTRA	= -g
 
@@ -14,8 +15,15 @@ CSEL = gcc
 # dynamic library (.so) = dynamic
 LOPT = regular
 
+# select debug information debug or release
+DSEL = debug
+
+# select warning during compilation warning or none
+WSEL = warning
+
 # library name for static and dynamic link
 LIBNAME 	= libmylib
+
 DYNAMIC_EXTRA	= -fPIC
 
 link_regular 	= main.o random.o
@@ -23,6 +31,7 @@ link_static  	= main.o random.a
 link_dynamic 	= main.c random.o random.so
 
 CHECKPATCH_PATH = ./checkpatch.pl
+
 # compiler selection
 ifeq ($(CSEL), gcc)
 	COMPILER = $(CC)
@@ -32,7 +41,7 @@ else
 $(error Select compiler options)
 endif
 
-# linkd options for second file
+# linked options for second file
 ifeq ($(LOPT), regular)
 	link_option = $(link_regular)
 	prog = regular
@@ -47,7 +56,21 @@ else
 $(error Select link options for second file)
 endif
 
-.PHONY: all regular static dynamic cppcheck checkpatch debug release
+# debug options
+ifeq ($(DSEL), debug)
+	DEBUG += $(DEBUG_EXTRA)
+else ifeq ($(DSEL), release)
+	DEBUG = $()
+else
+$(error Select debug options)
+endif
+
+# warning options
+ifeq ($(WSEL), warning)
+	CFLAGS += $(CFLAGS_EXTRA)
+endif
+
+.PHONY: all regular static dynamic cppcheck checkpatch
 
 all: $(prog)
 
@@ -56,20 +79,15 @@ cppcheck:
 
 checkpatch:
 	$(CHECKPATCH_PATH) -f --no-tree ./*.c ./*.h
-	
-debug: DEBUG += $(DEBUG_EXTRA)
-debug: $(prog)
-
-release: $(prog)
 
 regular: $(link_regular)
 	$(COMPILER) $(CFLAGS) $(DEBUG) $^ -o $(PROG)
 
 static: $(link_static)
-	$(COMPILER) $(DEBUG) $< $(LIBNAME).a -o $(PROG)
+	$(COMPILER) $(CFLAGS) $(DEBUG) $< $(LIBNAME).a -o $(PROG)
 
 dynamic: $(link_dynamic)
-	$(COMPILER) $(DEBUG) $< $(LIBNAME).so -L ./ -o $(PROG)
+	$(COMPILER) $(CFLAGS) $(DEBUG) $< $(LIBNAME).so -L ./ -o $(PROG)
 
 %.o: %.c
 	$(COMPILER) $(CFLAGS) $(DEBUG) -c $< -o $@
@@ -78,5 +96,5 @@ dynamic: $(link_dynamic)
 	ar rcs $(LIBNAME).a $<
 
 %.so: %.o
-	$(COMPILER) $(DEBUG) -shared -Wl,-soname,$(LIBNAME).so -o $(LIBNAME).so $< -lc
+	$(COMPILER) $(CFLAGS) $(DEBUG) -shared -Wl,-soname,$(LIBNAME).so -o $(LIBNAME).so $< -lc
 
