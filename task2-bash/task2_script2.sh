@@ -21,6 +21,13 @@ help() {
 start_game() {
     if [ "$number" -ge 0 ] && [ "$number" -le 9 ]; then
         $game "$number"
+
+        if [ $? -eq 0 ]; then
+            echo "Good job"
+            win_counter=$((win_counter+1))
+        else
+            echo "Wish a good luck next time"
+        fi
     fi
 }
 

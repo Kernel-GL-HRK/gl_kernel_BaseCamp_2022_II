@@ -4,15 +4,12 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
 
-#define LOWER 0
-#define UPPER 9
-
-uint8_t generateRandomNumber(int lower, int upper)
+uint8_t generateRandomNumber()
 {
-	uint8_t r = rand() % (upper - lower + 1) + lower;
-	printf("%d",r); 
-	return r;
+	srand(time(NULL)); // Seed
+	return rand() % 10;
 }
 
 int main(int argc, char **argv)
@@ -30,10 +27,10 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	if (userNumber == generateRandomNumber(LOWER, UPPER)) {
-		printf("You win!\n");
+	if (userNumber == generateRandomNumber()) {
+		//printf("You win!\n");
 	} else {
-		printf("You lose\n");
+		//printf("You lose\n");
 		return -1;
 	}
 
