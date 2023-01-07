@@ -10,16 +10,21 @@
 
 uint8_t generateRandomNumber(int lower, int upper)
 {
-	return rand() % (upper - lower + 1) + lower;
+	uint8_t r = rand() % (upper - lower + 1) + lower;
+	printf("%d",r); 
+	return r;
 }
 
 int main(int argc, char **argv)
 {
 	uint8_t userNumber = 0;
 
-	printf("Please gimme a number in range [0-9]");
-	scanf("%hhd", &userNumber);
-
+	if (argc < 2){
+		printf("Please gimme a number in range [0-9]");
+		scanf("%hhd", &userNumber);
+	}else
+		userNumber = atoi(argv[1]); 
+	
 	if (userNumber < 0 || userNumber > 9) {
 		printf("Value is not correct. Leaving\n");
 		return -1;
