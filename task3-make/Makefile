@@ -2,6 +2,8 @@ PROG		= main
 CC 		= gcc
 CLANG		= clang
 CFLAGS		=
+DEBUG		=
+DEBUG_EXTRA	= -g
 
 # select gcc or clang
 CSEL = gcc
@@ -45,7 +47,7 @@ else
 $(error Select link options for second file)
 endif
 
-.PHONY: all regular static dynamic cppcheck checkpatch
+.PHONY: all regular static dynamic cppcheck checkpatch debug release
 
 all: $(prog)
 
@@ -54,22 +56,27 @@ cppcheck:
 
 checkpatch:
 	$(CHECKPATCH_PATH) -f --no-tree ./*.c ./*.h
+	
+debug: DEBUG += $(DEBUG_EXTRA)
+debug: $(prog)
+
+release: $(prog)
 
 regular: $(link_regular)
-	$(COMPILER) $(CFLAGS) $^ -o $(PROG)
+	$(COMPILER) $(CFLAGS) $(DEBUG) $^ -o $(PROG)
 
 static: $(link_static)
-	$(COMPILER) $< $(LIBNAME).a -o $(PROG)
+	$(COMPILER) $(DEBUG) $< $(LIBNAME).a -o $(PROG)
 
 dynamic: $(link_dynamic)
-	$(COMPILER) $< $(LIBNAME).so -L ./ -o $(PROG)
+	$(COMPILER) $(DEBUG) $< $(LIBNAME).so -L ./ -o $(PROG)
 
 %.o: %.c
-	$(COMPILER) $(CFLAGS) -c $< -o $@
+	$(COMPILER) $(CFLAGS) $(DEBUG) -c $< -o $@
 
 %.a: %.o
 	ar rcs $(LIBNAME).a $<
 
 %.so: %.o
-	$(COMPILER) -shared -Wl,-soname,$(LIBNAME).so -o $(LIBNAME).so $< -lc
+	$(COMPILER) $(DEBUG) -shared -Wl,-soname,$(LIBNAME).so -o $(LIBNAME).so $< -lc
 
