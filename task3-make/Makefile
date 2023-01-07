@@ -1,4 +1,5 @@
 CC = gcc # clang
+CFLAGS = -Wall -Werror -Wextra 
 
 PROG=guess_a_number
 
@@ -7,10 +8,10 @@ PROG=guess_a_number
 all: $(PROG)
 
 $(PROG): random.o guess_a_number.c
-	$(CC) $^ -o $@ 
+	$(CC) $(CFLAGS) $^ -o $@ 
 
 random.o: random.c
-	$(CC) -c $<
+	$(CC) $(CFLAGS) -c $<
 
 clean:
 	rm -f *.o $(PROG)
