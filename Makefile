@@ -13,10 +13,18 @@ CEXTFLAGS	=
 
 COMPILE.c   	= $(CC) $(CFLAGS) $(CEXTFLAGS) -c
 LINK.c 		= $(CC)
+# 
+CHECKER		= checkpatch.pl
+ifeq ($(CHECKER), checkpatch.pl)
+    CHECKFLAGS	= --no-tree -f
+    CHECKER	= ./checkpatch.pl
+else
+    CHECKFLAGS<>= --enable=all
+endif
 
 RM 		= rm -f
 
-.PHONY: all clean objs show target
+.PHONY: all clean objs show target check
 
 target:
 	@echo Provide a target name to make
@@ -32,6 +40,9 @@ objs:$(OBJS)
 $(PROGRAM):$(OBJS)
 	$(LINK.c)   $(OBJS) -o $@
 	@echo Type ./$@ to execute the program.
+
+check:$(SOURCES)
+	$(CHECKER) $(CHECKFLAGS) $^
 
 clean:
 	$(RM) $(OBJS) $(PROGRAM)
