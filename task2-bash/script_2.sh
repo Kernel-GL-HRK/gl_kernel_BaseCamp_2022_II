@@ -5,6 +5,11 @@ loop=1
 game=~/gl_base_camp/gl_kernel_BaseCamp_2022_II/task1-simple-program/main
 success_count=0
 
+RED='\033[1;31m'
+BGREEN='\x1b[1;32m'
+BRED='\033[1;31m'
+NOC='\033[0m'
+
 while [ 1 ]
 do
         for (( i = 0; i < loop; i++ ))
@@ -18,7 +23,7 @@ do
                         echo "Wish a good luck next time"
                 fi
 
-                echo "Success cases $success_count"
+                echo -e "${BGREEN}Success cases $success_count ${NOC}"
         done
 
         echo "To continue press \"y\", \"n\" or number of tries"
@@ -35,6 +40,6 @@ do
                 loop=$var
         else
                 loop=0
-                echo "Error input!"
+                echo -e "${BRED}Error input!${NOC}"
         fi
 done
