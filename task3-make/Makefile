@@ -1,4 +1,4 @@
-CC = gcc # clang
+CC = gcc
 CFLAGS = -Wall -Werror -Wextra 
 DEBUG_EXTRAFLAGS = -g
 
@@ -6,7 +6,9 @@ PROG_NAME = guess_a_number
 MAIN = guess_a_number.c
 SRCMODULES = random.c
 OBJMODULES = $(SRCMODULES:.c=.o)
+
 SLIB = librandom.a
+DLIB = librandom.so
 
 CHECK_PROG = ./checkpatch.pl
 CHECK_FLAGS = --no-tree -f
@@ -19,7 +21,9 @@ LIB =
 
 ifeq ($(LIB), static)
 	PROG_BUILD = static
-else 
+else ifeq ($(LIB), dynamic)
+	PROG_BUILD = dynamic
+else
 	PROG_BUILD = regular
 endif
 
@@ -37,6 +41,14 @@ static: $(SLIB) $(MAIN)
 $(SLIB): $(OBJMODULES)
 	ar rcs $@ $<
 
+
+dynamic: $(MAIN) $(DLIB)
+	$(CC) $< -lrandom -L ./ -o $(PROG_NAME)
+
+$(DLIB): $(SRCMODULES)
+	$(CC) -fPIC -c $<
+	$(CC) -dynamiclib -o $@ $(OBJMODULES)
+	
 
 $(OBJMODULES): $(SRCMODULES)
 	$(CC) $(CFLAGS) -c $<
