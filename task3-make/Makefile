@@ -2,7 +2,12 @@ CC = gcc # clang
 CFLAGS = -Wall -Werror -Wextra 
 DEBUG_EXTRAFLAGS = -g
 
-PROG = guess_a_number
+PROG_NAME = guess_a_number
+MAIN = guess_a_number.c
+SRCMODULES = random.c
+OBJMODULES = $(SRCMODULES:.c=.o)
+SLIB = librandom.a
+
 
 CHECK_PROG = ./checkpatch.pl
 CHECK_FLAGS = --no-tree -f
@@ -11,25 +16,43 @@ ifeq ($(CHECK_PROG), cppcheck)
 	CHECK_FLAGS = --enable=all --inconclusive --check-config --template=gcc --suppress=missingIncludeSystem
 endif
 
+LIB =
+
+ifeq ($(LIB), static)
+	PROG_BUILD = static
+else 
+	PROG_BUILD = regular
+endif
+
+
 ./PHONY: clean all debug check run
 
-all: $(PROG)
+all: $(PROG_BUILD)
 
-$(PROG): random.o guess_a_number.c
-	$(CC) $(CFLAGS) $^ -o $@ 
+regular: $(OBJMODULES) $(MAIN)
+	$(CC) $(CFLAGS) $^ -o $(PROG_NAME)
 
-random.o: random.c
+
+static: $(SLIB) $(MAIN)
+	$(CC) $(CFLAGS) $^ -o $(PROG_NAME)
+
+$(SLIB): $(OBJMODULES)
+	ar rcs $@ $<
+
+
+$(OBJMODULES): $(SRCMODULES)
 	$(CC) $(CFLAGS) -c $<
 
+
 debug: CFLAGS += $(DEBUG_EXTRAFLAGS)
-debug: $(PROG)
+debug: $(PROG_NAME)
 
 check:
 	$(CHECK_PROG) $(CHECK_FLAGS) ./*.[ch]
 
 run:
-	./$(PROG)
+	./$(PROG_NAME)
 
 clean:
-	rm -rf *.o $(PROG) *.dSYM
+	rm -rf *.a *.o $(PROG_NAME) *.dSYM
 
