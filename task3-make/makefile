@@ -3,11 +3,11 @@ CC=gcc
 Link_like=
 Flag=
 
-Debag=false
+Debug=false
 Warning=false
 
-ifeq (${Debag}, true)
-	Flag=-g
+ifeq (${Debug}, true)
+	Flag += -g
 endif
 
 ifeq (${Warning}, true)
@@ -43,4 +43,21 @@ check:
 
 clean:
 	rm -f *.out *.o *.so *.a
+
+help:
+	$(info 	Variable "Name": Name of program, can be any str.)
+	$(info 	Variable "CC": Compiler that will be using for compiling.)
+	$(info 	Variable "Link_like": Responsible for the type of linking source code from not main file, can accept: )
+	$(info 		- " "(nothing): regular compiling;)
+	$(info 		- "_static": linking source code like static library;)
+	$(info 		- "_dynamic": linking source code like dynamic library.)
+	$(info 	Variable "Flag": Flags for compiling.)
+	$(info 	)
+	$(info 	Flag "Debug": Enables debug mode, can accept "true" or "false".)
+	$(info 	Flag "Warning": Enables mode of print all warning during compilation, can accept "true" or "false".)
+	$(info 	)
+	$(info 	Option "target": Starts compilation according to the specified parameters.)
+	$(info 	Option "check": Checks all project code using checkpatch.pl.)
+	$(info 	Option "clean": Deletes all intermediate and resulting files.)
+	$(info 	Option "help": Displays help information.)
 	
