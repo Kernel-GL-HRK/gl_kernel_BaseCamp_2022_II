@@ -4,9 +4,14 @@ Link_like=
 Flag=
 
 Debag=false
+Warning=false
 
 ifeq (${Debag}, true)
 	Flag=-g
+endif
+
+ifeq (${Warning}, true)
+	Flag += -Wall
 endif
 
 target: ${Name}${Link_like}
