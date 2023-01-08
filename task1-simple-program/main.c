@@ -1,12 +1,7 @@
 #include <stdio.h>
-#include <time.h>
-#include <stdlib.h>
+#include "get_rand.h"
 
-int get_rand(void)
-{
-	srand(time(NULL));
-	return rand() % 10;
-}
+
 
 int main(void)
 {
