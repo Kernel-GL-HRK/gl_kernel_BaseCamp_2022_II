@@ -9,6 +9,16 @@ function score_update ()
     else
         echo "Wish a good luck next time"
     fi
+    echo "$score"
+}
+
+function loop ()
+{
+    for (( c=1; c<="$1"; c++ ))
+    do 
+        ./"$PROG_NAME"
+        score_update
+    done
 }
 
 # Program name
@@ -28,8 +38,7 @@ do
     case "$Variable" in
         y        ) ./"$PROG_NAME"; score_update;;
         n        ) break;;
-        +([0-9]) ) echo "Loop"; break;;
+        +([0-9]) ) loop Variable; break;;
         *        ) echo "Sorry, please try one more time."
     esac
-    echo "$score"
 done
