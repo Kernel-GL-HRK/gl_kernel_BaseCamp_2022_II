@@ -39,11 +39,14 @@ endif
 
 all: $(PROGRAM)
 
+debug: DFLAG = -g
+debug: $(PROGRAM)
+
 $(PROGRAM): $(objs) $(deps)
 	$(CC) $(objs) $(LDFLAGS) -o $(PROGRAM)
 
 %.o: %.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $^
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(DFLAG) -c $^
 
 lib%.a: %.o
 	ar rcs $@ $^
