@@ -13,3 +13,6 @@ fi
 
 cd $path_destination
 cp $path_source/* ./
+
+destination_name=${PWD##*/}
+tar -czf $destination_name.tar.gzip ./*
