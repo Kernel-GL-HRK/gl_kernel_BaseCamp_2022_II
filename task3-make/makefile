@@ -41,3 +41,6 @@ lib_%.o: ../task1-simple-program/%.c
 check: 
 	../checkpatch.pl --no-tree ../task1-simple-program/*.c
 
+clean:
+	rm -f *.out *.o *.so *.a
+	
