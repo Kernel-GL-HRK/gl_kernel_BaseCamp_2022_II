@@ -44,7 +44,7 @@ help:
 	@echo "                               <make check CHECK_PROG=cppcheck>\n"
 	@echo "To link second files with: static library (.a) use <make all LIB=static>"
 	@echo "                           dynamic library(.so) use <make all LIB=dynamic>"
-	@echo "                           regular way use <make all> or <make all LIB=regular\n"
+	@echo "                           regular way use <make all> or <make all LIB=regular>\n"
 	@echo "To build your project with dynamic library on Linux use flag <OS=linux> (MacOs default)\n"
 
 all: $(PROG_BUILD)
