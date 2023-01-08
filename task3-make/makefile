@@ -1,10 +1,10 @@
 Name=Vanga
-
+CC=gcc
 
 ${Name}: main.o get_rand.o
-	gcc $^ -o $@.out
+	${CC} $^ -o $@.out
 
 %.o: ../task1-simple-program/%.c
-	gcc -c $<
+	${CC} -c $<
 
 
