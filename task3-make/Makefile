@@ -70,7 +70,7 @@ ifeq ($(WSEL), warning)
 	CFLAGS += $(CFLAGS_EXTRA)
 endif
 
-.PHONY: all regular static dynamic cppcheck checkpatch
+.PHONY: all regular static dynamic cppcheck checkpatch clean
 
 all: $(prog)
 
@@ -98,3 +98,5 @@ dynamic: $(link_dynamic)
 %.so: %.o
 	$(COMPILER) $(CFLAGS) $(DEBUG) -shared -Wl,-soname,$(LIBNAME).so -o $(LIBNAME).so $< -lc
 
+clean:
+	rm *.o *.a *.so $(PROG)
