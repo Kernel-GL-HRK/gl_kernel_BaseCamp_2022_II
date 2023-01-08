@@ -76,7 +76,7 @@ $(OBJMODULES): $(SRCMODULES)
 
 debug: CFLAGS += $(DEBUG_EXTRAFLAGS)
 
-debug: $(PROG_NAME)
+debug: $(PROG_BUILD)
 
 check:
 	$(CHECK_PROG) $(CHECK_FLAGS) ./*.[ch]
