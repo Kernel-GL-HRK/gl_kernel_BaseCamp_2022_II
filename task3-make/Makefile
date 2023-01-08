@@ -24,6 +24,14 @@ game_dynamic: main.o libmyrandom.so
 libmyrandom.so: myrandom.c myrandom.h
 	$(CC) -fPIC -shared $< -o $@
 
+.PHONY: cppcheck
+cppcheck:
+	cppcheck --enable=all *.c *.h
+
+.PHONY: checkpatch
+checkpatch: checkpatch.pl
+	./checkpatch.pl --no-tree -f *.c *.h
+
 .PHONY: clean
 clean:
 	rm *.o *.a *.so game game_static game_dynamic
