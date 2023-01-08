@@ -8,7 +8,6 @@ SRCMODULES = random.c
 OBJMODULES = $(SRCMODULES:.c=.o)
 SLIB = librandom.a
 
-
 CHECK_PROG = ./checkpatch.pl
 CHECK_FLAGS = --no-tree -f
 
@@ -24,10 +23,9 @@ else
 	PROG_BUILD = regular
 endif
 
-
-./PHONY: clean all debug check run
-
 all: $(PROG_BUILD)
+
+./PHONY: debug check run clean regular static all
 
 regular: $(OBJMODULES) $(MAIN)
 	$(CC) $(CFLAGS) $^ -o $(PROG_NAME)
@@ -45,6 +43,7 @@ $(OBJMODULES): $(SRCMODULES)
 
 
 debug: CFLAGS += $(DEBUG_EXTRAFLAGS)
+
 debug: $(PROG_NAME)
 
 check:
