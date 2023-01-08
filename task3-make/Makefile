@@ -4,26 +4,56 @@
 
 CC ?= gcc
 CFLAGS ?= -Wall
+LDARGS =
 PROGRAM = guessanumber
-FILES.o = task1.o random_func.o
-FILES.c = task1.c random_func.c
-FILES.h = task1.h
 CURRENT_DIR = $(shell pwd)
+DEBUG =
+LINK=
 
-$(warning $(CURRENT_DIR))
+ifeq ($(DEBUG),true)
+	CFLAGS +=  -g
+endif
+
+ifeq ($(LINK),static)
+	link_obj_1=task1.o
+	link_obj_2=librandom_func.a
+else ifeq ($(LINK),dynamic )
+	LDARGS += -L./
+	link_obj_1=task1.o
+	link_obj_2=librandom_func.so
+else
+	link_obj_1=task1.o
+	link_obj_2=random_func.o
+endif
+
 
 all: $(PROGRAM)
 
-$(PROGRAM): $(FILES.o)
-	${CC} -Wall  $(FILES.o) -o $(PROGRAM)
+$(PROGRAM): $(link_obj_1) $(link_obj_2)
+	${CC} $(CFLAGS) $(link_obj_1) $(LDARGS) $(link_obj_2) -o $(PROGRAM)
 
 task1.o:
-	${CC} -Wall -c $(CURRENT_DIR)/../task1-simple-program/task1.c
+	${CC} $(CFLAGS) -c $(CURRENT_DIR)/../task1-simple-program/task1.c
 
 random_func.o:
-	${CC} -Wall -c $(CURRENT_DIR) /../task1-simple-program/random_func.c
+	${CC} $(CFLAGS) -c $(CURRENT_DIR)/../task1-simple-program/random_func.c
+
+librandom_func.a:random_func.o
+	ar rcs $@ random_func.o
+
+librandom_func.so:
+	${CC} -fPIC -c $(CURRENT_DIR)/../task1-simple-program/random_func.c
+	${CC} -shared -o $@ random_func.o
+
+help:
+	@echo "Options:"
+	@echo " 'LINK'	values: 'static' to create the static lib"
+	@echo "		'dynamic' to create the dynamic lib"
+	@echo "		By Default files will linked regular way"
+	@echo " 'DEBUG' values: 'true' to add debug information"
+	@echo "		By Default is false"
 
 .PHONY: clean
 
 clean:
-	rm -f guessanumber *.o
+	rm -f guessanumber *.o *.a *.so
