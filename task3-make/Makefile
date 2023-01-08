@@ -70,7 +70,7 @@ ifeq ($(WSEL), warning)
 	CFLAGS += $(CFLAGS_EXTRA)
 endif
 
-.PHONY: all regular static dynamic cppcheck checkpatch clean
+.PHONY: all regular static dynamic cppcheck checkpatch clean help
 
 all: $(prog)
 
@@ -100,3 +100,11 @@ dynamic: $(link_dynamic)
 
 clean:
 	rm *.o *.a *.so $(PROG)
+
+help:
+	@echo "make CSEL=gcc or CSEL=clang - select compiler"
+	@echo "make LOPT=regular, LOPT=static, LOPT=dynamic - select link options"
+	@echo "make checkpatch or make cppcheck - check code"
+	@echo "make DOPT=debug or DOPT=release - include debug information"
+	@echo "make WSEL=warning - print all warnings"
+	@echo "make clean - for clean project"
