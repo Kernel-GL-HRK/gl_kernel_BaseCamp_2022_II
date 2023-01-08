@@ -25,7 +25,7 @@ mkdir $CURRENT_DIR/../$RELEASE_DIR_NAME
 #copy source files to temp folder
 
 echo Copying .c sources and compressing
-cp $CURRENT_DIR/../task1-simple-program/*.c $TEMP_DIR/
+cp $CURRENT_DIR/../task1-simple-program/*.{c,h} $TEMP_DIR/
 
 #create tar archive
 cd $TEMP_DIR
