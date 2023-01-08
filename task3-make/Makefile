@@ -34,9 +34,22 @@ ifeq ($(OS), linux)
        	DLIB_BUILD = $(CC) -shared -Wl,-soname,$(DLIB) -o $(DLIB) $(OBJMODULES) -lc
 endif
 
+help: 
+	@echo
+	@echo "To build project use <make all> (gcc default and regular way)\n"
+	@echo "To build project with clang use <make all CC=clang> (gcc default)\n"
+	@echo "To include debug information use <make debug>\n"
+	@echo "To check all project code use: <make check> (checkpatch.pl default)"
+	@echo "                               <make check CHECK_PROG=checkpatch.pl>"
+	@echo "                               <make check CHECK_PROG=cppcheck>\n"
+	@echo "To link second files with: static library (.a) use <make all LIB=static>"
+	@echo "                           dynamic library(.so) use <make all LIB=dynamic>"
+	@echo "                           regular way use <make all> or <make all LIB=regular\n"
+	@echo "To build your project with dynamic library on Linux use flag <OS=linux> (MacOs default)\n"
+
 all: $(PROG_BUILD)
 
-./PHONY: debug check run clean regular static all
+./PHONY: debug check run clean regular static all help
 
 regular: $(OBJMODULES) $(MAIN)
 	$(CC) $(CFLAGS) $^ -o $(PROG_NAME)
@@ -72,5 +85,5 @@ run:
 	./$(PROG_NAME)
 
 clean:
-	rm -rf *.a *.o $(PROG_NAME) *.dSYM
+	rm -rf *.a *.o *.so $(PROG_NAME) *.dSYM
 
