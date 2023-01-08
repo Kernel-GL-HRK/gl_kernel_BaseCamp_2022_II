@@ -26,4 +26,6 @@ lib_%.o: ../task1-simple-program/%.c
 
 	${CC} -c $<
 
+check: 
+	../checkpatch.pl --no-tree ../task1-simple-program/*.c
 
