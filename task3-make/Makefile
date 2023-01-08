@@ -27,6 +27,13 @@ else
 	PROG_BUILD = regular
 endif
 
+#for MacOs
+DLIB_BUILD = $(CC) $< -lrandom -L ./ -o $(PROG_NAME)
+OS =
+ifeq ($(OS), linux)
+       	DLIB_BUILD = $(CC) -shared -Wl,-soname,$(DLIB) -o $(DLIB) $(OBJMODULES) -lc
+endif
+
 all: $(PROG_BUILD)
 
 ./PHONY: debug check run clean regular static all
@@ -43,7 +50,7 @@ $(SLIB): $(OBJMODULES)
 
 
 dynamic: $(MAIN) $(DLIB)
-	$(CC) $< -lrandom -L ./ -o $(PROG_NAME)
+	$(DLIB_BUILD)
 
 $(DLIB): $(SRCMODULES)
 	$(CC) -fPIC -c $<
