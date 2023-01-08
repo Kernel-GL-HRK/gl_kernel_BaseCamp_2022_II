@@ -4,8 +4,13 @@ CFLAGS=
 .PHONY: all
 all: game
 
+.PHONY: debug
 debug: CFLAGS+=-g
 debug: game
+
+.PHONY: all_warnings
+all_warnings:CFLAGS+=-Wall -Werror -Wextra
+all_warnings:game
 
 game: main.o myrandom.o
 	$(CC) $^ -o $@
