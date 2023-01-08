@@ -1,7 +1,8 @@
 #!/bin/bash
 # script_1.sh
 
-path_destination=~/tmp/guesanumber
+path_source=~/gl_base_camp/gl_kernel_BaseCamp_2022_II/task1-simple-program
+path_destination=/tmp/guesanumber
 
 if [ -d $path_destination ]
 then
@@ -11,3 +12,4 @@ else
 fi
 
 cd $path_destination
+cp $path_source/* ./
