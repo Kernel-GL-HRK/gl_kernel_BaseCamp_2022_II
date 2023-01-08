@@ -1,15 +1,47 @@
-CC=gcc
+CC = gcc
 
-all: main.o guess.o
-	${CC} $^ -o main
+CPPFLAGS = -Wall -Werror
 
-main.o: main.c
-	${CC} -Wall -c $<
-guess.o: guess.c
-	${CC} -Wall -c $<
+CFLAGS =
 
-.PHONY:all
+LDFLAGS =
+
+LIBFLAG =
+
+PROGRAM = main
+
+objs = $(PROGRAM).o guess.o
+deps =
+
+ifeq ($(LIBFLAG),static)
+	objs = $(PROGRAM).o libguess.a
+endif
+
+ifeq ($(LIBFLAG),shared)
+	CFLAGS += -fPIC
+	LDFLAGS += $(CFLAGS) -lguess -L ./
+	objs = $(PROGRAM).c
+	deps = guess.o libguess.so
+endif
+
+.PHONY: all clean
+
+
+all: $(PROGRAM)
+
+$(PROGRAM): $(objs) $(deps)
+	$(CC) $(objs) $(LDFLAGS) -o $(PROGRAM)
+
+%.o: %.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $^
+
+lib%.a: %.o
+	ar rcs $@ $^
+
+lib%.so: %.o
+	$(CC) -shared -Wl,-soname,$@.1 -o $@.1.0.1 $< -lc
+	ln -s $@.1.0.1 $@.1
+	ln -s $@.1 $@
 
 clean:
-	rm *.o
-
+	rm -f $(PROGRAM) *.o *.a *.so*
