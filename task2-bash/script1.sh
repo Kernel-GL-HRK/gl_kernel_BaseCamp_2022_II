@@ -10,3 +10,9 @@ fi
 cp $PROJECT_PATH/*.c $DIR_PATH
 
 tar cvzf /tmp/guesanumber.tar.gz -C /tmp guesanumber 
+
+if [ ! -d "release" ]; then
+    mkdir release
+fi
+
+cp /tmp/guesanumber.tar.gz release/
