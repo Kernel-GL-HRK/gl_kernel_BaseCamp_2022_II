@@ -4,6 +4,14 @@ CFLAGS=
 .PHONY: all
 all: game
 
+.PHONY: gcc
+gcc:CC=gcc
+gcc:game
+
+.PHONY: clang
+clang:CC=clang
+clang:game
+
 .PHONY: debug
 debug: CFLAGS+=-g
 debug: game
