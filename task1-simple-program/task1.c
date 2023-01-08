@@ -9,7 +9,6 @@
 
 #define NUM_MIN  0
 #define NUM_MAX  9
-#define RETURN_FALSE   -1
 
 unsigned short get_random(void)
 {
@@ -21,6 +20,7 @@ int main(void)
 
 {
 	int number_fromUser;
+	int result=-1;
 
 
 do	{
@@ -30,7 +30,8 @@ do	{
 while ((number_fromUser > NUM_MAX) || (number_fromUser < NUM_MIN));
 
 if (get_random() == number_fromUser) {
-	printf("You win\n");
-	return 0;
+	printf("You winnn\n");
+	result=0;
 	}
+	return result;
 }
