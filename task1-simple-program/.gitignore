@@ -1,0 +1,13 @@
+# gitignore file
+
+# Ignore all object files
+*.o
+
+# Ignore tags file
+tags
+
+# Ignore all log files
+*.log
+
+# Ignore all txt files
+*.txt
