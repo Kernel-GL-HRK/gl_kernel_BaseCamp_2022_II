@@ -3,16 +3,27 @@
 
 loop=1
 game=~/gl_base_camp/gl_kernel_BaseCamp_2022_II/task1-simple-program/main
+success_count=0
 
 while [ 1 ]
 do
         for (( i = 0; i < loop; i++ ))
         do
                 $game
+                if [ $? -eq 0 ]
+                then
+                        echo "Good job"
+                        ((success_count++))
+                else
+                        echo "Wish a good luck next time"
+                fi
+
+                echo "Success cases $success_count"
         done
 
         echo "To continue press \"y\", \"n\" or number of tries"
         read var
+
         if [[ $var = "y" ]]
         then
                 loop=1
