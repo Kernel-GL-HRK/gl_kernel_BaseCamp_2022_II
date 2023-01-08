@@ -1,0 +1,7 @@
+*.so
+*.a
+*.o
+checkpatch.pl
+guess_a_number
+*.DS_Store
+*.dSYM
