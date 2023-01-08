@@ -54,3 +54,4 @@ dkms.conf
 # GL BASECAMP
 release/
 tmp/
+task3-make/checkpatch.pl
