@@ -1,16 +1,20 @@
 CC=gcc
+CFLAGS=
 
 .PHONY: all
 all: game
+
+debug: CFLAGS+=-g
+debug: game
 
 game: main.o myrandom.o
 	$(CC) $^ -o $@
 
 main.o: main.c myrandom.h
-	$(CC) -c $<
+	$(CC) $(CFLAGS) -c $<
 
 myrandom.o: myrandom.c myrandom.h
-	$(CC) -c $<
+	$(CC) $(CFLAGS) -c $<
 
 game_static: main.o libmyrandom.a
 	$(CC) $^ -o $@
@@ -22,7 +26,7 @@ game_dynamic: main.o libmyrandom.so
 	$(CC) $< -L./ -lmyrandom -Wl,-rpath=./ -o $@
 
 libmyrandom.so: myrandom.c myrandom.h
-	$(CC) -fPIC -shared $< -o $@
+	$(CC) $(CFLAGS) -fPIC -shared $< -o $@
 
 .PHONY: cppcheck
 cppcheck:
