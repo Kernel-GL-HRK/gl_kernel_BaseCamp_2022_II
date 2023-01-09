@@ -32,7 +32,7 @@ ifeq ($(LIBFLAG),shared)
 	deps = game.o libgame.so
 endif
 
-.PHONY: all check clean
+.PHONY: all check clean help
 
 
 all: $(PROGRAM)
