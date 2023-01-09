@@ -14,7 +14,10 @@
 # Executables
 task*/*
 !task*/*.c
+!task*/*.h
 !task*/*.sh
+!task*/Makefile
+!task*/README.md
 
 # Linux
 *~
