@@ -5,12 +5,17 @@
 #include <stdint.h>
 #include <time.h>
 
+int get_random_number(int from, int to)
+{
+	srand(time(NULL));
+	return rand() % (to + 1 - from) + from;
+}
+
 int main(void)
 {
 	int input_num, rand_num;
 
-	srand(time(NULL));
-	rand_num = rand() % 10;
+	rand_num = get_random_number(0, 9);
 	printf("Guess a number from 0 to 9\n");
 
 	//Uncomment for game debugging
