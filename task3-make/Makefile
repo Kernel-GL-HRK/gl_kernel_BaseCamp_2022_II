@@ -59,3 +59,18 @@ check:
 
 clean:
 	rm -f $(PROGRAM) *.o *.a *.so*
+
+help:
+	@echo 'Usage: make [TARGET] [FLAGS]'
+	@echo 'TARGETS:'
+	@echo '  all       (=make) compile and link'
+	@echo '  debug     compile and link with debug information'
+	@echo '  check     check source files with checkpatch.pl'
+	@echo '  clean     clean objects and the executable file'
+	@echo '  help      print this message'
+	@echo
+	@echo 'FLAGS:'
+	@echo '  LIBFLAG=static'
+	@echo '            link as static library'
+	@echo '  LIBFLAG=shared'
+	@echo '            link as shared library'
