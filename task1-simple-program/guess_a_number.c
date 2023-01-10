@@ -7,12 +7,17 @@
 #define MIN_VALUE 0
 #define MAX_VALUE 9
 
+int get_rand_number(int min, int max)
+{
+	srand((unsigned int)time(NULL));
+	return (rand() % (max - min + 1)) + min;
+}
+
 int main(void)
 {
 	int user_number, random_number;
 
-	srand((unsigned int)time(NULL));
-	random_number = (rand() % (MAX_VALUE - MIN_VALUE + 1)) + MIN_VALUE;
+	random_number = get_rand_number(MIN_VALUE, MAX_VALUE);
 
 	printf("Welcome to game \"guess a number\"!\n");
 	printf("Enter number from %d to %d: ", MIN_VALUE, MAX_VALUE);
