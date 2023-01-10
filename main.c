@@ -14,17 +14,29 @@
 #include <stdio.h>
 #include <time.h>
 
+/*
+ * Return random number from 0 to 9
+ * Use two-factor randomization:
+ *	- Epoch time, measured in seconds
+ *	- processor clock (from the beginning of the program)
+ */
+
+int rand10(void)
+{
+	int randnum;
+
+	randnum = (time(NULL) + clock()) % 10;
+	return randnum;
+}
+
 int main(void)
 {
 	int usrnum;	//User input number
-	int randnum;	//Random number
 	int retst;	//Return status
 
 	printf("Input number from 0 to 9: ");
 	scanf("%d", &usrnum);
-	randnum = (time(NULL) + clock()) % 10;
-//	printf("%d | %d (usrnum | randnum)\n", usrnum, randnum);
-	if (usrnum == randnum) {
+	if (usrnum == rand10()) {
 		printf("You win\n");
 		retst = 0;
 	} else {
