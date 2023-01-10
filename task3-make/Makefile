@@ -4,6 +4,8 @@ CC=gcc
 
 NAME = guess_game
 
+FILE = *.c *h
+
 all: main.o random.o
 	${CC} $^ -o ${NAME}
 
@@ -23,3 +25,6 @@ game_with_lib: main.o librandom.a
 
 librandom.a: random.o 
 	ar rcs $@ $^ 
+
+check:
+	../script/checkpatch.pl --no-tree -f ${FILE}
