@@ -4,21 +4,43 @@ SOURCES 	=  main.c \
 				utility.c
 			
 HEADERS 	= utility.h
-CFLAGS      = -Wall
+CFLAGS      :=
 CHECKPATH   = /home/artem/Documents
 CHECKFLAGS  = --no-tree
 OBJ := ${SOURCES:c=o}
 
-all: $(OBJ)
+ifdef clang
+	CC=clang
+endif
+
+ifdef debug
+	CFLAGS := $(CFLAGS) -g
+endif
+
+ifdef Wall
+	CFLAGS := $(CFLAGS) -Wall
+
+.PHONY: all test guessgame checkpatch clean
+
+all: $(OBJ) guessgame
 
 test:
 	echo $(OBJ)
 
-%.o : %.c $(HEADERS)
-	$(CC) $(CFLAGS) -c -o $@ $<
+%.o : %.c
+	$(CC) -o $@ -c $(CFLAGS) $<
 
 guessgame: $(OBJ)
 	$(CC) -o $@ $^
 
+libguessgame.so: utility.o
+	$(CC) -o $@ $^ -fPIC -shared
+
+libguessgame.a: utility.o
+	ar rcs $@ $<
+
 checkpatch:
 	$(CHECKPATH)/checkpatch.pl $(CHECKFLAGS) $(SOURCES) 
+
+clean:
+	rm -f *.o *.a *.so $(TARGET)
