@@ -22,7 +22,7 @@ int main(void)
 
 	printf("Input number from 0 to 9: ");
 	scanf("%d", &usrnum);
-	randnum = clock() % 10;
+	randnum = (time(NULL) + clock()) % 10;
 //	printf("%d | %d (usrnum | randnum)\n", usrnum, randnum);
 	if (usrnum == randnum) {
 		printf("You win\n");
