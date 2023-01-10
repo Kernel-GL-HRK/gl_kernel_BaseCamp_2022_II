@@ -14,4 +14,12 @@ random.o: random.c random.h
 	${CC} -c -Wall $<
 
 clean:
-	rm *.o ${NAME}
+	rm *.o ${NAME} *.a
+
+#static lib
+
+game_with_lib: main.o librandom.a
+	${CC} $^ -o ${NAME}
+
+librandom.a: random.o 
+	ar rcs $@ $^ 
