@@ -3,9 +3,15 @@
 #include <stdlib.h>
 #include <time.h>
 
+int get_random(void){
+	srand(time(NULL));
+	return rand() % 10;
+}
+
+
 int main(int argc, char *argv[]){
 	srand(time(NULL));
-	uint8_t randNum = rand() % 10;
+	uint8_t randNum = get_random();
 	uint8_t userNum = 0;
 
 	if(argc > 1) userNum = atoi(argv[1]);
