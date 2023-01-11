@@ -22,4 +22,15 @@ do
 	fi
 
 	echo "Number of success cases: ${wins}"
+	let count=$count-1
+
+	if [ "$count" -eq 0 ]; then
+		read -p "Do you want to continue? Enter Y/N or number of attempts: " reply
+		case $reply in
+			[Yy]) let count=1 ;;
+			[Nn]) let count=0 ;;
+			*[0-9]*) let count=$reply ;;
+			*) echo -e "${Red}Invalid choice!${Color_Off}" ;;
+		esac
+	fi
 done
