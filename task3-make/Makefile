@@ -8,8 +8,8 @@ ifeq ($(CHECK_STYLE),./checkpatch.pl)
 endif
 
 # Variables to indicate whether we should build a static or a shared library.
-BUILD_SHARED := 1
-BUILD_STATIC := 2
+BUILD_SHARED := 2
+BUILD_STATIC := 1
 
 # We want to have a rule to compile the executables.
 # IF BUILD_SHARED != BUILD_STATIC
@@ -31,6 +31,7 @@ else
 guess: guess.o functions-static.o
 	$(CC) $(CFLAGS) -o $@ $^
 endif
+# End of the rule
 
 guess.o: guess.c
 	$(CC) $(CFLAGS) $(DEBAGFLAG) -c $< -o $@
