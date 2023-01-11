@@ -11,3 +11,7 @@ echo -e "${Red}${On_White}run this script from the project directory${Color_Off}
 rm -rf /tmp/guesanumber 2>/dev/null
 mkdir /tmp/guesanumber
 cp --archive ./*.c ./*.h ./*.md ./*.sh /tmp/guesanumber 2>/dev/null
+
+#Compress the directory
+tar -zcvf guesanumber.tar.gz /tmp/guesanumber
+
