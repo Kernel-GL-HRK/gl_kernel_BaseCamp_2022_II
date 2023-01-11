@@ -1,29 +1,41 @@
-#  The following code was taken as a basis https://makefiletutorial.com/#makefile-cookbook
-TARGET_EXEC := final_program
+BUILD_SHARED = 1
+BUILD_STATIC = 2
 
-BUILD_DIR := ./build
-SRC_DIRS := ./src
+# Finally, we want to have a rule to compile the executables.
+# IF BUILD_SHARED != BUILD_STATIC
+# We will make two versions of the rule, depending on whether we are linking
+# against the shared or the static libraries.
+# IF BUILD_SHARED == BUILD_STATIC
+# We compile the file in a simple way.
+ifneq ($(BUILD_SHARED),$(BUILD_STATIC))
 
-SRCS := $(shell find $(SRC_DIRS) -name '*.c')
-OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
-DEPS := $(OBJS:.o=.d)
+ifeq ($(shell test $(BUILD_SHARED) -gt $(BUILD_STATIC); echo $$?),0)
+guess: guess.o libmyshare.so
+	gcc -g -o guess guess.o -L. -lmyshare
+else
+guess: guess.o libmystatic.a
+	gcc -g -o guess guess.o -L. -lmystatic
+endif
 
-INC_DIRS := $(shell find $(SRC_DIRS) -type d)
-INC_FLAGS := $(addprefix -I,$(INC_DIRS))
+else
+guess:
+	gcc -Wall -g -o guess guess.c functions.c
+endif
 
-CPPFLAGS := $(INC_FLAGS) -MMD -MP
+guess.o: guess.c
+	gcc -Wall -g -c guess.c -o guess.o
 
-# The final build step.
-$(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
-	$(CC) $(OBJS) -o $@ $(LDFLAGS)
+functions-static.o: functions.c functions.h
+	gcc -Wall -g -c -o functions-static.o functions.c
 
-# Build step for C source
-$(BUILD_DIR)/%.c.o: %.c
-	mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+functions-dynamic.o: functions.c functions.h
+	gcc -fPIC -Wall -g -c -o functions-dynamic.o functions.c
 
-.PHONY: clean
+libmystatic.a: functions-static.o
+	ar rcs libmystatic.a functions-static.o
+
+libmyshare.so: functions-dynamic.o
+	gcc -g -shared -Wl,-soname,libmyshare.so -o libmyshare.so functions-dynamic.o -lc
+
 clean:
-	rm -r $(BUILD_DIR)
-
--include $(DEPS)
+	rm -f guess *.o *.so *.a

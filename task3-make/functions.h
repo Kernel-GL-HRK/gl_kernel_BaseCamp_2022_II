@@ -1,6 +1,6 @@
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
 
-int random(void);
+int randm(void);
 
 #endif

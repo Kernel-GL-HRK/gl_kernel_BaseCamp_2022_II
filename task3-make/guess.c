@@ -4,7 +4,7 @@
 
 int main(void)
 {
-	int r = random();
+	int r = randm();
 	int i;
 
 	do {

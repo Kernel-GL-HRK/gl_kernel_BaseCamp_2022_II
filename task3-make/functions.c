@@ -1,7 +1,8 @@
-#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 #include "functions.h"
 
-int random(void)
+int randm(void)
 {
 	srand(time(NULL));
 	return rand() % 10;
