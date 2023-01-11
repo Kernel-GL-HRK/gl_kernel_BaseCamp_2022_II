@@ -15,3 +15,6 @@ cp --archive ./*.c ./*.h ./*.md ./*.sh /tmp/guesanumber 2>/dev/null
 #Compress the directory
 tar -zcvf guesanumber.tar.gz /tmp/guesanumber
 
+#Copy the archive to project subdirectory
+mkdir ./release 2>/dev/null
+cp -f ./guesanumber.tar.gz ./release
