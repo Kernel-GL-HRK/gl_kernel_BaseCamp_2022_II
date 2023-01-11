@@ -1,5 +1,5 @@
 BUILD_SHARED = 1
-BUILD_STATIC = 2
+BUILD_STATIC = 1
 
 # Finally, we want to have a rule to compile the executables.
 # IF BUILD_SHARED != BUILD_STATIC
@@ -18,12 +18,12 @@ guess: guess.o libmystatic.a
 endif
 
 else
-guess:
-	gcc -Wall -g -o guess guess.c functions.c
+guess: guess.o functions-static.o
+	gcc -g -o guess guess.o functions-static.o
 endif
 
 guess.o: guess.c
-	gcc -Wall -g -c guess.c -o guess.o
+	gcc -Wall -g -c -o guess.c guess.o
 
 functions-static.o: functions.c functions.h
 	gcc -Wall -g -c -o functions-static.o functions.c
@@ -36,6 +36,9 @@ libmystatic.a: functions-static.o
 
 libmyshare.so: functions-dynamic.o
 	gcc -g -shared -Wl,-soname,libmyshare.so -o libmyshare.so functions-dynamic.o -lc
+
+check:
+	./../checkpatch.pl --no-tree -f guess.c functions.c functions.h
 
 clean:
 	rm -f guess *.o *.so *.a
