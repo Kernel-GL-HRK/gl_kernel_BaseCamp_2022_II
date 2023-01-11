@@ -18,3 +18,7 @@ tar -zcvf guesanumber.tar.gz /tmp/guesanumber
 #Copy the archive to project subdirectory
 mkdir ./release 2>/dev/null
 cp -f ./guesanumber.tar.gz ./release
+
+#Clear temporary data
+rm -rf /tmp/guesanumber
+rm -f ./guesanumber.tar.gz
