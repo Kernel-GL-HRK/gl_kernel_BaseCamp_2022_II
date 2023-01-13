@@ -21,3 +21,14 @@ if [ ! -d $1 ]; then
     echo "Error: $1 is not a directory."
     exit 1
 fi
+
+echo "Copying source files from $1 to /tmp/$2..."
+[ -d /tmp/$2 ] || mkdir /tmp/$2
+cp $1/*.c $1/*.h /tmp/$2/
+
+echo "Making archive /tmp/$2.tgz..."
+tar czf /tmp/$2.tgz -C /tmp $2
+
+echo "Copying archive /tmp/$2.tgz to $1/release..."
+[ -d $1/release ] || mkdir $1/release
+cp /tmp/$2.tgz $1/release/
