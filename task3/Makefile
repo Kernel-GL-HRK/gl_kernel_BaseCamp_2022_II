@@ -12,12 +12,16 @@ static_libs: libutility.a
 
 ${OBJ}: main.o utility.o
 	${CC} main.o utility.o -o ${OBJ}
+
 utility.o: utility.c
-	${CC} ${CFLAGS} utility.c
+	${CC} ${CFLAGS} ${DEBUGFLAGS} -c utility.c
+
 main.o: main.c
-	${CC} ${CFLAGS} main.c
+	${CC} ${CFLAGS} ${DEBUGFLAGS} -c main.c
+
 exec:
 	./GuessANumber
+
 clean:
 	rm -rf ./GuessANumber
 	rm -rf *.o
