@@ -25,3 +25,4 @@ exec:
 clean:
 	rm -rf ./GuessANumber
 	rm -rf *.o
+	rm -rf *.a
