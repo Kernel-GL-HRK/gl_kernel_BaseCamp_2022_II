@@ -5,6 +5,7 @@ GAME="../task1-simple-program/guess_a_number.out"
 
 # Variables:
 attempt_cnt=0
+win_cnt=0
 
 # Command to enable extended pattern matching:
 shopt -s extglob
@@ -27,5 +28,14 @@ while true; do
     fi
 
     $GAME
+
+    if [ $? -eq 0 ]; then
+        let win_cnt++
+        echo "Good job!"
+    else
+        echo "Wish a good luck next time."
+    fi
+
+    echo "You have won $win_cnt time(s)."
     
 done
