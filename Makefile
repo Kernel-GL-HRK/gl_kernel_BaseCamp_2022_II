@@ -1,4 +1,4 @@
-.PHONY : all check
+.PHONY : all check clean
 
 all: guesanumber
 
@@ -25,6 +25,16 @@ check:
 #	./checkpatch.pl --no-tree -f $(wildcard *.c)
 #	./checkpatch.pl --no-tree -f $$( find . -name "*.c" -type f)
 #	cppcheck -q --enable=all $$( find . -name "*.c" -type f)
+
+#==============================================================================
+# clean-target
+#==============================================================================
+
+clean_pattern = -name guesanumber -o -name '*.o'
+
+clean:
+#	rm -f guesanumber *.o *
+	find . \( $(clean_pattern) \) -type f,l -print | xargs /bin/rm -f
 
 #==============================================================================
 # guesanumber-target
