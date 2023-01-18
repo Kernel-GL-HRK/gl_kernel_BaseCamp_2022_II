@@ -51,6 +51,7 @@ clean:
 
 # flag_lib = stat //compile with static library
 # flag_lib = shar //compile with shared library
+# flag_lib = dynl //compile with dynamic library for Linux
 # flag_lib = <any other value> //compile as regular file
 flag_lib = none
 
@@ -61,6 +62,9 @@ ifeq (${flag_lib},stat)
 else ifeq (${flag_lib},shar)
   req = main.o librand10.so
   gueslink = main.o -lrand10 -L ./
+else ifeq (${flag_lib},dynl)
+  req = main_dl.o librand10.so
+  gueslink = main_dl.o -ldl
 else
   req = main.o rand10.o
   gueslink = $(req)
@@ -70,6 +74,9 @@ guesanumber: $(req)
 	${CC} $(gueslink) -o $@
 
 main.o: main.c rand10.h
+	${CC} ${debug} ${warn} -c $<
+
+main_dl.o: main_dl.c
 	${CC} ${debug} ${warn} -c $<
 
 rand10.o: rand10.c
