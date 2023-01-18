@@ -1,4 +1,6 @@
-.PHONY : all check clean
+$(info Use command "make param" for help about parameters)
+
+.PHONY : all check clean param
 
 all: guesanumber
 
@@ -91,3 +93,13 @@ librand10.so: rand10.c
 	${CC} -shared -Wl,-soname,librand10.so.1 -o librand10.so.1.0 rand10.o -lc
 	ln -s librand10.so.1.0 librand10.so.1
 	ln -s librand10.so.1 librand10.so
+
+param:
+	@echo CC = gcc or clang
+	@echo warn = -Wall //compile with -Wall
+	@echo debug = -g //compile with -g
+	@echo check_util = checkpatch or cppcheck
+	@echo flag_lib = stat //compile with static library
+	@echo flag_lib = shar //compile with shared library
+	@echo flag_lib = dynl //compile with dynamic library for Linux
+	@echo flag_lib = any other value //compile as regular file
