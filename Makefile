@@ -5,6 +5,9 @@ all: guesanumber
 # CC = gcc or clang
 CC = gcc
 
+# warn = -Wall //compile with -Wall
+warn =
+
 #==============================================================================
 # check-target
 #==============================================================================
@@ -47,4 +50,4 @@ guesanumber: main.o
 	${CC} $^ -o $@
 
 main.o: main.c
-	${CC} -c $<
+	${CC} ${warn} -c $<
