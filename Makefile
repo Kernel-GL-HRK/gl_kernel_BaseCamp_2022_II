@@ -49,8 +49,11 @@ clean:
 # guesanumber-target
 #==============================================================================
 
-guesanumber: main.o
+guesanumber: main.o rand10.o
 	${CC} $^ -o $@
 
-main.o: main.c
+main.o: main.c rand10.h
+	${CC} ${debug} ${warn} -c $<
+
+rand10.o: rand10.c
 	${CC} ${debug} ${warn} -c $<
