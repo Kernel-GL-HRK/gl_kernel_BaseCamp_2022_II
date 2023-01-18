@@ -8,6 +8,9 @@ CC = gcc
 # warn = -Wall //compile with -Wall
 warn =
 
+# debug = -g //compile with -g
+debug =
+
 #==============================================================================
 # check-target
 #==============================================================================
@@ -50,4 +53,4 @@ guesanumber: main.o
 	${CC} $^ -o $@
 
 main.o: main.c
-	${CC} ${warn} -c $<
+	${CC} ${debug} ${warn} -c $<
