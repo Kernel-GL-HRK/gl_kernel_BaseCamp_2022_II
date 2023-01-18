@@ -39,21 +39,38 @@ check:
 # clean-target
 #==============================================================================
 
-clean_pattern = -name guesanumber -o -name '*.o'
+clean_pattern = -name guesanumber -o -name '*.o' -o -name '*.a'
 
 clean:
-#	rm -f guesanumber *.o *
+#	rm -f guesanumber *.o *.a
 	find . \( $(clean_pattern) \) -type f,l -print | xargs /bin/rm -f
 
 #==============================================================================
 # guesanumber-target
 #==============================================================================
 
-guesanumber: main.o rand10.o
-	${CC} $^ -o $@
+# flag_lib = stat //compile with static library
+# flag_lib = <any other value> //compile as regular file
+flag_lib = none
+
+# For guesanumber-target form requirements and command parameters
+ifeq (${flag_lib},stat)
+  req = main.o librand10.a
+  gueslink = main.o -lrand10 -L ./
+else
+  req = main.o rand10.o
+  gueslink = $(req)
+endif
+
+guesanumber: $(req)
+	${CC} $(gueslink) -o $@
 
 main.o: main.c rand10.h
 	${CC} ${debug} ${warn} -c $<
 
 rand10.o: rand10.c
 	${CC} ${debug} ${warn} -c $<
+
+librand10.a: rand10.c
+	${CC} ${debug} ${warn} -c $<
+	ar rcs $@ rand10.o
