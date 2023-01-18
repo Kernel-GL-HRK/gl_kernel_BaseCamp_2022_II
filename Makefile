@@ -39,10 +39,10 @@ check:
 # clean-target
 #==============================================================================
 
-clean_pattern = -name guesanumber -o -name '*.o' -o -name '*.a'
+clean_pattern = -name guesanumber -o -name '*.o' -o -name '*.a' -o -name '*.so.*'  -o -name '*.so'
 
 clean:
-#	rm -f guesanumber *.o *.a
+#	rm -f guesanumber *.o *.a *.so.* *.so
 	find . \( $(clean_pattern) \) -type f,l -print | xargs /bin/rm -f
 
 #==============================================================================
@@ -50,12 +50,16 @@ clean:
 #==============================================================================
 
 # flag_lib = stat //compile with static library
+# flag_lib = shar //compile with shared library
 # flag_lib = <any other value> //compile as regular file
 flag_lib = none
 
 # For guesanumber-target form requirements and command parameters
 ifeq (${flag_lib},stat)
   req = main.o librand10.a
+  gueslink = main.o -lrand10 -L ./
+else ifeq (${flag_lib},shar)
+  req = main.o librand10.so
   gueslink = main.o -lrand10 -L ./
 else
   req = main.o rand10.o
@@ -74,3 +78,9 @@ rand10.o: rand10.c
 librand10.a: rand10.c
 	${CC} ${debug} ${warn} -c $<
 	ar rcs $@ rand10.o
+
+librand10.so: rand10.c
+	${CC} ${debug} ${warn} -fPIC -c $<
+	${CC} -shared -Wl,-soname,librand10.so.1 -o librand10.so.1.0 rand10.o -lc
+	ln -s librand10.so.1.0 librand10.so.1
+	ln -s librand10.so.1 librand10.so
