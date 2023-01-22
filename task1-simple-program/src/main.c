@@ -4,12 +4,14 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+
 #include <time.h>
 
 uint8_t generateRandomNumber()
 {
 	srand(time(NULL)); // Seed
 	return rand() % 10;
+
 }
 
 int main(int argc, char **argv)
@@ -21,7 +23,7 @@ int main(int argc, char **argv)
 		scanf("%hhd", &userNumber);
 	}else
 		userNumber = atoi(argv[1]); 
-	
+    
 	if (userNumber < 0 || userNumber > 9) {
 		printf("Value is not correct. Leaving\n");
 		return -1;
@@ -31,6 +33,7 @@ int main(int argc, char **argv)
 		//printf("You win!\n");
 	} else {
 		//printf("You lose\n");
+
 		return -1;
 	}
 
