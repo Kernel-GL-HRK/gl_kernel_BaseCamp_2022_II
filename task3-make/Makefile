@@ -19,6 +19,7 @@ endif
 
 ifdef Wall
 	CFLAGS := $(CFLAGS) -Wall
+endif
 
 .PHONY: all test guessgame checkpatch clean
 
