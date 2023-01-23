@@ -5,30 +5,35 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define LOWER 0
-#define UPPER 9
+#include <time.h>
 
-uint8_t generateRandomNumber(int lower, int upper)
+uint8_t generateRandomNumber()
 {
-	return rand() % (upper - lower + 1) + lower;
+	srand(time(NULL)); // Seed
+	return rand() % 10;
+
 }
 
 int main(int argc, char **argv)
 {
 	uint8_t userNumber = 0;
 
-	printf("Please gimme a number in range [0-9]");
-	scanf("%hhd", &userNumber);
-
+	if (argc < 2){
+		printf("Please gimme a number in range [0-9]");
+		scanf("%hhd", &userNumber);
+	}else
+		userNumber = atoi(argv[1]); 
+    
 	if (userNumber < 0 || userNumber > 9) {
 		printf("Value is not correct. Leaving\n");
 		return -1;
 	}
 
-	if (userNumber == generateRandomNumber(LOWER, UPPER)) {
-		printf("You win!\n");
+	if (userNumber == generateRandomNumber()) {
+		//printf("You win!\n");
 	} else {
-		printf("You lose\n");
+		//printf("You lose\n");
+
 		return -1;
 	}
 
