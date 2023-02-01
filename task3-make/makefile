@@ -1,16 +1,28 @@
 CC=gcc
 
-main.out: main.o random.o
-	${CC} $^ -g -o $@
+regular: main.o random.o
+	${CC} $^ -o main.out
+
+static: main.o librandom_st.a
+	${CC} main.o -l random_st -L ./ -o main.out
+
+dynamic_share: main.o librandom_sh.so
+	${CC} main.o -L./ -Wl,-rpath=./ -lrandom_sh -o main.out
 
 main.o: main.c
-	${CC} -c $^
+	${CC} -fPIC -c $^
+
+librandom_st.a: random.o
+	ar rsc $@ $<
+
+librandom_sh.so: random.o
+	${CC} -shared $< -o $@
 
 random.o: random.c random.h
-	${CC} -c $<
+	${CC} -fPIC -c $<
 
-.PHONY: run
-
-run: main.out
+run: regular
 	./main.out
-	rm *.out *.o
+	rm -f *.out *.o *.a *.so
+
+.PHONY: run regular static dynamic_share
