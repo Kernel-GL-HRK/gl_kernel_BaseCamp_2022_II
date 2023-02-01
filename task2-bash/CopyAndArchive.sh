@@ -26,3 +26,8 @@ if [ ! -d $DestinationPath ]; then
 fi
 #Copying Source files
 cp -v $SourcePath/$SourceFile "$DestinationPath"
+#Archive Source files
+tar -czvf "$DestinationPath/QuessNumber.tar.gzip" "$DestinationPath"
+#Copying archive to release
+mkdir ../release
+cp "$DestinationPath/QuessNumber.tar.gzip" ../release
