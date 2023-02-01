@@ -3,13 +3,13 @@ TEST=../checkpatch.pl --no-tree
 SFILE=main.c
 
 regular: main.o random.o
-	${CC} $^ -o main.out
+	${CC} -g $^ -o main.out
 
 static: main.o librandom_st.a
-	${CC} main.o -l random_st -L ./ -o main.out
+	${CC} -g main.o -l random_st -L ./ -o main.out
 
 dynamic_share: main.o librandom_sh.so
-	${CC} main.o -L./ -Wl,-rpath=./ -lrandom_sh -o main.out
+	${CC} -g main.o -L./ -Wl,-rpath=./ -lrandom_sh -o main.out
 
 main.o: main.c
 	${CC} -fPIC -c $^
