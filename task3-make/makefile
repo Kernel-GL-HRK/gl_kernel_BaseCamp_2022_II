@@ -12,7 +12,7 @@ dynamic_share: main.o librandom_sh.so
 	${CC} -g main.o -L./ -Wl,-rpath=./ -lrandom_sh -o main.out
 
 main.o: main.c
-	${CC} -fPIC -c $^
+	${CC} -Wall -fPIC -c $^
 
 librandom_st.a: random.o
 	ar rsc $@ $<
@@ -21,7 +21,7 @@ librandom_sh.so: random.o
 	${CC} -shared $< -o $@
 
 random.o: random.c random.h
-	${CC} -fPIC -c $<
+	${CC} -Wall -fPIC -c $<
 
 run: regular
 	./main.out
