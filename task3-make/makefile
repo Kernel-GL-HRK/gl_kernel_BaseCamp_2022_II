@@ -1,4 +1,6 @@
 CC=gcc
+TEST=../checkpatch.pl --no-tree
+SFILE=main.c
 
 regular: main.o random.o
 	${CC} $^ -o main.out
@@ -25,4 +27,7 @@ run: regular
 	./main.out
 	rm -f *.out *.o *.a *.so
 
-.PHONY: run regular static dynamic_share
+check:
+	${TEST} ${SFILE}
+
+.PHONY: run regular static dynamic_share check
