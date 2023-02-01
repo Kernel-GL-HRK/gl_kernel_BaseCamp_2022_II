@@ -1,12 +1,13 @@
+CC=gcc
 
 main.out: main.o random.o
-	gcc $^ -o $@
+	${CC} $^ -g -o $@
 
 main.o: main.c
-	gcc -c $^
+	${CC} -c $^
 
 random.o: random.c random.h
-	gcc -c $<
+	${CC} -c $<
 
 .PHONY: run
 
