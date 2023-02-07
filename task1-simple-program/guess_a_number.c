@@ -6,13 +6,10 @@ int randomGenerate();
 
 int main()
 {
-	srand(time(NULL));
-	int randomNumber = rand()%9;
-
 	int userNumber, result;
 	result = scanf("%d", &userNumber);
 
-	if(userNumber == randomNumber){
+	if(userNumber == randomGenerate()){
 		printf("You win\n");
 		return 0;
 	}
