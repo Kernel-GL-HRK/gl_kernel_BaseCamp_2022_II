@@ -1,8 +1,5 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-
-int randomGenerate();
+#include "randomeGenerate.h"
 
 int main()
 {
@@ -18,11 +15,3 @@ int main()
 		return 4;
 	}
 }
-
-int randomGenerate()
-{
-	srand(time(NULL));
-	int randomNumber = rand()%9;
-	return randomNumber;
-}
-
