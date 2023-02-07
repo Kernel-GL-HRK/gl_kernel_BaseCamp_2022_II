@@ -7,12 +7,12 @@ int main()
 	int userNumber, result;
 	result = scanf("%d", &userNumber);
 	
-	void *handle = dlopen("librandomeGenerate.so", RTLD_LAZY);
+	void *handle = dlopen("./../librandomeGenerate.so", RTLD_LAZY);
 	if(!handle){
 		printf("error with load dynamic library");
 	}
-	void (*lib_generate)();
-	lib_generate = (void (*)dlsym(handle), "randomGenerate");
+	int (*lib_generate)();
+	lib_generate = (void (*)())dlsym(handle, "randomGenerate");
 	if(dlerror() != NULL){
 		printf("error");
 	}
