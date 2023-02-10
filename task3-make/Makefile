@@ -38,3 +38,6 @@ guess_a_number_dll.o:randomeGenerate.so
 	gcc guess_a_number_dll.c -ldl -o guess_a_number_dll.o
 check:
 	cppcheck ${req}
+clean:
+	rm *.o
+	rm *.a
