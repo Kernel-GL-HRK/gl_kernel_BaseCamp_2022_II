@@ -1,4 +1,4 @@
-#Simple encoder Linux Kernel Driver
+# Simple encoder Linux Kernel Driver
 
 Build command:
 
@@ -25,7 +25,7 @@ For remove driver:
 	rmmod encoder_driver
 
 
-##References:
+## References:
 
 https://tldp.org/LDP/lkmpg/2.6/html/c119.html
 
