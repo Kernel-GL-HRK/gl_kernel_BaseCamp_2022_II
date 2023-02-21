@@ -20,7 +20,10 @@ static int subst_count;
 module_param_array(subst, int, &subst_count, 0);
 MODULE_PARM_DESC(subst, "Substraction of two integers");
 
-
+static int prod[2];
+static int prod_count;
+module_param_array(prod, int, &prod_count, 0);
+MODULE_PARM_DESC(prod, "Substraction of two integers");
 
 static int __init hello_init(void)
 {
@@ -37,13 +40,25 @@ static int __init hello_init(void)
 			return -EINVAL;
 		}
 	}
+
 	if (subst_count) {
 		if (subst_count == 2) {
 			result = subst[0] - subst[1];
 			pr_info("SUBST(%d,%d) = %d\n", subst[0], subst[1], result);
 		} else {
 			pr_err("SUBST passed %d parameters, must be 2!\n",
-			       sum_count);
+			       subst_count);
+			return -EINVAL;
+		}
+	}
+
+	if (prod_count) {
+		if (prod_count == 2) {
+			result = prod[0] * prod[1];
+			pr_info("PROD(%d,%d) = %d\n", prod[0], prod[1], result);
+		} else {
+			pr_err("PRODT passed %d parameters, must be 2!\n",
+			       prod_count);
 			return -EINVAL;
 		}
 	}
