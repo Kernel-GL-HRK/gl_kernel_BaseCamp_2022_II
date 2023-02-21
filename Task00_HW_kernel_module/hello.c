@@ -15,6 +15,13 @@ static int sum_count;
 module_param_array(sum, int, &sum_count, 0);
 MODULE_PARM_DESC(sum, "Sum of two integers");
 
+static int subst[2];
+static int subst_count;
+module_param_array(subst, int, &subst_count, 0);
+MODULE_PARM_DESC(subst, "Substraction of two integers");
+
+
+
 static int __init hello_init(void)
 {
 	int result;
@@ -26,6 +33,16 @@ static int __init hello_init(void)
 			pr_info("SUM(%d,%d) = %d\n", sum[0], sum[1], result);
 		} else {
 			pr_err("SUM passed %d parameters, must be 2!\n",
+			       sum_count);
+			return -EINVAL;
+		}
+	}
+	if (subst_count) {
+		if (subst_count == 2) {
+			result = subst[0] - subst[1];
+			pr_info("SUBST(%d,%d) = %d\n", subst[0], subst[1], result);
+		} else {
+			pr_err("SUBST passed %d parameters, must be 2!\n",
 			       sum_count);
 			return -EINVAL;
 		}
