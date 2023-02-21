@@ -19,7 +19,7 @@ static s32 p1, p2;
 module_param(p1, int, 0644);
 module_param(p2, int, 0644);
 
-static s32 __init hellau_init(void)
+static int __init hellau_init(void)
 {
 	s32 sum = p1 + p2;
 	s32 diff = p1 - p2;
