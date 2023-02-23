@@ -5,3 +5,5 @@
 debug/
 script/
 task2-bash/release/
+task4-module/.vscode-ctags
+task4-module/.vscode/
