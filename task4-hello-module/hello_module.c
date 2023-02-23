@@ -15,7 +15,10 @@ static int num1;
 static int num2;
 
 module_param(num1, int, 0444);
+MODULE_PARM_DESC(num1, "First value");
+
 module_param(num2, int, 0444);
+MODULE_PARM_DESC(num2, "Second value");
 
 static int __init hello_init(void)
 {
