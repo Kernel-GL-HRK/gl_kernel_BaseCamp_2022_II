@@ -1,3 +1,17 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/*
+ *  @file
+ *  @author      Mykhailo Vyshnevskyi
+ *  @date        23 February 2023
+ *  @version     0.1.2
+ *  @details     Simple Linux device Welcome text \"Hello Kernel\" and
+ *               simple calculator driver for Raspberry Pi Zero W
+ *               Operation on numbers (operate) +, -, *
+ *               Example: sudo insmod hello_calc.ko num1=3 operate=\"*\" num2=5
+ *                        sudo rmmod hello_calc.ko
+ *                        sudo dmesg
+ *               Tested with Linux raspberrypi [5.10.103+]
+ */
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
@@ -53,4 +67,4 @@ module_exit(hello_calc_exit);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Mykhailo Vyshnevskyi");
 MODULE_DESCRIPTION("Welcome text and simple calculator driver for RaspberryPi Zero W\n\t\tExample: sudo insmod hello_calc.ko num1=3 operate=\"*\" num2=5\n\t\t\t sudo rmmod hello_calc.ko");
-MODULE_VERSION("0.1.1");
+MODULE_VERSION("0.1.2");
