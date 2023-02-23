@@ -2,6 +2,11 @@
 *.lib
 *.a
 *.so
+task4-module/.*.*
+task4-module/*.mod
+task4-module/*.mod.*
+task4-module/Module.symvers
+task4-module/modules.order
 debug/
 script/
 task2-bash/release/
