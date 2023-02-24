@@ -1,4 +1,5 @@
-obj-m += hello.o 
+obj-m += hello.o
+obj-m += calculator.o 
 
 PWD := $(CURDIR) 
  
