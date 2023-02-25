@@ -1,4 +1,4 @@
-TARGET_MODULE:=gpio-driver
+TARGET_MODULE:=simple-module
 
 ifneq ($(KERNELRELEASE),)
 	$(TARGET_MODULE)-objs := main.o
