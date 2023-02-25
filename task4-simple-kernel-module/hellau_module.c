@@ -9,6 +9,9 @@ MODULE_AUTHOR("Vlad Degtyarov <deesyync@gmail.com>");
 MODULE_DESCRIPTION("Simple kernel module");
 MODULE_VERSION("0.1");
 
+#undef pr_fmt
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+
 static s32 p1;
 module_param(p1, int, 0444);
 MODULE_PARM_DESC(p1, "First parameter");
@@ -23,7 +26,7 @@ static int __init hellau_init(void)
 	s32 diff = p1 - p2;
 	s32 prod = p1 * p2;
 
-	pr_notice(KBUILD_MODNAME ": Initializing kernel module...\n");
+	pr_notice("Initializing kernel module...\n");
 
 	pr_info("Parameter \"p1\" = %d\n", p1);
 	pr_info("Parameter \"p2\" = %d\n", p2);
@@ -40,13 +43,13 @@ static int __init hellau_init(void)
 	return 0;
 
 at_last:
-	pr_notice(KBUILD_MODNAME ": Module was not loaded.\n");
+	pr_notice("Module was not loaded.\n");
 	return -EINVAL;
 }
 
 static void __exit hellau_exit(void)
 {
-	pr_notice(KBUILD_MODNAME ": Exiting kernel module.\n");
+	pr_notice("Exiting kernel module.\n");
 }
 
 module_init(hellau_init);
