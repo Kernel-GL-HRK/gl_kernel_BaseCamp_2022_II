@@ -7,7 +7,7 @@ MODULE_AUTHOR("Tereshchenko Dmytro <buxdmo@gmail.com>");
 MODULE_VERSION("1.0");
 
 #ifdef pr_fmt
-#undef pr_fmt
+	#undef pr_fmt
 #endif
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
@@ -25,6 +25,9 @@ MODULE_PARM_DESC(param2, "Second parameter");
 static int driver_init(void)
 {
 	pr_notice("module_init\n");
+	pr_info("The sum of %d and %d is %d\n", param1, param2, param1 + param2);
+	pr_info("The diff of %d and %d is %d\n", param1, param2, param1 - param2);
+	pr_info("The product of %d and %d is %d\n", param1, param2, param1 * param2);
 	return 0;
 }
 /*===============================================================================================*/
