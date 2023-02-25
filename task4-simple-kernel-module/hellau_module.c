@@ -9,10 +9,13 @@ MODULE_AUTHOR("Vlad Degtyarov <deesyync@gmail.com>");
 MODULE_DESCRIPTION("Simple kernel module");
 MODULE_VERSION("0.1");
 
-static s32 p1, p2;
+static s32 p1;
+module_param(p1, int, 0444);
+MODULE_PARM_DESC(p1, "First parameter");
 
-module_param(p1, int, 0644);
-module_param(p2, int, 0644);
+static s32 p2;
+module_param(p2, int, 0444);
+MODULE_PARM_DESC(p2, "Second parameter");
 
 static int __init hellau_init(void)
 {
