@@ -28,8 +28,8 @@ static int __init hellau_init(void)
 
 	pr_notice("Initializing kernel module...\n");
 
-	pr_info("Parameter \"p1\" = %d\n", p1);
-	pr_info("Parameter \"p2\" = %d\n", p2);
+	pr_debug("p1 = %d\n", p1);
+	pr_debug("p2 = %d\n", p2);
 
 	if (p1 == 0 && p2 == 0) {
 		pr_warn("There will be no magic if you won\'t set params!\n");
