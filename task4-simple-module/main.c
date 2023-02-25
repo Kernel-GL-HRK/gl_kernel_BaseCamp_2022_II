@@ -1,4 +1,10 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
+//
+// Kernel module
+// Prints "module_init" message
+// Calculates and prints sum, subtraction and product of two parameters
+// Prints "module_exit" message
+
 #include <linux/init.h>
 #include <linux/module.h>
 
