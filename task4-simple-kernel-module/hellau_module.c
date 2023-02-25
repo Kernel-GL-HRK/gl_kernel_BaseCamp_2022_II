@@ -7,7 +7,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Vlad Degtyarov <deesyync@gmail.com>");
 MODULE_DESCRIPTION("Simple kernel module");
-MODULE_VERSION("0.1");
+MODULE_VERSION("0.2");
 
 #undef pr_fmt
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
