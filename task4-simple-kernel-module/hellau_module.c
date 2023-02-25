@@ -1,9 +1,4 @@
 // SPDX-License-Identifier: GPL
-/*
- * Simple kernel module,
- * which receive two params
- * and make some arithmetics
- */
 
 #include <linux/init.h>
 #include <linux/module.h>
