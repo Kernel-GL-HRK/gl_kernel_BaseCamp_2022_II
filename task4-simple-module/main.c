@@ -9,7 +9,17 @@ MODULE_VERSION("1.0");
 #ifdef pr_fmt
 #undef pr_fmt
 #endif
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+
+static int param1 = 0;
+static int param2 = 0;
+
+module_param(param1, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+module_param(param2, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+
+MODULE_PARM_DESC(param1, "First parameter");
+MODULE_PARM_DESC(param2, "Second parameter");
 
 /*===============================================================================================*/
 static int driver_init(void)
