@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 //
 // Kernel module
-// Prints "module_init" message
+// Prints "module_init" message on init
 // Calculates and prints sum, subtraction and product of two parameters
-// Prints "module_exit" message
+// Prints "module_exit" message on exit
 
 #include <linux/init.h>
 #include <linux/module.h>
@@ -42,7 +42,7 @@ static void driver_exit(void)
 {
 	pr_notice("module_exit\n");
 }
-
 /*===============================================================================================*/
+
 module_init(driver_init);
 module_exit(driver_exit);
