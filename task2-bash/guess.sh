@@ -3,13 +3,27 @@
 game_path="../task1-simple-program"
 game_name="guess"
 
+# Error codes
+E_CANT_FIND_EXECUTABLE=1
+E_NOT_AN_EXECUTABLE=2
+E_UNRECOGNIZED=10
 
+# Error messages
+e_msg["$E_CANT_FIND_EXECUTABLE"]="Cannot find game executable!"
+e_msg["$E_NOT_AN_EXECUTABLE"]="Game file is not executable!" 
+e_msg["$E_UNRECOGNIZED"]="Something went wrong..."
+
+# Exit function
+e_exit() {
+	echo ${e_msg[$1]}
+	exit $1
+}
+
+# Init checks
 if [ ! -f "$game_path/$game_name" ]; then
-	echo "Can't find game executable!"
-	exit 1
+	e_exit ${E_CANT_FIND_EXECUTABLE}
 elif [ ! -x "$game_path/$game_name" ]; then
-	echo "Game file is not executable!"
-	exit 2
+	e_exit ${E_NOT_AN_EXECUTABLE}
 fi
 
 purple='\033[1;35m'
@@ -33,8 +47,7 @@ run_game() {
 		echo -e "${yellow}Good luck next time!${no_color}"
 		((total_tries++))
 	else
-		echo "Something goes wrong..."
-		exit 10;
+		e_exit ${E_UNRECOGNIZED}
 	fi
 }
 
