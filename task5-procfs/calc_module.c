@@ -16,9 +16,9 @@ module_param(n1, int, 0);
 static int n2;
 module_param(n2, int, 0);
 
-#define PROC_BUFFER_SIZE 512
+#define PROC_BUFFER_MAX_SIZE 512
 
-static char procfs_buffer[PROC_BUFFER_SIZE] = { 0 };
+static char procfs_buffer[PROC_BUFFER_MAX_SIZE] = { 0 };
 static size_t procfs_buffer_size;
 
 #define PROC_FILE_NAME "calc_module"
@@ -27,38 +27,46 @@ static struct proc_dir_entry *proc_file;
 static ssize_t procfs_read_handler(struct file *File, char __user *buffer,
 				   size_t count, loff_t *offset)
 {
-	ssize_t not_copied, delta;
+	ssize_t to_copy, not_copied, delta;
 
-	if (*offset > 0 || count < procfs_buffer_size)
+	if (*offset >= procfs_buffer_size)
 		return 0;
 
-	not_copied = copy_to_user(buffer, procfs_buffer, procfs_buffer_size);
+	to_copy = min(count, procfs_buffer_size - (size_t)(*offset));
 
-	delta = procfs_buffer_size - not_copied;
-	*offset = delta;
+	not_copied = copy_to_user(buffer, procfs_buffer + (*offset), to_copy);
+
+	delta = to_copy - not_copied;
+	*offset += delta;
 
 	return delta;
 }
 
 static struct proc_ops fops = { .proc_read = procfs_read_handler };
 
+static bool write_one_operation(const char *fmt, int number1, int number2,
+				int result)
+{
+	int need_size = snprintf(NULL, 0, fmt, number1, number2, result);
+
+	if (procfs_buffer_size + need_size >= PROC_BUFFER_MAX_SIZE)
+		return false;
+
+	procfs_buffer_size += sprintf(procfs_buffer + procfs_buffer_size, fmt,
+				      number1, number2, result);
+	return true;
+}
+
 static void write_number_operations(void)
 {
-	char *tmp;
-	int writen;
-
-	tmp = procfs_buffer;
-
-	writen = sprintf(tmp, "Sum: %d + %d = %d\n", n1, n2, n1 + n2);
-	tmp += writen;
-	procfs_buffer_size += writen;
-	writen = sprintf(tmp, "Substraction: %d - %d = %d\n", n1, n2, n1 - n2);
-	tmp += writen;
-	procfs_buffer_size += writen;
-	writen =
-		sprintf(tmp, "Multiplication: %d * %d = %d\n", n1, n2, n1 * n2);
-	tmp += writen;
-	procfs_buffer_size += writen;
+	if (!write_one_operation("Sum: %d + %d = %d\n", n1, n2, n1 + n2))
+		return;
+	if (!write_one_operation("Substraction: %d - %d = %d\n", n1, n2,
+				 n1 - n2))
+		return;
+	if (!write_one_operation("Multiplication: %d * %d = %d\n", n1, n2,
+				 n1 * n2))
+		return;
 }
 
 static int __init calc_init(void)
