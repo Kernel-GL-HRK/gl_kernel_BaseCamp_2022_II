@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL
 
+#define DEBUG
+
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -54,3 +56,5 @@ static void __exit hellau_exit(void)
 
 module_init(hellau_init);
 module_exit(hellau_exit);
+
+#undef DEBUG
