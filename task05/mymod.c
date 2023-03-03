@@ -6,14 +6,12 @@
 #define DEVICE_NAME "mymod"
 #define PROC_NAME "mymod"
 #define PERMS 0644
-#define BUFS 100
-static char modbuf[BUFS] = {0};
-static ssize_t bufcount;
+#define BUFS 6000
+static char modbuf[BUFS] = {[0 ... 3000] = '1', [3001 ... BUFS-1] = '2'};
 static struct proc_dir_entry *proc_dir, *proc_file;
 static ssize_t mymod_read(struct file *filp, char __user *buf, size_t count, loff_t *pos);
-static
 
-struct proc_ops pops = {
+static struct proc_ops pops = {
 	.proc_read = mymod_read,
 };
 
@@ -27,7 +25,7 @@ static ssize_t mymod_read(struct file *filp, char __user *buf, size_t count, lof
 		return -EIO;
 
 	*pos += count;
-	pr_info("%s: %s\n", DEVICE_NAME, "READ");
+	pr_info("%s: %s %lu %lld\n", DEVICE_NAME, "COPIED/FPOS", count, *pos);
 	return count;
 }
 
@@ -36,16 +34,16 @@ static int __init init_function(void)
 
 	pr_info("%s: %s\n", DEVICE_NAME, "INIT");
 	proc_dir = proc_mkdir(PROC_NAME, NULL);
-        if (IS_ERR(proc_dir))
+	if (IS_ERR(proc_dir))
 		goto init_err;
 	proc_file = proc_create(PROC_NAME, PERMS, proc_dir, &pops);
 	if (IS_ERR(proc_file)) {
-		proc_remove(proc_file); 
+		proc_remove(proc_file);
 		goto init_err;
 	}
 	pr_info("%s: %s\n", DEVICE_NAME, "Success");
 	return 0;
-        init_err:
+	init_err:
 		proc_remove(proc_dir);
 		pr_err("%s: %s\n", DEVICE_NAME, "ENOMEM");
 		return -ENOMEM;
