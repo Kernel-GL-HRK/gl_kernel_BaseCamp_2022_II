@@ -13,3 +13,7 @@
 # no .order files.
 *.order
 
+# no .sh files.
+*.sh
+
+
