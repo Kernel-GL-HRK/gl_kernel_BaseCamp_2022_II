@@ -1,6 +1,6 @@
 ifneq ($(KERNELRELEASE),)
 # Kbuild part of makefile
-obj-m := hello.o
+obj-m := my_module.o
 else
 # build for current kernel if KDIR is not specified
 KDIR ?= /lib/modules/`uname -r`/build
