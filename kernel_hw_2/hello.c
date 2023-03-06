@@ -7,7 +7,9 @@
 #include <linux/fs.h>
 
 MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Kostiantyn Makhno");
 MODULE_DESCRIPTION("Simple led driver");
+MODULE_VERSION("1.0");
 
 #define LED_PIN 23UL
 #define PERIOD  1000UL
