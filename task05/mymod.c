@@ -4,6 +4,7 @@
 #include <linux/proc_fs.h>
 #include <linux/timer.h>
 #include <linux/jiffies.h>
+#include <linux/gpio.h>
 
 #define DEVICE_NAME "mymod"
 #define PROC_NAME "mymod"
@@ -15,10 +16,14 @@ static ssize_t mymod_read(struct file *filp, char __user *buf, size_t count, lof
 
 #define PERIOD 5000
 static struct timer_list my_timer;
+
+#define LED 26
+
 void my_timer_callback(struct timer_list * this_timer)
 {
 	static int level;
 	level = !level;
+	gpio_set_value(LED, level);
 	pr_info("%s: %s %d\n", DEVICE_NAME, "SET LEVEL:", level);
 	mod_timer(&my_timer, jiffies + msecs_to_jiffies(PERIOD));
 }
@@ -37,7 +42,7 @@ static ssize_t mymod_read(struct file *filp, char __user *buf, size_t count, lof
 		return -EIO;
 
 	*pos += count;
-	pr_info("%s: %s %lu %lld\n", DEVICE_NAME, "COPIED/FPOS", count, *pos);
+	pr_info("%s: %s %u %lld\n", DEVICE_NAME, "COPIED/FPOS", count, *pos);
 	return count;
 }
 
@@ -53,20 +58,30 @@ static int __init init_function(void)
 		proc_remove(proc_file);
 		goto init_err;
 	}
-	pr_info("%s: %s\n", DEVICE_NAME, "Success");
+
+	if (!gpio_is_valid(LED))
+		goto gpio_err;
+	gpio_free(LED);
+
+	if (!gpio_request_one(LED, GPIOF_INIT_LOW, "LED"))
+		gpio_export(LED, 0);
+	else
+		goto gpio_err;
 
         timer_setup(&my_timer, my_timer_callback, 0);
 	if (mod_timer(&my_timer, jiffies + msecs_to_jiffies(PERIOD))) {
 		pr_info("%s: %s\n", DEVICE_NAME, "Timer firing failed");
 		return -EPERM;
 	}
-	
+
 	return 0;
 	init_err:
 		proc_remove(proc_dir);
 		pr_err("%s: %s\n", DEVICE_NAME, "ENOMEM");
 		return -ENOMEM;
-
+	gpio_err:
+		pr_err("%s: %s\n", DEVICE_NAME, "Invalid GPIO");
+		return -ENODEV;
 }
 
 static void __exit exit_function(void)
