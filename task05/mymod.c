@@ -2,6 +2,8 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/proc_fs.h>
+#include <linux/timer.h>
+#include <linux/jiffies.h>
 
 #define DEVICE_NAME "mymod"
 #define PROC_NAME "mymod"
@@ -10,6 +12,16 @@
 static char modbuf[BUFS] = {[0 ... 3000] = '1', [3001 ... BUFS-1] = '2'};
 static struct proc_dir_entry *proc_dir, *proc_file;
 static ssize_t mymod_read(struct file *filp, char __user *buf, size_t count, loff_t *pos);
+
+#define PERIOD 5000
+static struct timer_list my_timer;
+void my_timer_callback(struct timer_list * this_timer)
+{
+	static int level;
+	level = !level;
+	pr_info("%s: %s %d\n", DEVICE_NAME, "SET LEVEL:", level);
+	mod_timer(&my_timer, jiffies + msecs_to_jiffies(PERIOD));
+}
 
 static struct proc_ops pops = {
 	.proc_read = mymod_read,
@@ -42,6 +54,13 @@ static int __init init_function(void)
 		goto init_err;
 	}
 	pr_info("%s: %s\n", DEVICE_NAME, "Success");
+
+        timer_setup(&my_timer, my_timer_callback, 0);
+	if (mod_timer(&my_timer, jiffies + msecs_to_jiffies(PERIOD))) {
+		pr_info("%s: %s\n", DEVICE_NAME, "Timer firing failed");
+		return -EPERM;
+	}
+	
 	return 0;
 	init_err:
 		proc_remove(proc_dir);
@@ -52,6 +71,7 @@ static int __init init_function(void)
 
 static void __exit exit_function(void)
 {
+	del_timer(&my_timer);
 	proc_remove(proc_file);
 	proc_remove(proc_dir);
 	pr_info("%s: %s\n", DEVICE_NAME, "EXIT");
