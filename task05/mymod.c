@@ -9,8 +9,8 @@
 #define DEVICE_NAME "mymod"
 #define PROC_NAME "mymod"
 #define PERMS 0644
-#define BUFS 6000
-static char modbuf[BUFS] = {[0 ... 3000] = '1', [3001 ... BUFS-1] = '2'};
+#define BUFS 256
+static char modbuf[BUFS] = {0};
 static struct proc_dir_entry *proc_dir, *proc_file;
 static ssize_t mymod_read(struct file *filp, char __user *buf, size_t count, loff_t *pos);
 
@@ -34,6 +34,8 @@ static struct proc_ops pops = {
 
 static ssize_t mymod_read(struct file *filp, char __user *buf, size_t count, loff_t *pos)
 {
+	sprintf(modbuf, "Current LED level: %d\nPeriod of the signal: %d\n", gpio_get_value(LED), PERIOD);
+
 	if (*pos >= BUFS)
 		return 0;
 	if (*pos + count > BUFS)
@@ -42,7 +44,6 @@ static ssize_t mymod_read(struct file *filp, char __user *buf, size_t count, lof
 		return -EIO;
 
 	*pos += count;
-	pr_info("%s: %s %u %lld\n", DEVICE_NAME, "COPIED/FPOS", count, *pos);
 	return count;
 }
 
@@ -61,16 +62,15 @@ static int __init init_function(void)
 
 	if (!gpio_is_valid(LED))
 		goto gpio_err;
+
 	gpio_free(LED);
 
-	if (!gpio_request_one(LED, GPIOF_INIT_LOW, "LED"))
-		gpio_export(LED, 0);
-	else
+	if (gpio_request_one(LED, GPIOF_INIT_LOW, "LED"))
 		goto gpio_err;
 
         timer_setup(&my_timer, my_timer_callback, 0);
 	if (mod_timer(&my_timer, jiffies + msecs_to_jiffies(PERIOD))) {
-		pr_info("%s: %s\n", DEVICE_NAME, "Timer firing failed");
+		pr_err("%s: %s\n", DEVICE_NAME, "Timer firing failed");
 		return -EPERM;
 	}
 
@@ -80,12 +80,15 @@ static int __init init_function(void)
 		pr_err("%s: %s\n", DEVICE_NAME, "ENOMEM");
 		return -ENOMEM;
 	gpio_err:
+		proc_remove(proc_file);
+		proc_remove(proc_dir);
 		pr_err("%s: %s\n", DEVICE_NAME, "Invalid GPIO");
 		return -ENODEV;
 }
 
 static void __exit exit_function(void)
 {
+	gpio_free(LED);
 	del_timer(&my_timer);
 	proc_remove(proc_file);
 	proc_remove(proc_dir);
