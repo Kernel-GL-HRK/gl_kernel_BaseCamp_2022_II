@@ -7,6 +7,8 @@ else
 	BUILDSYSTEM_DIR:=/lib/modules/$(shell uname -r)/build
 	PWD:=$(shell pwd)
 
+.PHONY: all clean load unload
+
 all:
 	$(MAKE) -C $(BUILDSYSTEM_DIR) M=$(PWD) modules
 
