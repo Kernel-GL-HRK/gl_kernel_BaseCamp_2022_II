@@ -1,6 +1,6 @@
 CC = gcc
 
-CHECKER = /scripts/checkpatch.pl
+CHECKER = ../scripts/checkpatch.pl
 CHECKER_FLAGS = --no-tree -f
 
 PROGRAM = main
@@ -11,9 +11,8 @@ CPPFLAGS      = -Wall -Wextra -DDEBUG -g
 CFLAGS        =
 
 SRCDIR  = ../task1-simple-program
-SOURCES = $(foreach d,$(SRCDIR),$(wildcard $(addprefix $(d)/*,.c)))
-HEADERS = $(foreach d,$(SRCDIR),$(wildcard $(addprefix $(d)/*,.h)))
-SRC_CXX = $(filter-out %.c,$(SOURCES))
+SOURCES = $(SRCDIR)/main.c $(SRCDIR)/get_random_number.c
+HEADERS = $(SRCDIR)/get_random_number.h
 OBJS    = $(addsuffix .o, $(basename $(SOURCES)))
 
 LIBTYPE =
