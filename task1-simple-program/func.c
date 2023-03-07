@@ -1,5 +1,6 @@
 #include "func.h"
 
+#include <stdlib.h>
 #include <time.h>
 
 static char randomized;
