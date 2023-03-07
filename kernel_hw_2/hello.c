@@ -38,6 +38,9 @@ hello_proc_read(struct file *filp, char __user *ubuf, size_t count, loff_t *offs
 {
 	size_t to_copy;
 
+	if (*offset > 0)
+		return 0;
+
 	to_copy = min(count, drv_data.buff_len);
 
 	sprintf(drv_data.buff, "led_state: %u\nperiod: %u\n",
@@ -45,6 +48,8 @@ hello_proc_read(struct file *filp, char __user *ubuf, size_t count, loff_t *offs
 
 	if (copy_to_user(ubuf, drv_data.buff, to_copy))
 		return -EFAULT;
+
+	*offset += to_copy;
 
 	return to_copy;
 }
@@ -98,6 +103,8 @@ static int __init hello_init(void)
 	timer_setup(&drv_data.tm, tm_callback, 0);
 	mod_timer(&drv_data.tm, jiffies + msecs_to_jiffies(drv_data.tm_period));
 
+	pr_info("Module was initialized\n");
+
 	return 0;
 
 err_set_dir_gpio:
@@ -115,6 +122,7 @@ static void __exit hello_exit(void)
 	gpio_set_value(LED_PIN, 0);
 	gpio_free(LED_PIN);
 	pr_info("led pin %ld was freed\n", LED_PIN);
+	pr_info("Module was removed\n");
 }
 
 module_init(hello_init);
