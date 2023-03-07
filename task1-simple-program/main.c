@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <time.h>
 
 #include "func.h"
 
@@ -16,8 +15,6 @@ int main(void)
 		printf("Wrong input\n");
 		return -1;
 	}
-
-	srand(time(NULL));
 
 	const int pc_choice = get_random_number(lower, upper);
 
