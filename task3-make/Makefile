@@ -1,4 +1,4 @@
-CC = 
+CC =
 
 CHECKER = ../scripts/checkpatch.pl
 CHECKER_FLAGS = --no-tree -f
@@ -21,7 +21,7 @@ ifeq ($(DEBUG),1)
 	CPPFLAGS += -DDEBUG -g
 endif
 
-WARNINGS = 
+WARNINGS =
 
 ifeq ($(WARNINGS),1)
 	CPPFLAGS += -Wall -Wextra
