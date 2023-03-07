@@ -1,6 +1,6 @@
 #ifndef FUNC_H
 #define FUNC_H
 
-int get_random_number(int, int);
+unsigned char get_random_number(unsigned char, unsigned char);
 
 #endif //FUNC_H
