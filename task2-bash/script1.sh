@@ -1,18 +1,12 @@
 #! /bin/bash
 
-if [[ ! -d /tmp/guessanumber ]]
-then
-        mkdir /tmp/guessanumber
-fi
+mkdir /tmp/guessanumber
 
 cp ../task1-simple-program/*.c /tmp/guessanumber
 
 tar -zcvf guessanumber.tar.gz /tmp/guessanumber
 
-if [[ ! -d ./release ]]
-then
-        mkdir release
-fi
+mkdir release
 
 mv guessanumber.tar.gz release/
 
