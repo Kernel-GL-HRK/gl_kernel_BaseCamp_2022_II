@@ -1,0 +1,8 @@
+This is the simple led blink module that use timer to set the period of blinking
+Tested on RPi Zero, use GPIO pin 23 to control led
+
+Features:
+	*Supports ability to pass period as module parameter `insmod hello.ko period=<some period in milliseconds>`
+		When period is not pass, the module use default value of 1000ms
+	*Pass current led state and period to /proc/hello/drv_info
+
