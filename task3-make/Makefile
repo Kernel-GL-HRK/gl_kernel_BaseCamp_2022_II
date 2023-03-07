@@ -30,7 +30,7 @@ endif
 COMPILE.c   = $(CC)  $(EXTRA_CFLAGS) $(CFLAGS)   $(CPPFLAGS) -c
 LINK.c      = $(CC)  $(EXTRA_CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
-.PHONY: all objs clean help
+.PHONY: all check clean help
 
 all:$(PROGRAM)
 
