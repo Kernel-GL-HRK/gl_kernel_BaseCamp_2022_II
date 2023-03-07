@@ -9,7 +9,7 @@ int main(void)
 
 	printf("Guess a number (0-%hhd) -> ", upper);
 
-	if (!scanf("%hhd", &user_choice) || user_choice < 0 || user_choice > upper) {
+	if (!scanf("%hhd", &user_choice) || user_choice > upper) {
 		printf("Wrong input\n");
 		return -1;
 	}
