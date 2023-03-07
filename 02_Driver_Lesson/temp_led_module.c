@@ -20,6 +20,9 @@
 static char     procfs_buffer[PROC_BUFFER_SIZE] = {0};
 static size_t   procfs_buffer_size = 0;
 
+// Thermal zone device for temperature readings
+struct thermal_zone_device *tz;
+static int temp;
 
 // GPIO pins for the LEDs
 #define GPIO_5 5            // RED 
@@ -37,6 +40,11 @@ static struct proc_dir_entry *proc_folder;
 
 static ssize_t hello_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 {
+    // Get the temperature from the thermal zone
+    if (thermal_zone_get_temp(tz, &temp)) {
+        pr_err("Failed to get temperature\n");
+    }
+
     // Determine the size of the buffer to be read
     procfs_buffer_size = min(count, (size_t)PROC_BUFFER_SIZE);                            
     
@@ -44,6 +52,9 @@ static ssize_t hello_read(struct file *file, char __user *buf, size_t count, lof
     if (*pos >= procfs_buffer_size) {
         return 0;
     }
+
+    // Format the temperature string to be written to the buffer
+    sprintf(procfs_buffer, "CPU temperature = %d.%d Grad\n", temp/1000, temp%1000);
 
     // If reading the buffer would cause a buffer overflow, adjust the size of the buffer accordingly
     if (*pos + procfs_buffer_size > PROC_BUFFER_SIZE) {
@@ -89,6 +100,12 @@ static int __init hello_init(void)
     if (gpio_request_array(led_array, ARRAY_SIZE(led_array))) {
         pr_err("Failed to request GPIO array\n");
         return -1;
+    }
+
+    if (thermal_zone_get_temp(tz, &temp)) {
+        pr_err("Failed to get temperature\n");
+    } else {
+        pr_info("CPU Temperature: %d\n", temp / 1000);
     }
 
     pr_info("Hello Module Inserted /proc/%s/%s\n", PROC_DIR_NAME, PROC_FILE_NAME);
