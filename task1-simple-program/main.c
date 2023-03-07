@@ -8,24 +8,24 @@ static const unsigned int lower = 0;
 
 int main(void)
 {	
-	int input;
+	int user_choice;
 
 	printf("Guess a number (%d-%d) -> ", lower, upper);
 
-	if (!scanf("%d", &input) || input < lower || input > upper) {
+	if (!scanf("%d", &user_choice) || user_choice < lower || user_choice > upper) {
 		printf("Wrong input\n");
 		return -1;
 	}
 
 	srand(time(NULL));
 
-	const int random = get_random_number(lower, upper);
+	const int pc_choice = get_random_number(lower, upper);
 
-	if (input == random) {
-		printf("You win %d = %d\n", input, random);
+	if (user_choice == pc_choice) {
+		printf("You win %d = %d\n", user_choice, pc_choice);
 		return 0;
 	} else {
-		printf("You loose %d != %d\n", input, random);
+		printf("You loose %d != %d\n", user_choice, pc_choice);
 		return 1;
 	}
 }
