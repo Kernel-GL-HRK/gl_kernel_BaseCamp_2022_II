@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "func.h"
+#include "get_random_number.h"
 
 static const unsigned char upper = 9;
 
