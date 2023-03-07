@@ -1,7 +1,7 @@
 #obj-m += hello_calc.o
 #obj-m += gpio_interrupt_ampel.o
-obj-m += testReadFuncModule.o
-#obj-m += temp_led_module.o
+#obj-m += testReadFuncModule.o
+obj-m += temp_led_module.o
 
 export ARCH=arm
 export CROSS_COMPILE=arm-linux-gnueabihf-
@@ -14,7 +14,7 @@ all:
 	make -C $(KDIR) M=$(shell pwd) modules
 
 clean:
-	rm -f ${TARGET} *.o *.a *.so *.gch *.xml *.mod *.symvers *.order
+	rm -f ${TARGET} *.o *.a *.so *.gch *.xml *.mod *.symvers *.order *.mod.c
 
 clean_all:
 	make -C $(KDIR) M=$(shell pwd) clean
