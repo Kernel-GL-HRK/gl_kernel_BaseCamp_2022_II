@@ -33,6 +33,10 @@ static struct driver_data drv_data;
 static struct proc_dir_entry *pdir;
 static struct proc_dir_entry *pfile;
 
+static unsigned int period = PERIOD;
+module_param(period, uint, 0444);
+MODULE_PARM_DESC(period, "Value of the timer period");
+
 ssize_t
 hello_proc_read(struct file *filp, char __user *ubuf, size_t count, loff_t *offset)
 {
@@ -97,7 +101,7 @@ static int __init hello_init(void)
 		pr_err("can not create /proc/%s/%s file\n", PROC_DIR_NAME, PROC_FILE_NAME);
 		return -ENOMEM;
 	}
-	drv_data.tm_period = PERIOD;
+	drv_data.tm_period = period;
 	drv_data.buff      = proc_buff;
 	drv_data.buff_len  = PROC_BUFF_LEN;
 	timer_setup(&drv_data.tm, tm_callback, 0);
