@@ -3,11 +3,11 @@
 
 #include "func.h"
 
-int main(void)
-{
-	const int upper = 9;
-	const int lower = 0;
+static const unsigned int upper = 9;
+static const unsigned int lower = 0;
 
+int main(void)
+{	
 	int input;
 
 	printf("Guess a number (%d-%d) -> ", lower, upper);
