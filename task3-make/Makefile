@@ -1,4 +1,4 @@
-CC = gcc
+CC = 
 
 CHECKER = ../scripts/checkpatch.pl
 CHECKER_FLAGS = --no-tree -f
@@ -7,13 +7,25 @@ PROGRAM = main
 
 EXTRA_LDFLAGS =
 EXTRA_CFLAGS  = -fdata-sections -ffunction-sections
-CPPFLAGS      = -Wall -Wextra -DDEBUG -g
+CPPFLAGS      =
 CFLAGS        =
 
 SRCDIR  = ../task1-simple-program
 SOURCES = $(SRCDIR)/main.c $(SRCDIR)/get_random_number.c
 HEADERS = $(SRCDIR)/get_random_number.h
 OBJS    = $(addsuffix .o, $(basename $(SOURCES)))
+
+DEBUG =
+
+ifeq ($(DEBUG),1)
+	CPPFLAGS += -DDEBUG -g
+endif
+
+WARNINGS = 
+
+ifeq ($(WARNINGS),1)
+	CPPFLAGS += -Wall -Wextra
+endif
 
 LIBTYPE =
 
