@@ -57,9 +57,9 @@ static struct proc_ops fops = {
 
 static int __init hello_init(void)
 {
-procfs_buffer_size = sprintf(procfs_buffer,"%d + %d = %d\n", num1, num2, num1 + num2);
-procfs_buffer_size += sprintf(procfs_buffer + strlen(procfs_buffer),"%d - %d = %d\n", num1, num2, num1 - num2);
-procfs_buffer_size += sprintf(procfs_buffer + strlen(procfs_buffer),"%d * %d = %d\n", num1, num2, num1 * num2);
+procfs_buffer_size = sprintf(procfs_buffer, "%d + %d = %d\n", num1, num2, num1 + num2);
+procfs_buffer_size += sprintf(procfs_buffer + strlen(procfs_buffer), "%d - %d = %d\n", num1, num2, num1 - num2);
+procfs_buffer_size += sprintf(procfs_buffer + strlen(procfs_buffer), "%d * %d = %d\n", num1, num2, num1 * num2);
 
 pr_info("HELLO: Hello Kernel!\n%s", procfs_buffer);
 
