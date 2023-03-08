@@ -1,12 +1,14 @@
-ifneq ($(KERNELRELEASE),)
-# kbuild part of makefile
 obj-m :=hello.o
-else
-# normal makefile
-KDIR ?= /lib/modules/`uname -r`/build
+CFLAGS_hello.o := -DDEBUG
 
-default:
-	$(MAKE) -C $(KDIR) M=$$PWD	
+export ARCH = arm
+export CROSS_COMPILE = arm-linux-gnueabihf-
+export KDIR = ~/gl_base_camp/linux_kernel_arm/kernel
+
+PWD := $(CURDIR)
+
+all:
+	$(MAKE) -C $(KDIR) M=$(PWD) modules
+
 clean:
-	$(MAKE) -C $(KDIR) M=$$PWD clean
-endif
+	$(MAKE) -C $(KDIR) M=$(PWD) clean

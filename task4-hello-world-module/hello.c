@@ -22,7 +22,7 @@ MODULE_PARM_DESC(par2, "The second variable");
 static int __init hello_init(void)
 {
 	pr_info("HELLO: Hello linux kernel!\n");
-	pr_info("CALC: par1 = %ld, par2 = %ld\n", par1, par2);
+	pr_debug("DEBUG: par1 = %ld, par2 = %ld\n", par1, par2);
 	pr_info("CALC: sum = %ld\n", par1 + par2);
 	pr_info("CALC: sub = %ld\n", par1 - par2);
 	pr_info("CALC: mul = %ld\n", par1 * par2);
