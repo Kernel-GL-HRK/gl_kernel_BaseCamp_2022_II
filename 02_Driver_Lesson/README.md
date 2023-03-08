@@ -20,12 +20,7 @@ This driver measures CPU temperature using the "cpu-thermal" sensor and indicate
 -	`cat /proc/hello/dummy` 
 - and outputs the message 
 	`temperature = %d.%d Grad`
-
-## GPIO
-- GPIO_5 - RED
-- GPIO_6 - YELLOW
-- GPIO_26 - GREEN
-
+	
 ## Usage
 1. Run the driver:
 `sudo insmod ./temp_led_module.ko`
@@ -35,8 +30,13 @@ This driver measures CPU temperature using the "cpu-thermal" sensor and indicate
 `sudo rmmod ./temp_led_module.ko`
 
 
+## GPIO
+- GPIO_5 - RED
+- GPIO_6 - YELLOW
+- GPIO_26 - GREEN
+
 ## LEDs connection diagram
-(<image src="https://lh3.google.com/u/0/d/1rfrgtPdDDv1S7TKzq5YTvsGthlRzrk3B=w1920-h980-iv1">)
+<image src="https://github.com/MihailV1/gl_kernel_BaseCamp_2022_II/blob/02_Driver_Lesson/02_Driver_Lesson/block_diagram_small.jpg">
 
 
 ## Test video
