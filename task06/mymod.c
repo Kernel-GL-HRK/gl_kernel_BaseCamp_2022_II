@@ -12,17 +12,17 @@
 
 #define PERMS 0644
 #define BUFS 1024 * 4
-static char modbuf[BUFS] = {[0 ... BUFS / 2 - 1] = '1', [BUFS / 2 ... BUFS-1] = '2'};
+static char modbuf[BUFS] = {0}; // {[0 ... BUFS / 2 - 1] = '1', [BUFS / 2 ... BUFS-1] = '2'};
 
 /* proc_fs data */
 static struct proc_dir_entry *proc_dir, *proc_file;
-static ssize_t mymod_read(struct file *filp, char __user *buf, size_t count, loff_t *pos);
+static ssize_t proc_read_mymod(struct file *filp, char __user *buf, size_t count, loff_t *pos);
 
 static struct proc_ops pops = {
-	.proc_read = mymod_read,
+	.proc_read = proc_read_mymod,
 };
 
-static ssize_t mymod_read(struct file *filp, char __user *buf, size_t count, loff_t *pos)
+static ssize_t proc_read_mymod(struct file *filp, char __user *buf, size_t count, loff_t *pos)
 {
 	if (*pos >= BUFS)
 		return 0;
@@ -32,7 +32,7 @@ static ssize_t mymod_read(struct file *filp, char __user *buf, size_t count, lof
 		return -EIO;
 
 	*pos += count;
-	pr_info("%s: %s %lu %lld\n", DEVICE_NAME, "COPIED/FPOS", count, *pos);
+	pr_info("%s: %s %s %lu %lld\n", DEVICE_NAME, __func__, "COPIED/FPOS", count, *pos);
 	return count;
 }
 
@@ -56,19 +56,39 @@ static const struct file_operations mymod_cdev_fops = {
         .release = release_mymod_cdev,
 };
 
-static int open_mymod_cdev(struct inode *, struct file *) 
+static int open_mymod_cdev(struct inode *this_inode, struct file *this_file) 
 {
 	return 0;
 }
-static ssize_t write_mymod_cdev(struct file *, const char __user *, size_t, loff_t *)
+static ssize_t write_mymod_cdev(struct file *this_file, const char __user *buf, size_t count, loff_t *pos)
 {
-	return 0;
+	if (*pos >= BUFS)
+		return 0;
+	if (*pos + count > BUFS)
+		count = BUFS - (*pos);
+	if (copy_from_user(modbuf + (*pos), buf, count))
+		return -EIO;
+
+	*pos += count;
+	pr_info("%s: %s %s %lu %lld\n", DEVICE_NAME, __func__, "COPIED/FPOS", count, *pos);
+	return count;
 }
-static ssize_t read_mymod_cdev(struct file *, char __user *, size_t, loff_t *)
+
+static ssize_t read_mymod_cdev(struct file *this_file, char __user *buf, size_t count, loff_t *pos)
 {
-	return 0;
+	if (*pos >= BUFS)
+		return 0;
+	if (*pos + count > BUFS)
+		count = BUFS - (*pos);
+	if (copy_to_user(buf, modbuf + (*pos), count))
+		return -EIO;
+
+	*pos += count;
+	pr_info("%s: %s %s %lu %lld\n", DEVICE_NAME, __func__, "COPIED/FPOS", count, *pos);
+	return count;
 }
-static int release_mymod_cdev(struct inode *, struct file *)
+
+static int release_mymod_cdev(struct inode *this_inode, struct file *this_file)
 {
 	return 0;
 }
