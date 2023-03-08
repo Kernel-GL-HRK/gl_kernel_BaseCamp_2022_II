@@ -11,10 +11,14 @@
 #define DEVICE_CLASS "mymod_cdev"
 
 #define PERMS 0644
+/* cdev buffer */
 #define BUFS 1024 * 4
 static char modbuf[BUFS] = {0}; // {[0 ... BUFS / 2 - 1] = '1', [BUFS / 2 ... BUFS-1] = '2'};
 
 /* proc_fs data */
+#define PROC_SIZE  500
+static char proc_buf[PROC_SIZE] = {0};
+
 static struct proc_dir_entry *proc_dir, *proc_file;
 static ssize_t proc_read_mymod(struct file *filp, char __user *buf, size_t count, loff_t *pos);
 
@@ -24,19 +28,22 @@ static struct proc_ops pops = {
 
 static ssize_t proc_read_mymod(struct file *filp, char __user *buf, size_t count, loff_t *pos)
 {
-	if (*pos >= BUFS)
+	if (*pos > 0)
 		return 0;
-	if (*pos + count > BUFS)
-		count = BUFS - (*pos);
-	if (copy_to_user(buf, modbuf + (*pos), count))
+		
+	sprintf(proc_buf, "Module name: %s\n", DEVICE_NAME);
+	sprintf(proc_buf + 100, "CharDev Read/Write buffer size: %d\n", BUFS);
+	
+	if (copy_to_user(buf, proc_buf, PROC_SIZE))
 		return -EIO;
-
-	*pos += count;
-	pr_info("%s: %s %s %lu %lld\n", DEVICE_NAME, __func__, "COPIED/FPOS", count, *pos);
-	return count;
+		
+	*pos += PROC_SIZE;
+	pr_info("%s: %s %s %u %lld\n", DEVICE_NAME, __func__, "COPIED/FPOS", PROC_SIZE, *pos);
+	return PROC_SIZE;
 }
 
 /* cdev data */
+
 static struct cdev mymod_cdev;
 static dev_t dev_num;
 
