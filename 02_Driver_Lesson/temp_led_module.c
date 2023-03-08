@@ -94,12 +94,12 @@ void thermal_callback(struct timer_list *data)
 		gpio_set_value(GPIO_5, 0);
 		gpio_set_value(GPIO_6, 0);
 		gpio_set_value(GPIO_26, 1);
-	} else if (temp < 50000) {                // LED YELLOW blinklicht
+	} else if (temp < 60000) {                // LED YELLOW blinklicht
 		gpio_index = 1;
 		gpio_set_value(GPIO_5, 0);
 		gpio_set_value(GPIO_6, 1);
 		gpio_set_value(GPIO_26, 0);
-	} else if (temp < 74000) {                // LED RED blinklicht
+	} else if (temp < 75000) {                // LED RED blinklicht
 		gpio_index = 0;
 		gpio_set_value(GPIO_5, 1);
 		gpio_set_value(GPIO_6, 0);
