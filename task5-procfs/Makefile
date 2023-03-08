@@ -1,5 +1,5 @@
 ifneq ($(KERNELRELEASE),)
-obj-m := calc_module.o
+obj-m := module.o
 else
 
 KDIR ?= /lib/modules/`uname -r`/build
