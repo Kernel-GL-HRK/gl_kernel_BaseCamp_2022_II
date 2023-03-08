@@ -39,9 +39,6 @@ This driver measures CPU temperature using the "cpu-thermal" sensor and indicate
 <image src="https://github.com/MihailV1/gl_kernel_BaseCamp_2022_II/blob/02_Driver_Lesson/02_Driver_Lesson/block_diagram_small.jpg">
 
 
-## Test video
-
-
 ## Sources:
 - Raspberry Pi Documentation
 `<link>` : <https://www.raspberrypi.com/documentation/computers/linux_kernel.html#kernel>
