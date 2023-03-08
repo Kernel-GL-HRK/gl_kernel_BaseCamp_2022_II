@@ -17,6 +17,9 @@ static int num2;
 module_param(num1, int, 0660);
 module_param(num2, int, 0660);
 
+MODULE_PARM_DESC(num1, "First value");
+MODULE_PARM_DESC(num2, "Second value");
+
 #define PROC_BUFFER_SIZE 100
 
 static char procfs_buffer[PROC_BUFFER_SIZE] = {0};
@@ -46,21 +49,17 @@ static ssize_t hello_read(struct file *File, char __user *buffer, size_t count, 
 	return delta;
 }
 
-
-
 static struct proc_ops fops = {
 	.proc_read = hello_read,
 
 };
 
+
 static int __init hello_init(void)
 {
-
-
 procfs_buffer_size = sprintf(procfs_buffer,"%d + %d = %d\n", num1, num2, num1 + num2);
 procfs_buffer_size += sprintf(procfs_buffer + strlen(procfs_buffer),"%d - %d = %d\n", num1, num2, num1 - num2);
 procfs_buffer_size += sprintf(procfs_buffer + strlen(procfs_buffer),"%d * %d = %d\n", num1, num2, num1 * num2);
-
 
 pr_info("HELLO: Hello Kernel!\n%s", procfs_buffer);
 
@@ -77,9 +76,10 @@ if (!proc_file) {
 	return -ENOMEM;
 }
 
-
 return 0;
 }
+
+
 static void __exit hello_exit(void)
 {
 pr_info("HELLO: Goodbye Kernel!\n");
@@ -87,7 +87,6 @@ pr_info("HELLO: Goodbye Kernel!\n");
 proc_remove(proc_file);
 proc_remove(proc_folder);
 pr_info("HELLO: /proc/%s/%s removed\n", PROC_DIR_NAME, PROC_FILE_NAME);
-
 }
 
 module_init(hello_init);
