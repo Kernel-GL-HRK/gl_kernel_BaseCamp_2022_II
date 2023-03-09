@@ -1,0 +1,19 @@
+# no .mod files 
+*.mod*
+
+# no .o files.
+*.o
+
+# no .cmd files.
+*.cmd
+
+# no .symvers files.
+*.symvers
+
+# no .order files.
+*.order
+
+# no .sh files.
+*.sh
+
+
