@@ -15,3 +15,8 @@ endif
 check:
 	./checkpatch.pl --no-tree -f *.c
 
+insmod:
+	sudo insmod module.ko
+
+rmmod:
+	sudo rmmod module
