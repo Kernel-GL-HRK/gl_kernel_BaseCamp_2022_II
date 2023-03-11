@@ -9,7 +9,7 @@ NC='\033[0m'
 PATH=../task1-simple-program
 
 if ! [[ -f ${PATH}/main.out ]]; then
-        gcc ${PATH}/main.c ${PATH}/func.c -o ${PATH}/main.out
+        gcc ${PATH}/main.c ${PATH}/func.c -o ${PATH}/guess-number
 fi
 
 counter=1
