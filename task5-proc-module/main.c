@@ -2,6 +2,8 @@
 #include "pr_fmt.h"
 #include <linux/init.h>
 #include <linux/module.h>
+#include "gpio.h"
+#include "proc.h"
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Module that uses procfs ang gpio");
