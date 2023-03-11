@@ -2,10 +2,9 @@
 #include <time.h>
 #include "get_random_number.h"
 
-static unsigned char randomized;
-
 unsigned char get_random_number(unsigned char lower, unsigned char upper)
 {
+	static unsigned char randomized;
 	if (!randomized) {
 		srand(time(NULL));
 		randomized = 1;
