@@ -11,21 +11,22 @@ static struct proc_dir_entry *proc_timeout;
 static struct proc_dir_entry *proc_gpio_status;
 static struct proc_dir_entry *proc_folder;
 
-static const size_t PROC_BUFFER_CAPACITY = 8;
+#define PROC_BUFFER_CAPACITY 8
+
 static char procfs_buffer[PROC_BUFFER_CAPACITY];
 
 /*===============================================================================================*/
 static ssize_t gpio_status_read(struct file *file, char __user *buffer, size_t count, loff_t *offset)
 {
+	ssize_t to_copy, not_copied, buffer_size;
+
 	if (*offset > 0)
 		return 0;
-
-	ssize_t to_copy, not_copied, buffer_size;
 
 	buffer_size = sprintf(procfs_buffer, "%d\n", gpio_get_status());
 
 	if (buffer_size < 0)
-		return -EFAULT
+		return -EFAULT;
 
 	to_copy = min_t(size_t, count, buffer_size);
 	not_copied = copy_to_user(buffer, procfs_buffer, to_copy);
@@ -57,17 +58,17 @@ static struct proc_ops gpio_status_ops = {
 /*===============================================================================================*/
 static ssize_t timeout_read(struct file *file, char __user *buffer, size_t count, loff_t *offset)
 {
+	ssize_t to_copy, not_copied, buffer_size;
+
 	if (*offset > 0)
 		return 0;
-
-	ssize_t to_copy, not_copied, buffer_size;
 
 	buffer_size = sprintf(procfs_buffer, "%d\n", TIMEOUT);
 
 	if (buffer_size < 0)
 		return -EFAULT;
 
-	to_copy = min(size_t, count, buffer_size);
+	to_copy = min_t(size_t, count, buffer_size);
 	not_copied = copy_to_user(buffer, procfs_buffer, to_copy);
 
 	*offset += to_copy - not_copied;
@@ -88,14 +89,14 @@ int proc_init(void)
 	}
 
 	proc_gpio_status = proc_create(PROC_GPIO_STATUS, 0666, proc_folder, &gpio_status_ops);
-	if (!proc_file) {
+	if (!proc_gpio_status) {
 		pr_err("Could not initialize /proc/%s/%s\n", PROC_DIR, PROC_GPIO_STATUS);
 		proc_exit();
 		return -ENOMEM;
 	}
 
 	proc_timeout = proc_create(PROC_TIMEOUT, 0666, proc_folder, &timeout_ops);
-	if (!proc_file) {
+	if (!proc_timeout) {
 		pr_err("Could not initialize /proc/%s/%s\n", PROC_DIR, PROC_TIMEOUT);
 		proc_exit();
 		return -ENOMEM;
