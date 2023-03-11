@@ -10,12 +10,18 @@ MODULE_DESCRIPTION("Module that uses procfs ang gpio");
 MODULE_AUTHOR("Tereshchenko Dmytro <buxdmo@gmail.com>");
 MODULE_VERSION("1.0");
 
+static int gpio_pin;
+
+module_param(gpio_pin, int, 0660);
+
+MODULE_PARM_DESC(gpio_pin, "gpio_pin");
+
 /*===============================================================================================*/
 static int driver_init(void)
 {
 	pr_info("module init");
 
-	if (gpio_init(27)) {
+	if (gpio_init(gpio_pin)) {
 		pr_err("Failed to init gpio\n");
 		return -EFAULT;
 	}
