@@ -4,6 +4,55 @@
 
 static unsigned int GPIO_PIN;
 
+static int gpio_status;
+static int blink_status;
+
+static struct timer_list blink_timer;
+
+static void gpio_set_status(int status)
+{
+	if (gpio_status == status)
+		return;
+
+	gpio_status = status;
+	gpio_set_value(GPIO_PIN, status);
+}
+
+unsigned int gpio_get_status(void) {
+	return gpio_status;
+}
+
+static void blink_timer_callback(struct timer_list *unused)
+{
+	gpio_set_status(!gpio_status);
+	mod_timer(&blink_timer, jiffies + msecs_to_jiffies(TIMEOUT));
+}
+
+void gpio_blink_on(void)
+{
+	if (blink_status) {
+		pr_notice("Led is already blinking\n");
+		return;
+	}
+
+	timer_setup(&blink_timer, blink_timer_callback, 0);
+	mod_timer(&blink_timer, jiffies + msecs_to_jiffies(TIMEOUT));
+	blink_status = 1;
+}
+
+void gpio_blink_off(void)
+{
+	if (!blink_status) {
+		pr_notice("Led is already off\n");
+		return;
+	}
+
+	del_timer_sync(&blink_timer);
+	gpio_set_status(0);
+	blink_status = 0;
+}
+
+
 int gpio_init(unsigned int gpio)
 {
 	int err;
