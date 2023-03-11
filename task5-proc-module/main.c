@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
+#include "pr_fmt.h"
 #include <linux/init.h>
 #include <linux/module.h>
 
@@ -6,9 +7,6 @@ MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Module that uses procfs ang gpio");
 MODULE_AUTHOR("Tereshchenko Dmytro <buxdmo@gmail.com>");
 MODULE_VERSION("1.0");
-
-#undef pr_fmt
-#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 /*===============================================================================================*/
 static int driver_init(void)

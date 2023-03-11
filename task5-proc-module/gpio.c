@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
+#include "pr_fmt.h"
 #include <linux/gpio.h>
 #include <linux/timer.h>
 #include "gpio.h"
