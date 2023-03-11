@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 #include <linux/gpio.h>
 #include <linux/timer.h>
 #include "gpio.h"
@@ -19,7 +20,8 @@ static void gpio_set_status(int status)
 	gpio_set_value(GPIO_PIN, status);
 }
 /*===============================================================================================*/
-unsigned int gpio_get_status(void) {
+unsigned int gpio_get_status(void)
+{
 	return gpio_status;
 }
 /*===============================================================================================*/

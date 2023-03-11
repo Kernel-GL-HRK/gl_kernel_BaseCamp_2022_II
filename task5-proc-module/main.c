@@ -14,7 +14,7 @@ MODULE_VERSION("1.0");
 static int driver_init(void)
 {
 	pr_info("module init");
-	
+
 	if (gpio_init(27)) {
 		pr_err("Failed to init gpio\n");
 		return -EFAULT;
