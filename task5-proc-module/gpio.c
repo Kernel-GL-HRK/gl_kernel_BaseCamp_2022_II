@@ -9,6 +9,7 @@ static int blink_status;
 
 static struct timer_list blink_timer;
 
+/*===============================================================================================*/
 static void gpio_set_status(int status)
 {
 	if (gpio_status == status)
@@ -17,17 +18,17 @@ static void gpio_set_status(int status)
 	gpio_status = status;
 	gpio_set_value(GPIO_PIN, status);
 }
-
+/*===============================================================================================*/
 unsigned int gpio_get_status(void) {
 	return gpio_status;
 }
-
+/*===============================================================================================*/
 static void blink_timer_callback(struct timer_list *unused)
 {
 	gpio_set_status(!gpio_status);
 	mod_timer(&blink_timer, jiffies + msecs_to_jiffies(TIMEOUT));
 }
-
+/*===============================================================================================*/
 void gpio_blink_on(void)
 {
 	if (blink_status) {
@@ -39,7 +40,7 @@ void gpio_blink_on(void)
 	mod_timer(&blink_timer, jiffies + msecs_to_jiffies(TIMEOUT));
 	blink_status = 1;
 }
-
+/*===============================================================================================*/
 void gpio_blink_off(void)
 {
 	if (!blink_status) {
@@ -51,8 +52,7 @@ void gpio_blink_off(void)
 	gpio_set_status(0);
 	blink_status = 0;
 }
-
-
+/*===============================================================================================*/
 int gpio_init(unsigned int gpio)
 {
 	int err;
@@ -73,9 +73,10 @@ int gpio_init(unsigned int gpio)
 
 	return 0;
 }
-
+/*===============================================================================================*/
 void gpio_exit(void)
 {
 	gpio_blink_off();
 	gpio_free(GPIO_PIN);
 }
+/*===============================================================================================*/

@@ -12,6 +12,7 @@ static struct proc_dir_entry *proc_folder;
 static const size_t PROC_BUFFER_CAPACITY = 8;
 static char procfs_buffer[PROC_BUFFER_CAPACITY];
 
+/*===============================================================================================*/
 static ssize_t gpio_status_read(struct file *file, char __user *buffer, size_t count, loff_t *offset)
 {
 	if (*offset > 0)
@@ -31,7 +32,7 @@ static ssize_t gpio_status_read(struct file *file, char __user *buffer, size_t c
 
 	return to_copy - not_copied;
 }
-
+/*===============================================================================================*/
 static ssize_t gpio_status_write(struct file *file, const char __user *buffer, size_t count, loff_t *offset)
 {
 	ssize_t to_copy, not_copied;
@@ -46,13 +47,12 @@ static ssize_t gpio_status_write(struct file *file, const char __user *buffer, s
 
 	return to_copy - not_copied;
 }
-
+/*===============================================================================================*/
 static struct proc_ops gpio_status_ops = {
 	.proc_read	= gpio_status_read,
 	.proc_write	= gpio_status_write
 };
-
-
+/*===============================================================================================*/
 static ssize_t timeout_read(struct file *file, char __user *buffer, size_t count, loff_t *offset)
 {
 	if (*offset > 0)
@@ -72,12 +72,11 @@ static ssize_t timeout_read(struct file *file, char __user *buffer, size_t count
 
 	return to_copy - not_copied;
 }
-
+/*===============================================================================================*/
 static struct proc_ops timeout_ops = {
 	.proc_read = timeout_read
 };
-
-
+/*===============================================================================================*/
 int proc_init(void)
 {
 	proc_folder = proc_mkdir(PROC_DIR, NULL);
@@ -102,10 +101,11 @@ int proc_init(void)
 
 	return 0;
 }
-
+/*===============================================================================================*/
 void proc_exit(void)
 {
 	proc_remove(proc_timeout);
 	proc_remove(proc_gpio_status);
 	proc_remove(proc_folder);
 }
+/*===============================================================================================*/
