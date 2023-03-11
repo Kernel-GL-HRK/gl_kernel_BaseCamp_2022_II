@@ -7,6 +7,34 @@ static struct proc_dir_entry *proc_timeout;
 static struct proc_dir_entry *proc_gpio_status;
 static struct proc_dir_entry *proc_folder;
 
+static const size_t PROC_BUFFER_CAPACITY = 8;
+static char procfs_buffer[PROC_BUFFER_CAPACITY];
+
+static ssize_t timeout_read(struct file *file, char __user *buffer, size_t count, loff_t *offset)
+{
+	if (*offset > 0)
+		return 0;
+
+	ssize_t to_copy, not_copied, buffer_size;
+
+	buffer_size = sprintf(procfs_buffer, "%d\n", TIMEOUT);
+
+	if (buffer_size < 0)
+		return -EFAULT;
+
+	to_copy = min(size_t, count, buffer_size);
+	not_copied = copy_to_user(buffer, procfs_buffer, to_copy);
+
+	*offset += to_copy - not_copied;
+
+	return to_copy - not_copied;
+}
+
+static struct proc_ops timeout_ops = {
+	.proc_read = timeout_read
+};
+
+
 int proc_init(void)
 {
 	proc_folder = proc_mkdir(PROC_DIR, NULL);
