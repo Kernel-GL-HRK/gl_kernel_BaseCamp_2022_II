@@ -33,7 +33,7 @@ endif
 COMPILE.c   = $(CC)  $(EXTRA_CFLAGS) $(CFLAGS)   $(CPPFLAGS) -c
 LINK.c      = $(CC)  $(EXTRA_CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
-.PHONY: build check clean help
+.PHONY: build debug warn check clean help
 
 build:$(PROGRAM)
 
