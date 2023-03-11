@@ -5,6 +5,9 @@ CHECKER_FLAGS = --no-tree -f
 
 PROGRAM = main
 
+DEBUG_FLAGS = -DDEBUG -g
+WARN_FLAGS = -Wall -Wextra -Wpedantic
+
 EXTRA_LDFLAGS =
 EXTRA_CFLAGS  = -fdata-sections -ffunction-sections
 CPPFLAGS      =
@@ -14,18 +17,6 @@ SRCDIR  = ../task1-simple-program
 SOURCES = $(SRCDIR)/main.c $(SRCDIR)/get_random_number.c
 HEADERS = $(SRCDIR)/get_random_number.h
 OBJS    = $(addsuffix .o, $(basename $(SOURCES)))
-
-DEBUG =
-
-ifeq ($(DEBUG),1)
-	CPPFLAGS += -DDEBUG -g
-endif
-
-WARNINGS =
-
-ifeq ($(WARNINGS),1)
-	CPPFLAGS += -Wall -Wextra
-endif
 
 LIBTYPE =
 
@@ -42,9 +33,15 @@ endif
 COMPILE.c   = $(CC)  $(EXTRA_CFLAGS) $(CFLAGS)   $(CPPFLAGS) -c
 LINK.c      = $(CC)  $(EXTRA_CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
-.PHONY: all check clean help
+.PHONY: build check clean help
 
-all:$(PROGRAM)
+build:$(PROGRAM)
+
+debug:CPPFLAGS += $(DEBUG_FLAGS)
+debug:$(PROGRAM)
+
+warn:CPPFLAGS += $(WARN_FLAGS)
+warn:$(PROGRAM)
 
 $(PROGRAM):$(OBJS) $(DEPS)
 	$(LINK.c) $(OBJS) $(EXTRA_LDFLAGS) -o $@
@@ -72,7 +69,9 @@ clean:
 help:
 	@echo 'Usage: make [TARGET]'
 	@echo 'TARGETS:'
-	@echo '  all       (=make) compile and link.'
+	@echo '  build     (=make) compile and link.'
+	@echo '  debug     build with debug info.'
+	@echo '  warn      build with all warnings.'
 	@echo '  objs      compile only (no linking).'
 	@echo '  clean     clean objects and the executable file.'
 	@echo '  help      print this message.'
