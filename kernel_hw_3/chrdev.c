@@ -70,12 +70,56 @@ static const struct file_operations fops = {
 
 static int __init chrdev_init(void)
 {
+	int ret;
+
+	ret = alloc_chrdev_region(&drv_data.dev_num, 0, 1, "chrdev_device");
+	if (ret < 0)
+		goto err_alloc_dev_num;
+
+	pr_info("new device number was allocated major:minor %u:%u\n",
+		MAJOR(drv_data.dev_num), MINOR(drv_data.dev_num));
+
+	cdev_init(&drv_data.dev_data.dev, &fops);
+	drv_data.dev_data.dev.owner = THIS_MODULE;
+
+	ret = cdev_add(&drv_data.dev_data.dev, drv_data.dev_num, 1);
+	if (ret < 0)
+		goto err_cdev_add;
+
+	pr_info("init character device in VFS\n");
+
+	drv_data.pclass = class_create(THIS_MODULE, DRV_CLASS_NAME);
+	if (IS_ERR(drv_data.pclass)) {
+		ret = PTR_ERR(drv_data.pclass);
+		goto err_class_create;
+	}
+
+	drv_data.pdevice = device_create(drv_data.pclass, NULL, drv_data.dev_num,
+					NULL, DRV_DEVICE_NAME);
+	if (IS_ERR(drv_data.pdevice)) {
+		ret = PTR_ERR(drv_data.pdevice);
+		goto err_dev_create;
+	}
+
 	return 0;
+
+err_dev_create:
+	class_destroy(drv_data.pclass);
+err_class_create:
+	cdev_del(&drv_data.dev_data.dev);
+err_cdev_add:
+	unregister_chrdev_region(drv_data.dev_num, 1);
+err_alloc_dev_num:
+	return ret;
 }
 
 static void __exit chrdev_exit(void)
 {
-
+	device_destroy(drv_data.pclass, drv_data.dev_num);
+	class_destroy(drv_data.pclass);
+	cdev_del(&drv_data.dev_data.dev);
+	unregister_chrdev_region(drv_data.dev_num, 1);
+	pr_info("chrdev device was unload\n");
 }
 
 module_init(chrdev_init);
