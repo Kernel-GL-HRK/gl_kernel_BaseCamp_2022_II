@@ -18,9 +18,20 @@ MODULE_AUTHOR("Roman Kulchytskyi");
 MODULE_DESCRIPTION("Some description");
 MODULE_VERSION("0.1");
 
+static int first = 100;
+module_param(first, int, 0444);
+MODULE_PARM_DESC(first, "A first integer");
+
+static int second = 99;
+module_param(second, int, 0444);
+MODULE_PARM_DESC(second, "A second integer");
+
 static int __init hello_init(void)
 {
 	pr_notice("Hello, world\n");
+	pr_info("%d + %d = %d", first, second, first + second);
+	pr_info("%d - %d = %d", first, second, first - second);
+	pr_info("%d * %d= %d", first, second, first * second);
 	return 0;
 }
 
