@@ -13,6 +13,9 @@ MODULE_DESCRIPTION("Simple character device driver");
 MODULE_VERSION("1.0");
 
 #define MAX_BUFF_LEN 1024UL
+#define DRV_CLASS_NAME "chrdev"
+#define DRV_DEVICE_NAME "chrdev0"
+#define DRV_PROC_NAME  "chrdev"
 
 struct device_data {
 	struct cdev dev;
@@ -21,6 +24,7 @@ struct device_data {
 };
 
 struct driver_data {
+	struct proc_dir_entry *pfile;
 	struct class *pclass;
 	struct device *pdevice;
 	dev_t dev_num;
