@@ -14,17 +14,17 @@ MODULE_VERSION("1.0");
 
 #define MAX_BUFF_LEN 1024UL
 
+struct device_data {
+	struct cdev dev;
+	size_t buff_len;
+	char *buff;
+};
+
 struct driver_data {
 	struct class *pclass;
 	struct device *pdevice;
 	dev_t dev_num;
 	struct device_data dev_data;
-};
-
-struct device_data {
-	cdev dev;
-	size_t buff_len;
-	char *buff;
 };
 
 static char chrdev_buff[MAX_BUFF_LEN];
@@ -36,7 +36,27 @@ static struct driver_data drv_data = {
 	}
 };
 
-static const file_operations fops = {
+ssize_t chrdev_read(struct file *filp, char __user *ubuf, size_t count, loff_t *off)
+{
+	return 0;
+}
+
+ssize_t chrdev_write(struct file *filp, const char __user *ubuf, size_t count, loff_t *off)
+{
+	return 0;
+}
+
+int chrdev_open(struct inode *inode, struct file *filp)
+{
+	return 0;
+}
+
+int chrdev_release(struct inode *inode, struct file *filp)
+{
+	return 0;
+}
+
+static const struct file_operations fops = {
 	.owner   = THIS_MODULE,
 	.open    = chrdev_open,
 	.release = chrdev_release,
