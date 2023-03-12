@@ -19,6 +19,7 @@ MODULE_VERSION("1.0");
 
 struct device_data {
 	struct cdev dev;
+	const char *dev_name;
 	size_t buff_len;
 	char *buff;
 };
@@ -35,6 +36,7 @@ static char chrdev_buff[MAX_BUFF_LEN];
 
 static struct driver_data drv_data = {
 	.dev_data = {
+		.dev_name = DRV_DEVICE_NAME,
 		.buff_len = MAX_BUFF_LEN,
 		.buff     = chrdev_buff
 	}
@@ -157,7 +159,7 @@ static int __init chrdev_init(void)
 	}
 
 	drv_data.pdevice = device_create(drv_data.pclass, NULL, drv_data.dev_num,
-					NULL, DRV_DEVICE_NAME);
+					NULL, drv_data.dev_data.dev_name);
 	if (IS_ERR(drv_data.pdevice)) {
 		ret = PTR_ERR(drv_data.pdevice);
 		goto err_dev_create;
@@ -167,7 +169,7 @@ static int __init chrdev_init(void)
 	if (drv_data.pfile == NULL)
 		pr_err("%s: can not create /proc/%s file\n", __func__, DRV_PROC_NAME);
 
-	pr_info("%s: Module was successfully inserted\n", __func__);
+	pr_info("%s: driver %s was successfully inserted\n", __func__, drv_data.dev_data.dev_name);
 
 	return 0;
 
