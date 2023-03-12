@@ -1,4 +1,4 @@
-obj-m += temp_led_module.o
+obj-m += temp_led_plus_module.o
 
 export ARCH=arm
 export CROSS_COMPILE=arm-linux-gnueabihf-

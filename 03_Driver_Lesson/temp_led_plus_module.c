@@ -2,7 +2,7 @@
  *  @file        temp_led_module.ko
  *  @author      Mykhailo Vyshnevskyi
  *  @date        10 March 2023
- *  @version     0.1.0
+ *  @version     0.2.0
  *  @details     A driver for measuring CPU temperature using the \"cpu-thermal\"
  *               sensor and indicating temperature using three LEDs.
  *  Work algorithm:
@@ -23,10 +23,15 @@
  *               Tested with Linux raspberrypi [5.10.103+]
  */
 #include <linux/init.h>
+#include <linux/fs.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/device.h>			// device fs
 #include <linux/thermal.h>      // Thermal Zone  Temp
-#include <linux/proc_fs.h>
+#include <linux/proc_fs.h>		// ??? чи потрібно ????
+#include <linux/cdev.h>				// character device driver
+#include <linux/kdev_t.h>
+//#include<linux/slab.h>                 //kmalloc()
 #include <linux/uaccess.h>
 #include <linux/string.h>
 #include <linux/delay.h>
@@ -36,13 +41,30 @@
 #include <linux/err.h>
 
 
-#define PROC_BUFFER_SIZE 100
-#define PROC_DIR_NAME "hello"
-#define PROC_FILE_NAME "dummy"
+#define CLASS_NAME "chrdev"
+#define DEVICE_NAME "chrdev_temp_blink"
+#define BUFFER_SIZE 1024
+
+static struct class *pclass;
+static struct device *pdev;
+static struct cdev chrdev_cdev;
+dev_t dev = 0;				// Major Minor
+
+static int major;
+static int is_open;
+
+static int data_size;
+static unsigned char data_buffer[BUFFER_SIZE];
+
+/* procfs */
+#define PROC_BUFFER_SIZE 1024
+#define PROC_DIR_NAME "chrdev_proc"
+#define PROC_FILE_NAME "chrdev_temp_blink_proc"
 
 // Buffer and size for the proc file
 static char     procfs_buffer[PROC_BUFFER_SIZE] = {0};
 static size_t   procfs_buffer_size;
+/* end procfs */
 
 // Thermal zone device for temperature readings
 struct thermal_zone_device *tz;
@@ -74,7 +96,7 @@ void timer_blink_callback(struct timer_list *data)
 	if (flag_timer == false) {
 		gpio_set_value(led_array[gpio_index].gpio, 0);
 		mod_timer(&timer_blink, jiffies + msecs_to_jiffies(10));
-		pr_info("led_array[gpio_index= %d].gpio = %d\n", gpio_index, led_array[gpio_index].gpio);
+		//pr_info("led_array[gpio_index= %d].gpio = %d\n", gpio_index, led_array[gpio_index].gpio);
 	} else {
 		gpio_set_value(led_array[gpio_index].gpio, 1);
 		mod_timer(&timer_blink, jiffies + msecs_to_jiffies(1));
@@ -113,6 +135,65 @@ void thermal_callback(struct timer_list *data)
 	mod_timer(&timer_thermal, jiffies + msecs_to_jiffies(TIMEOUT));
 }
 
+static int dev_open(struct inode *inodep, struct file *filep)
+{
+	if (is_open){
+		pr_err("chrdev: already open\n");
+		return -EBUSY;
+	}
+	is_open = 1;
+	pr_info("chrdev: device opened\n");
+	return 0;
+}
+
+static int dev_release(struct inode *inodep, struct file *filep)
+{
+	is_open = 0;
+	pr_info("chrdev: device closed\n");
+	return 0;
+}
+
+static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *offset)
+{
+	int ret;
+
+	pr_info("chrdev: read from file %s\n", filep->f_path.dentry->d_name.name);	// .dentry->d_iname
+	pr_info("chrdev: read from device %d:%d\n", imajor(filep->f_inode), iminor(filep->f_inode));
+
+	if (len > data_size) len = data_size;
+
+	ret = copy_to_user(buffer, data_buffer, len);
+	if (ret) {
+		pr_err("chrdev: copy_to_user failed: %d\n", ret);
+		return -EFAULT;
+	}
+	data_size = 0; /* eof for cat */
+
+	pr_info("chrdev: %zu bytes read\n", len);
+	return len;
+}
+
+static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, loff_t *offset)
+{
+	int ret;
+
+	pr_info("chrdev: write to file %s\n", filep->f_path.dentry->d_name.name); //filep->f_inode.dentry->d_iname
+	pr_info("chrdev: write to device %d:%d\n", imajor(filep->f_inode), iminor(filep->f_inode));
+
+	data_size = len;
+	if (data_size > BUFFER_SIZE) data_size = BUFFER_SIZE;
+
+	ret = copy_from_user(data_buffer, buffer, data_size);
+	if (ret) {
+		pr_err("chrdev: copy_from_user failed: %d\n", ret);
+		return -EFAULT;		
+	}
+
+	pr_info("chrdev: %d bytes written\n", data_size);
+	return data_size;
+}
+
+/* procfs */
 static ssize_t hello_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 {
 	// Get the temperature from the thermal zone
@@ -152,10 +233,53 @@ static ssize_t hello_read(struct file *file, char __user *buf, size_t count, lof
 static const struct proc_ops hello_fops = {
 	.proc_read = hello_read,
 };
+/* end procfs */
+
+static struct file_operations fops =
+{
+	.open = dev_open,
+	.release = dev_release,
+	.read = dev_read,
+	.write = dev_write,
+};
+
 
 // Module Initialization function
-static int __init hello_init(void)
+static int __init temp_led_init(void)
 {
+	is_open = 0;
+	data_size = 0;
+
+	// Allocate device number
+	major = alloc_chrdev_region(&dev, 0, 1, DEVICE_NAME);			// dev = Major, 0 = Minor, 1 = device, DEVICE_NAME
+	if (major < 0){
+		pr_err("chrdev: register_chrdev failed %d\n", major);
+		return major;
+	}
+	pr_info("-------------chrdev: register_chrdev ok, major = %d minor = %d-------------\n", MAJOR(dev), MINOR(dev));
+
+	cdev_init(&chrdev_cdev, &fops);
+	if ((cdev_add(&chrdev_cdev,dev,1)) < 0){						// 1 = number of devices in the system
+		pr_err("chrdev: cannot add the device to the system\n");
+		goto cdev_err;
+	}
+	pr_info("chrdev: cdev created successfully\n");
+
+	// Create device class
+	pclass = class_create(THIS_MODULE, CLASS_NAME);
+	if (IS_ERR(pclass)){
+		goto class_err;
+	}
+	pr_info("chrdev: device class created successfully\n");
+
+	// Create device node
+	pdev = device_create(pclass, NULL, dev, NULL, DEVICE_NAME"0");		//    /dev/chrdev_temp_blink0     CLASS_NAME
+	if (IS_ERR(pdev)){
+		goto device_err;
+	}
+	pr_info("chrdev: device node created successfully\n");
+
+	/* procfs */
 	// Create proc directory
 	proc_folder = proc_mkdir(PROC_DIR_NAME, NULL);
 	if (!proc_folder) {
@@ -170,6 +294,7 @@ static int __init hello_init(void)
 		proc_remove(proc_folder);
 		return -ENOMEM;
 	}
+	/* end procfs */
 
 	//LED Driver Registration
 	if (gpio_request_array(led_array, ARRAY_SIZE(led_array))) {
@@ -197,13 +322,25 @@ static int __init hello_init(void)
 	mod_timer(&timer_blink, jiffies + msecs_to_jiffies(TIMEOUT));
 	mod_timer(&timer_thermal, jiffies + msecs_to_jiffies(TIMEOUT));
 
-	pr_info("Hello Module Inserted /proc/%s/%s\n", PROC_DIR_NAME, PROC_FILE_NAME);
+	// pr_info("Hello Module Inserted /proc/%s/%s\n", PROC_DIR_NAME, PROC_FILE_NAME);
+	pr_info("-------------chrdev: device node created successfully!-------------\n");
+	return 0;
 
+	device_err:
+		class_destroy(pclass);
+	class_err:
+		cdev_del(&chrdev_cdev);
+	cdev_err:
+		unregister_chrdev_region(dev, 1);
 	return 0;
 }
 
-static void __exit hello_exit(void)
+static void __exit temp_led_exit(void)
 {
+	device_destroy(pclass, dev);
+	class_destroy(pclass);
+	cdev_del(&chrdev_cdev);
+	unregister_chrdev_region(dev, 1);   // 1 = number of devices in the system
 	// Remove Timer
 	del_timer(&timer_blink);
 	del_timer(&timer_thermal);
@@ -212,12 +349,13 @@ static void __exit hello_exit(void)
 	// Remove Proc File
 	proc_remove(proc_file);
 	proc_remove(proc_folder);
-	pr_info("Hello Module Removed /proc/%s/%s\n", PROC_DIR_NAME, PROC_FILE_NAME);
+	pr_info("chrdev: Module Removed /proc/%s/%s\n", PROC_DIR_NAME, PROC_FILE_NAME);
 }
 
-module_init(hello_init);
-module_exit(hello_exit);
+module_init(temp_led_init);
+module_exit(temp_led_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Vyshnevskiy Mykhailo");
 MODULE_DESCRIPTION("A driver for measuring CPU temperature using the (cpu-thermal) sensor and indicating temperature using three LEDs: a green LED blinks when the temperature is below 40 degrees, a yellow LED blinks when the temperature is below 60 degrees, and a red LED blinks when the temperature is below 75 degrees. All LEDs remain on when the temperature is above 75 degrees, with the red LED blinking. Additionally, the driver responds to the command (cat /proc/hello/dummy) and outputs the message (temperature = %d.%d Grad)");
+MODULE_VERSION("0.2");
