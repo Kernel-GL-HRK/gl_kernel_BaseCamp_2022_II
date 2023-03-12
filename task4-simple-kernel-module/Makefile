@@ -1,6 +1,6 @@
 # obj-m is predefined kbuild variable. used for modules.
 ifneq ($(KERNELRELEASE),)
-obj-m := main.o
+obj-m := hello.o
 else
 
 KDIR ?= /lib/modules/$(shell uname -r)/build
