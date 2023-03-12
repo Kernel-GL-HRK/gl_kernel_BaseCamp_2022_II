@@ -60,12 +60,21 @@ int chrdev_release(struct inode *inode, struct file *filp)
 	return 0;
 }
 
+ssize_t	chrdev_proc_read(struct file *filp, char __user *ubuf, size_t count, loff_t *off)
+{
+	return 0;
+}
+
 static const struct file_operations fops = {
 	.owner   = THIS_MODULE,
 	.open    = chrdev_open,
 	.release = chrdev_release,
 	.read    = chrdev_read,
 	.write   = chrdev_write
+};
+
+static const struct proc_ops chrdev_ops = {
+	.proc_read = chrdev_proc_read
 };
 
 static int __init chrdev_init(void)
@@ -100,6 +109,12 @@ static int __init chrdev_init(void)
 		ret = PTR_ERR(drv_data.pdevice);
 		goto err_dev_create;
 	}
+
+	drv_data.pfile = proc_create(DRV_PROC_NAME, 0666, NULL, &chrdev_ops);
+	if (drv_data.pfile == NULL)
+		pr_err("can not create /proc/%s file\n", DRV_PROC_NAME);
+
+	pr_info("Module was successfully inserted\n");
 
 	return 0;
 
