@@ -34,10 +34,8 @@ static void blink_timer_callback(struct timer_list *unused)
 /*===============================================================================================*/
 void gpio_blink_on(void)
 {
-	if (blink_status) {
-		pr_notice("Led is already blinking\n");
+	if (blink_status)
 		return;
-	}
 
 	timer_setup(&blink_timer, blink_timer_callback, 0);
 	mod_timer(&blink_timer, jiffies + msecs_to_jiffies(TIMEOUT));
@@ -46,10 +44,8 @@ void gpio_blink_on(void)
 /*===============================================================================================*/
 void gpio_blink_off(void)
 {
-	if (!blink_status) {
-		pr_notice("Led is already off\n");
+	if (!blink_status)
 		return;
-	}
 
 	del_timer_sync(&blink_timer);
 	gpio_set_status(0);

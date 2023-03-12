@@ -2,6 +2,7 @@
 #include "pr_fmt.h"
 #include <linux/init.h>
 #include <linux/module.h>
+#include <linux/kernel.h>
 #include "gpio.h"
 #include "proc.h"
 
@@ -19,7 +20,7 @@ MODULE_PARM_DESC(gpio_pin, "gpio_pin");
 /*===============================================================================================*/
 static int driver_init(void)
 {
-	pr_info("module init");
+	pr_info("module init\n");
 
 	if (gpio_init(gpio_pin)) {
 		pr_err("Failed to init gpio\n");
@@ -37,7 +38,7 @@ static int driver_init(void)
 /*===============================================================================================*/
 static void driver_exit(void)
 {
-	pr_info("module exit");
+	pr_info("module exit\n");
 	gpio_exit();
 	proc_exit();
 }
