@@ -42,27 +42,80 @@ static struct driver_data drv_data = {
 
 ssize_t chrdev_read(struct file *filp, char __user *ubuf, size_t count, loff_t *off)
 {
-	return 0;
+	size_t to_copy;
+	struct device_data *dev_data;
+
+	pr_info("%s: requested bytes from userspace %zu\n", __func__, count);
+	dev_data = (struct device_data *)filp->private_data;
+	to_copy = min(dev_data->buff_len - *off, count);
+
+	if (to_copy == 0)
+		return 0;
+
+	if (copy_to_user(ubuf, dev_data->buff + *off, to_copy))
+		return -EFAULT;
+
+	pr_info("%s: written bytes to userspace %zu\n", __func__, to_copy);
+	*off += to_copy;
+
+	return to_copy;
 }
 
 ssize_t chrdev_write(struct file *filp, const char __user *ubuf, size_t count, loff_t *off)
 {
-	return 0;
+	size_t to_copy;
+	struct device_data *dev_data;
+
+	pr_info("%s: requested bytes from userspace %zu\n", __func__, count);
+	dev_data = (struct device_data *)filp->private_data;
+	to_copy = min(dev_data->buff_len - *off, count);
+
+	if (to_copy == 0)
+		return 0;
+
+	if (copy_from_user(dev_data->buff + *off, ubuf, to_copy))
+		return -EFAULT;
+
+	pr_info("%s: written bytes to the kernel space %zu\n", __func__, to_copy);
+	*off += to_copy;
+
+	return to_copy;
 }
 
 int chrdev_open(struct inode *inode, struct file *filp)
 {
+	struct device_data *dev_data;
+
+	dev_data = container_of(inode->i_cdev, struct device_data, dev);
+	filp->private_data = dev_data;
+
+	pr_info("%s: file was opened\n", __func__);
+
 	return 0;
 }
 
 int chrdev_release(struct inode *inode, struct file *filp)
 {
+	pr_info("%s: file was closed\n", __func__);
 	return 0;
 }
 
 ssize_t	chrdev_proc_read(struct file *filp, char __user *ubuf, size_t count, loff_t *off)
 {
-	return 0;
+	size_t to_copy;
+
+	if (*off > 0)
+		return 0;
+
+	to_copy = min(drv_data.dev_data.buff_len, count);
+
+	if (copy_to_user(ubuf, drv_data.dev_data.buff, to_copy))
+		return -EFAULT;
+
+	pr_info("%s: sent bytes to user %zu\n", __func__, to_copy);
+	*off += to_copy;
+
+	return to_copy;
 }
 
 static const struct file_operations fops = {
@@ -74,7 +127,7 @@ static const struct file_operations fops = {
 };
 
 static const struct proc_ops chrdev_ops = {
-	.proc_read = chrdev_proc_read
+	.proc_read    = chrdev_proc_read
 };
 
 static int __init chrdev_init(void)
@@ -85,8 +138,8 @@ static int __init chrdev_init(void)
 	if (ret < 0)
 		goto err_alloc_dev_num;
 
-	pr_info("new device number was allocated major:minor %u:%u\n",
-		MAJOR(drv_data.dev_num), MINOR(drv_data.dev_num));
+	pr_info("%s: new device number was allocated major:minor %u:%u\n",
+		__func__, MAJOR(drv_data.dev_num), MINOR(drv_data.dev_num));
 
 	cdev_init(&drv_data.dev_data.dev, &fops);
 	drv_data.dev_data.dev.owner = THIS_MODULE;
@@ -95,7 +148,7 @@ static int __init chrdev_init(void)
 	if (ret < 0)
 		goto err_cdev_add;
 
-	pr_info("init character device in VFS\n");
+	pr_info("%s: init character device in VFS\n", __func__);
 
 	drv_data.pclass = class_create(THIS_MODULE, DRV_CLASS_NAME);
 	if (IS_ERR(drv_data.pclass)) {
@@ -112,9 +165,9 @@ static int __init chrdev_init(void)
 
 	drv_data.pfile = proc_create(DRV_PROC_NAME, 0666, NULL, &chrdev_ops);
 	if (drv_data.pfile == NULL)
-		pr_err("can not create /proc/%s file\n", DRV_PROC_NAME);
+		pr_err("%s: can not create /proc/%s file\n", __func__, DRV_PROC_NAME);
 
-	pr_info("Module was successfully inserted\n");
+	pr_info("%s: Module was successfully inserted\n", __func__);
 
 	return 0;
 
@@ -130,11 +183,12 @@ err_alloc_dev_num:
 
 static void __exit chrdev_exit(void)
 {
+	proc_remove(drv_data.pfile);
 	device_destroy(drv_data.pclass, drv_data.dev_num);
 	class_destroy(drv_data.pclass);
 	cdev_del(&drv_data.dev_data.dev);
 	unregister_chrdev_region(drv_data.dev_num, 1);
-	pr_info("chrdev device was unload\n");
+	pr_info("%s: chrdev device was unload\n", __func__);
 }
 
 module_init(chrdev_init);
