@@ -4,7 +4,7 @@ KDIR ?= /home/kmakhno/Documents/rpi_sources/linux
 FILE ?= main.c
 
 all:
-	$(MAKE) -C $(KDIR) M=$(PWD) mmodules
+	$(MAKE) -C $(KDIR) M=$(PWD) modules
 
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
