@@ -13,11 +13,17 @@
 #define PERMS 0644
 /* cdev buffer */
 #define BUFS 1024 * 4
-static char modbuf[BUFS] = {0}; // {[0 ... BUFS / 2 - 1] = '1', [BUFS / 2 ... BUFS-1] = '2'};
+static uint8_t modbuf[BUFS] = {0}; // {[0 ... BUFS / 2 - 1] = '1', [BUFS / 2 ... BUFS-1] = '2'};
+
+/* statistics to be printed in /proc and /sysfs */ 
+static uint64_t read_counts;
+static uint64_t write_counts;
+static uint64_t read_amount;
+static uint64_t write_amount;
 
 /* proc_fs data */
 #define PROC_SIZE  500
-static char proc_buf[PROC_SIZE] = {0};
+static uint8_t proc_buf[PROC_SIZE] = {0};
 
 static struct proc_dir_entry *proc_dir, *proc_file;
 static ssize_t proc_read_mymod(struct file *filp, char __user *buf, size_t count, loff_t *pos);
@@ -32,7 +38,11 @@ static ssize_t proc_read_mymod(struct file *filp, char __user *buf, size_t count
 		return 0;
 		
 	sprintf(proc_buf, "Module name: %s\n", DEVICE_NAME);
-	sprintf(proc_buf + 100, "CharDev Read/Write buffer size: %d\n", BUFS);
+	sprintf(proc_buf + 50, "CharDev Read/Write buffer size: %d\n", BUFS);
+	sprintf(proc_buf + 100, "Reads: %llu\n", read_counts);
+	sprintf(proc_buf + 150, "Read amount: %llu\n", read_amount);
+	sprintf(proc_buf + 200, "Writes: %llu\n", write_counts);
+	sprintf(proc_buf + 250, "Write amount: %llu\n", write_amount);
 	
 	if (copy_to_user(buf, proc_buf, PROC_SIZE))
 		return -EIO;
@@ -77,6 +87,8 @@ static ssize_t write_mymod_cdev(struct file *this_file, const char __user *buf, 
 		return -EIO;
 
 	*pos += count;
+	write_counts++;
+	write_amount += count;
 	pr_info("%s: %s %s %lu %lld\n", DEVICE_NAME, __func__, "COPIED/FPOS", count, *pos);
 	return count;
 }
@@ -89,7 +101,9 @@ static ssize_t read_mymod_cdev(struct file *this_file, char __user *buf, size_t 
 		count = BUFS - (*pos);
 	if (copy_to_user(buf, modbuf + (*pos), count))
 		return -EIO;
-
+	
+	read_counts++;
+	read_amount += count;
 	*pos += count;
 	pr_info("%s: %s %s %lu %lld\n", DEVICE_NAME, __func__, "COPIED/FPOS", count, *pos);
 	return count;
