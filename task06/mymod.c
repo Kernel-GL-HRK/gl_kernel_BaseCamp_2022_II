@@ -5,15 +5,19 @@
 #include <linux/kdev_t.h>
 #include <linux/cdev.h>
 #include <linux/device/class.h>
+#include <linux/kobject.h>
+#include <linux/string.h>
 
 #define DEVICE_NAME "mymod"
 #define PROC_NAME "mymod" 
 #define DEVICE_CLASS "mymod_cdev"
 
+#define PAGE 1024
+
 #define PERMS 0644
 /* cdev buffer */
-#define BUFS 1024 * 4
-static uint8_t modbuf[BUFS] = {0}; // {[0 ... BUFS / 2 - 1] = '1', [BUFS / 2 ... BUFS-1] = '2'};
+#define BUFS PAGE * 4
+static uint8_t dev_buf[BUFS] = {0}; // {[0 ... BUFS / 2 - 1] = '1', [BUFS / 2 ... BUFS-1] = '2'};
 
 /* statistics to be printed in /proc and /sysfs */ 
 static uint64_t read_counts;
@@ -22,7 +26,7 @@ static uint64_t read_amount;
 static uint64_t write_amount;
 
 /* proc_fs data */
-#define PROC_SIZE  500
+#define PROC_SIZE  PAGE
 static uint8_t proc_buf[PROC_SIZE] = {0};
 
 static struct proc_dir_entry *proc_dir, *proc_file;
@@ -56,6 +60,7 @@ static ssize_t proc_read_mymod(struct file *filp, char __user *buf, size_t count
 
 static struct cdev mymod_cdev;
 static dev_t dev_num;
+static uint32_t dev_is_open;
 
 /* file operations callbacks  for cdev */
 
@@ -75,15 +80,20 @@ static const struct file_operations mymod_cdev_fops = {
 
 static int open_mymod_cdev(struct inode *this_inode, struct file *this_file) 
 {
+	if (dev_is_open)
+		return -EBUSY;
+	
+	dev_is_open = 1;
 	return 0;
 }
+
 static ssize_t write_mymod_cdev(struct file *this_file, const char __user *buf, size_t count, loff_t *pos)
 {
 	if (*pos >= BUFS)
 		return 0;
 	if (*pos + count > BUFS)
 		count = BUFS - (*pos);
-	if (copy_from_user(modbuf + (*pos), buf, count))
+	if (copy_from_user(dev_buf + (*pos), buf, count))
 		return -EIO;
 
 	*pos += count;
@@ -99,7 +109,7 @@ static ssize_t read_mymod_cdev(struct file *this_file, char __user *buf, size_t 
 		return 0;
 	if (*pos + count > BUFS)
 		count = BUFS - (*pos);
-	if (copy_to_user(buf, modbuf + (*pos), count))
+	if (copy_to_user(buf, dev_buf + (*pos), count))
 		return -EIO;
 	
 	read_counts++;
@@ -111,13 +121,50 @@ static ssize_t read_mymod_cdev(struct file *this_file, char __user *buf, size_t 
 
 static int release_mymod_cdev(struct inode *this_inode, struct file *this_file)
 {
+	/* clear blocking */
+	dev_is_open = 0; 
 	return 0;
 }
 
 /* device and  sysfs data */
-struct class * mymod_class;
-struct device * mymode_device;
+#define SYSFS_SIZE  PAGE
+//static uint8_t sysfs_buf[SYSFS_SIZE] = {0};
 
+static struct class *mymod_class;
+static struct device *mymode_device;
+static struct kobject *cdev_kobj;
+static ssize_t sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char __user *buf);
+static struct kobj_attribute cdev_attr = {
+	.attr = {
+		.name = DEVICE_NAME,
+		.mode = 0666,
+	},
+	.show = sysfs_show,
+};
+
+/* Define file operations (callbacks) provided by sysfs kobj */
+/*
+static const struct sysfs_ops mymod_sysfs_ops = {
+        .show = sysfs_show
+};
+*/
+
+static ssize_t sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char __user *buf)
+{ 
+	if (access_ok(buf, SYSFS_SIZE))
+		return -EIO;
+		
+	sprintf(buf, "Module name: %s\n", DEVICE_NAME);
+	sprintf(buf + 50, "CharDev Read/Write buffer size: %d\n", BUFS);
+	sprintf(buf + 100, "Reads: %llu\n", read_counts);
+	sprintf(buf + 150, "Read amount: %llu\n", read_amount);
+	sprintf(buf + 200, "Writes: %llu\n", write_counts);
+	sprintf(buf + 250, "Write amount: %llu\n", write_amount);
+	sprintf(buf + 300, "First 256 bites of the cdev buf:");
+	memcpy(buf + 350, dev_buf, 256);
+	pr_info("%s: %s %s %u %u\n", DEVICE_NAME, __func__, "COPIED/FPOS", PAGE, PAGE);
+	return PAGE;	
+}
 
 static int __init init_function(void)
 {
@@ -162,10 +209,18 @@ static int __init init_function(void)
 		goto proc_fs_file__err;
 	}
 	
+	cdev_kobj = kobject_create_and_add(DEVICE_CLASS, kernel_kobj);
+	if (sysfs_create_file(cdev_kobj, &cdev_attr.attr)) {
+		pr_err("%s: %s\n", DEVICE_NAME, "Failed to create sysfs file");
+		goto sysfs_err;
+	}
+	
 	pr_info("%s: %s\n", DEVICE_NAME, "Success");
 	return 0;
 	
-
+sysfs_err:
+	sysfs_remove_file(kernel_kobj, &cdev_attr.attr);
+	kobject_put(cdev_kobj); 
 proc_fs_file__err:
 	proc_remove(proc_file);
 proc_fs_dir__err:
@@ -183,6 +238,8 @@ cdev_err:
 
 static void __exit exit_function(void)
 {
+	sysfs_remove_file(kernel_kobj, &cdev_attr.attr);
+	kobject_put(cdev_kobj); 
 	proc_remove(proc_file);
 	proc_remove(proc_dir);
 	device_destroy(mymod_class, dev_num);
