@@ -8,6 +8,9 @@
 #include <linux/uaccess.h>
 #include <linux/err.h>
 #include <linux/kobject.h>
+#include <linux/ioctl.h>
+
+#include "chardev_ioctl.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Serhii Shramko");
@@ -18,9 +21,6 @@ MODULE_VERSION("0.1");
 
 static char data_buffer[DATA_BUFFER_MAX_SIZE] = { 0 };
 static size_t data_buffer_size;
-
-#define CLASS_NAME "chardev"
-#define DEVICE_NAME "chardev_device"
 
 static struct class *pclass;
 static struct device *pdev;
@@ -104,10 +104,79 @@ static ssize_t dev_write(struct file *file, const char *buffer, size_t len,
 	return len;
 }
 
+static long dev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+{
+	int err = -1;
+
+	pr_info("chardev_module: %s cmd=0x%x arg=0x%lx\n", __func__, cmd, arg);
+
+	if (_IOC_TYPE(cmd) != CHARDEV_IOC_MAGIC) {
+		pr_err("chardev_module: CHARDEV_IOC_MAGIC error\n");
+		err = -ENOTTY;
+		goto error_exit;
+	}
+
+	if (_IOC_NR(cmd) >= CHARDEV_IOC_MAXNR) {
+		pr_err("chardev_module: CHARDEV_IOC_MAXNR error\n");
+		err = -ENOTTY;
+		goto error_exit;
+	}
+
+	if (_IOC_DIR(cmd)) {
+		if (_IOC_DIR(cmd) & _IOC_READ)
+			err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
+		if (_IOC_DIR(cmd) & _IOC_WRITE)
+			err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
+		if (err) {
+			pr_err("chardev_module: _IOC_READ/_IOC_WRITE error\n");
+			err = -EFAULT;
+			goto error_exit;
+		}
+	}
+
+	switch (_IOC_NR(cmd)) {
+	case CLEAR_BUFFER:
+		data_buffer_size = 0;
+		data_buffer[0] = '\0';
+		pr_info("chardev_module: CLEAR_BUFFER\n");
+		break;
+	case GET_BUFFER_SIZE:
+		if (copy_to_user((size_t *)arg, &data_buffer_size,
+				 sizeof(data_buffer_size))) {
+			pr_err("chardev_module: GET_BUFFER_SIZE error\n");
+			err = -ENOTTY;
+			goto error_exit;
+		}
+		pr_info("chardev_module: GET_BUFFER_SIZE data_buffer_size=%d\n",
+			data_buffer_size);
+		break;
+	case SET_BUFFER_SIZE:
+		if (copy_from_user(&data_buffer_size, (size_t *)arg,
+				   sizeof(data_buffer_size))) {
+			pr_err("chardev_module: SET_BUFFER_SIZE error\n");
+			err = -ENOTTY;
+			goto error_exit;
+		}
+		if (data_buffer_size > DATA_BUFFER_MAX_SIZE)
+			data_buffer_size = DATA_BUFFER_MAX_SIZE;
+		pr_info("chardev_module: SET_BUFFER_SIZE data_buffer_size=%d\n",
+			data_buffer_size);
+		break;
+	default:
+		pr_warn("chardev_module: invalid cmd(%u)\n", _IOC_NR(cmd));
+	}
+
+	return 0;
+
+error_exit:
+	return err;
+}
+
 static struct file_operations fops = { .open = dev_open,
 				       .release = dev_realease,
 				       .read = dev_read,
-				       .write = dev_write };
+				       .write = dev_write,
+				       .unlocked_ioctl = dev_ioctl };
 
 #define PROC_FILE_NAME "chardev_module"
 static struct proc_dir_entry *proc_file;
