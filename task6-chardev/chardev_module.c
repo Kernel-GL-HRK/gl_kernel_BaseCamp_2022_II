@@ -7,6 +7,7 @@
 #include <linux/fs.h>
 #include <linux/uaccess.h>
 #include <linux/err.h>
+#include <linux/kobject.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Serhii Shramko");
@@ -28,6 +29,9 @@ dev_t dev;
 
 static int major;
 static bool is_open;
+
+static int count_dev_read;
+static int count_dev_write;
 
 static int dev_open(struct inode *inode, struct file *file)
 {
@@ -53,6 +57,8 @@ static ssize_t dev_read(struct file *file, char *buffer, size_t len,
 {
 	ssize_t not_copied;
 
+	count_dev_read++;
+
 	pr_info("chardev_module: read from file %s\n",
 		file->f_path.dentry->d_iname);
 	pr_info("chardev_module: read from device %d:%d\n",
@@ -76,6 +82,8 @@ static ssize_t dev_write(struct file *file, const char *buffer, size_t len,
 			 loff_t *offset)
 {
 	ssize_t not_copied;
+
+	count_dev_write++;
 
 	pr_info("chardev_module: write to file %s\n",
 		file->f_path.dentry->d_iname);
@@ -124,6 +132,46 @@ static ssize_t procfs_read_handler(struct file *File, char __user *buffer,
 
 static struct proc_ops proc_ops = { .proc_read = procfs_read_handler };
 
+static ssize_t data_buffer_show(struct kobject *kobj,
+				struct kobj_attribute *attr, char *buf)
+{
+	pr_info("chardev_module: %s called\n", __func__);
+	if (data_buffer_size == 0)
+		return sprintf(buf, "\n");
+	return sprintf(buf, "%s\n", data_buffer);
+}
+
+static ssize_t data_buffer_size_show(struct kobject *kobj,
+				     struct kobj_attribute *attr, char *buf)
+{
+	pr_info("chardev_module: %s called\n", __func__);
+	return sprintf(buf, "%d\n", data_buffer_size);
+}
+
+static ssize_t dev_read_count_show(struct kobject *kobj,
+				   struct kobj_attribute *attr, char *buf)
+{
+	pr_info("chardev_module: %s called\n", __func__);
+	return sprintf(buf, "%d\n", count_dev_read);
+}
+
+static ssize_t dev_write_count_show(struct kobject *kobj,
+				    struct kobj_attribute *attr, char *buf)
+{
+	pr_info("chardev_module: %s called\n", __func__);
+	return sprintf(buf, "%d\n", count_dev_write);
+}
+
+static struct kobject *chardev_kobj;
+struct kobj_attribute data_buffer_attr =
+	__ATTR(buffer, 0644, data_buffer_show, NULL);
+struct kobj_attribute data_buffer_size_attr =
+	__ATTR(buffer_size, 0644, data_buffer_size_show, NULL);
+struct kobj_attribute dev_read_count_attr =
+	__ATTR(dev_read_call_count, 0644, dev_read_count_show, NULL);
+struct kobj_attribute dev_write_count_attr =
+	__ATTR(dev_write_call_count, 0644, dev_write_count_show, NULL);
+
 static int __init chardev_module_init(void)
 {
 	pr_info("chardev_module: init\n");
@@ -155,14 +203,41 @@ static int __init chardev_module_init(void)
 
 	proc_file = proc_create(PROC_FILE_NAME, 0644, NULL, &proc_ops);
 	if (!proc_file) {
-		pr_err("chardev_module: Error: Could not initialize /proc/%s\n",
+		pr_err("chardev_module: Could not initialize /proc/%s\n",
 		       PROC_FILE_NAME);
 		goto proc_create_exit;
+	}
+
+	chardev_kobj = kobject_create_and_add("chardev_sysfs", kernel_kobj);
+	if (sysfs_create_file(chardev_kobj, &data_buffer_attr.attr)) {
+		pr_err("chardev_module: cannot create data_buffer_attr file\n");
+		goto sysfs_buffer_exit;
+	}
+	if (sysfs_create_file(chardev_kobj, &data_buffer_size_attr.attr)) {
+		pr_err("chardev_module: cannot create data_buffer_size_attr file\n");
+		goto sysfs_buffer_size_exit;
+	}
+	if (sysfs_create_file(chardev_kobj, &dev_read_count_attr.attr)) {
+		pr_err("chardev_module: cannot create dev_read_count_attr file\n");
+		goto sysfs_dev_read_exit;
+	}
+	if (sysfs_create_file(chardev_kobj, &dev_write_count_attr.attr)) {
+		pr_err("chardev_module: cannot create dev_write_count_attr file\n");
+		goto sysfs_dev_write_exit;
 	}
 
 	pr_info("chardev_module: Driver setup done\n");
 	return 0;
 
+sysfs_dev_write_exit:
+	sysfs_remove_file(kernel_kobj, &dev_read_count_attr.attr);
+sysfs_dev_read_exit:
+	sysfs_remove_file(kernel_kobj, &data_buffer_size_attr.attr);
+sysfs_buffer_size_exit:
+	sysfs_remove_file(kernel_kobj, &data_buffer_attr.attr);
+sysfs_buffer_exit:
+	kobject_put(chardev_kobj);
+	proc_remove(proc_file);
 proc_create_exit:
 	device_destroy(pclass, dev);
 device_create_exit:
@@ -176,6 +251,11 @@ cdev_add_exit:
 
 static void __exit chardev_module_exit(void)
 {
+	sysfs_remove_file(kernel_kobj, &dev_write_count_attr.attr);
+	sysfs_remove_file(kernel_kobj, &dev_read_count_attr.attr);
+	sysfs_remove_file(kernel_kobj, &data_buffer_size_attr.attr);
+	sysfs_remove_file(kernel_kobj, &data_buffer_attr.attr);
+	kobject_put(chardev_kobj);
 	proc_remove(proc_file);
 	device_destroy(pclass, dev);
 	class_destroy(pclass);
