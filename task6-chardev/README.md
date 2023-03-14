@@ -10,3 +10,10 @@ sysfs_read() <br/>
 :chrdev buffer print <br/>
 :chrdev buffer size print <br/>
 :number of dev_read() and dev_write() calls <br/>
+
+# Chrdev homework: part 3
+Add ioctl capability to character device driver <br/>
+ioctl: <br/>
+:CLEAR_BUFFER    buffer clear: size=0, ‘\0’ <br/>
+:GET_BUFFER_SIZE buffer size get <br/>
+:SET_BUFFER_SIZE check if val < BUFFER_SIZE <br/>
