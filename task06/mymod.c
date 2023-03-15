@@ -203,7 +203,10 @@ static ssize_t sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, cha
 	sprintf(buf + 200, "Writes: %llu\n", write_counts);
 	sprintf(buf + 250, "Write amount: %llu\n", write_amount);
 	sprintf(buf + 300, "First 256 bites of the cdev buf:\n");
-	memcpy(buf + 350, dev_buf, dev_buf_amount);
+	if (BUFS < 256)
+		memcpy(buf + 350, dev_buf, BUFS);
+	else
+		memcpy(buf + 350, dev_buf, 256);
 	dev_info(mymode_device, "%s %s %u %u", __func__, "COPIED/FPOS", PAGE, PAGE);
 	return PAGE;
 }
