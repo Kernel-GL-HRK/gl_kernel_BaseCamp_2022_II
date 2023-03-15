@@ -12,6 +12,10 @@
 #define PROC_NAME "mymod" 
 #define DEVICE_CLASS "mymod_cdev"
 
+/* device and class */
+static struct class *mymod_class;
+static struct device *mymode_device;
+
 #define PAGE 1024
 
 #define PERMS 0644
@@ -50,8 +54,8 @@ static ssize_t proc_read(struct file *filp, char __user *buf, size_t count, loff
 	if (copy_to_user(buf, proc_buf, PROC_SIZE))
 		return -EIO;
 		
-	*pos += PROC_SIZE;
-	pr_info("%s: %s %s %u %lld\n", DEVICE_NAME, __func__, "COPIED/FPOS", PROC_SIZE, *pos);
+	*pos += PROC_SIZE; 
+	dev_info(mymode_device, "%s %s %d %lld", __func__, "COPIED/FPOS", PROC_SIZE, *pos);
 	return PROC_SIZE;
 }
 
@@ -97,8 +101,8 @@ static ssize_t write_cdev(struct file *this_file, const char __user *buf, size_t
 
 	*pos += count;
 	write_counts++;
-	write_amount += count;
-	pr_info("%s: %s %s %lu %lld\n", DEVICE_NAME, __func__, "COPIED/FPOS", count, *pos);
+	write_amount += count; 
+	dev_info(mymode_device, "%s %s %lu %lld", __func__, "COPIED/FPOS", count, *pos);
 	return count;
 }
 
@@ -113,8 +117,8 @@ static ssize_t read_cdev(struct file *this_file, char __user *buf, size_t count,
 	
 	read_counts++;
 	read_amount += count;
-	*pos += count;
-	pr_info("%s: %s %s %lu %lld\n", DEVICE_NAME, __func__, "COPIED/FPOS", count, *pos);
+	*pos += count; 
+	dev_info(mymode_device, "%s %s %lu %lld", __func__, "COPIED/FPOS", count, *pos);
 	return count;
 }
 
@@ -129,8 +133,6 @@ static int release_cdev(struct inode *this_inode, struct file *this_file)
 #define SYSFS_SIZE  PAGE
 //static uint8_t sysfs_buf[SYSFS_SIZE] = {0};
 
-static struct class *mymod_class;
-static struct device *mymode_device;
 static struct kobject *cdev_kobj;
 static ssize_t sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char __user *buf);
 static struct kobj_attribute cdev_attr = {
@@ -161,60 +163,61 @@ static ssize_t sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, cha
 	sprintf(buf + 250, "Write amount: %llu\n", write_amount);
 	sprintf(buf + 300, "First 256 bites of the cdev buf:\n");
 	memcpy(buf + 350, dev_buf, 256);
-	pr_info("%s: %s %s %u %u\n", DEVICE_NAME, __func__, "COPIED/FPOS", PAGE, PAGE);
+	dev_info(mymode_device, "%s %s %u %u", __func__, "COPIED/FPOS", PAGE, PAGE);
 	return PAGE;
 }
 
 static int __init init_function(void)
 {
 	
-	pr_info("%s: %s\n", DEVICE_NAME, "INIT");
+	pr_info("%s: %s\n", DEVICE_NAME, "Init start");
+	
 	
 	/* Define MINOR and MAJOR of the device */
 	if (alloc_chrdev_region(&dev_num, 0, 1, DEVICE_NAME)) {
-		pr_err("%s: %s\n", DEVICE_NAME, "Failed to alloc cdev region");
+		dev_err(mymode_device, "%s", "Failed to alloc cdev region");
 		return -1;
 	}
 	
 	/* Create class of the device  */
 	mymod_class = class_create(THIS_MODULE, DEVICE_CLASS);
 	if (IS_ERR(mymod_class)) {
-		pr_err("%s: %s\n", DEVICE_NAME, "Failed to create class");
+		dev_err(mymode_device, "%s", "Failed to create class");
 		goto cdev_err;
 	}
 	/* init cdev by adding owner and fops and it to the system */
 	cdev_init(&mymod_cdev, &mymod_cdev_fops);
 	if (cdev_add(&mymod_cdev, dev_num, 1)) {
-		pr_err("%s: %s\n", DEVICE_NAME, "Failed to register cdev");
+		dev_err(mymode_device, "%s", "Failed to register cdev");
 		goto class_err;
 	}
 	
 	/* device_create - creates a device and registers it with sysfs  */
 	mymode_device = device_create(mymod_class, NULL, dev_num, NULL, DEVICE_NAME);
 	if (IS_ERR(mymode_device)) {
-		pr_err("%s: %s\n", DEVICE_NAME, "Failed to create /dev entry");
+		dev_err(mymode_device, "%s", "Failed to create /dev entry");
 		goto device_err;		
 	}
 	
 	/* create procfs entry */
 	proc_dir = proc_mkdir(PROC_NAME, NULL);
 	if (IS_ERR(proc_dir)) {
-		pr_err("%s: %s\n", DEVICE_NAME, "Failed to create proc_fs dir");
+		dev_err(mymode_device, "%s", "Failed to create proc_fs dir");
 		goto proc_fs_dir__err;
 	}
 	proc_file = proc_create(PROC_NAME, PERMS, proc_dir, &pops);
 	if (IS_ERR(proc_file)) {
-		pr_err("%s: %s\n", DEVICE_NAME, "Failed to create proc_fs file");
+		dev_err(mymode_device, "%s", "Failed to create proc_fs file");
 		goto proc_fs_file__err;
 	}
 	
 	cdev_kobj = kobject_create_and_add(DEVICE_CLASS, kernel_kobj);
 	if (sysfs_create_file(cdev_kobj, &cdev_attr.attr)) {
-		pr_err("%s: %s\n", DEVICE_NAME, "Failed to create sysfs file");
+		dev_err(mymode_device, "%s", "Failed to create sysfs file");
 		goto sysfs_err;
 	}
-	
-	pr_info("%s: %s\n", DEVICE_NAME, "Success");
+
+	dev_info(mymode_device,"%s", " Init Success");
 	return 0;
 	
 sysfs_err:
@@ -237,6 +240,7 @@ cdev_err:
 
 static void __exit exit_function(void)
 {
+	dev_info(mymode_device,"%s", "Exit start");
 	sysfs_remove_file(kernel_kobj, &cdev_attr.attr);
 	kobject_put(cdev_kobj); 
 	proc_remove(proc_file);
@@ -244,8 +248,9 @@ static void __exit exit_function(void)
 	device_destroy(mymod_class, dev_num);
 	class_unregister(mymod_class);
 	cdev_del(&mymod_cdev);
-	unregister_chrdev_region(dev_num, 1);
-	pr_info("%s: %s\n", DEVICE_NAME, "EXIT");
+	unregister_chrdev_region(dev_num, 1);  
+	
+	pr_info("%s: %s\n", DEVICE_NAME, "Exit success");
 }
 
 
