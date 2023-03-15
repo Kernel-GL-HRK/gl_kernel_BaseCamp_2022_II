@@ -22,6 +22,8 @@ static struct device *mymode_device;
 /* cdev buffer */
 #define BUFS PAGE * 4
 static uint8_t dev_buf[BUFS] = {0}; // {[0 ... BUFS / 2 - 1] = '1', [BUFS / 2 ... BUFS-1] = '2'}; 
+/* actual amount of data is written to buffer */
+static uint32_t dev_buf_amount;
 /* statistics to be printed in /proc and /sysfs */ 
 static uint64_t read_counts;
 static uint64_t write_counts;
@@ -45,8 +47,9 @@ static ssize_t proc_read(struct file *filp, char __user *buf, size_t count, loff
 		return 0;
 		
 	sprintf(proc_buf, "Module name: %s\n", DEVICE_NAME);
-	sprintf(proc_buf + 50, "CharDev Read/Write buffer size: %d\n", BUFS);
-	sprintf(proc_buf + 100, "Reads: %llu\n", read_counts);
+	sprintf(proc_buf + 20, "CharDev Read/Write buffer size: %d\n", BUFS);
+	sprintf(proc_buf + 60, "Current amount of data in the buffer: %d\n", dev_buf_amount);
+	sprintf(proc_buf + 120, "Reads: %llu\n", read_counts);
 	sprintf(proc_buf + 150, "Read amount: %llu\n", read_amount);
 	sprintf(proc_buf + 200, "Writes: %llu\n", write_counts);
 	sprintf(proc_buf + 250, "Write amount: %llu\n", write_amount);
@@ -92,26 +95,32 @@ static int open_cdev(struct inode *this_inode, struct file *this_file)
 
 static ssize_t write_cdev(struct file *this_file, const char __user *buf, size_t count, loff_t *pos)
 {
+	
 	if (*pos >= BUFS)
 		return 0;
 	if (*pos + count > BUFS)
 		count = BUFS - (*pos);
 	if (copy_from_user(dev_buf + (*pos), buf, count))
 		return -EIO;
-
+		
 	*pos += count;
 	write_counts++;
-	write_amount += count; 
+	write_amount += count;
+	
+	/*  *pos is a real  size of the written data. It updates at each write run */
+	
+	dev_buf_amount = *pos;
 	dev_info(mymode_device, "%s %s %lu %lld", __func__, "COPIED/FPOS", count, *pos);
 	return count;
 }
 
 static ssize_t read_cdev(struct file *this_file, char __user *buf, size_t count, loff_t *pos)
 {
-	if (*pos >= BUFS)
+	/* Use dev_buf_amount instead DUFS to read real size of data. */ 
+	if (*pos >= dev_buf_amount)
 		return 0;
-	if (*pos + count > BUFS)
-		count = BUFS - (*pos);
+	if (*pos + count > dev_buf_amount)
+		count = dev_buf_amount - (*pos);
 	if (copy_to_user(buf, dev_buf + (*pos), count))
 		return -EIO;
 	
@@ -156,13 +165,14 @@ static ssize_t sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, cha
 		return -EIO;
 	
 	sprintf(buf, "Module name: %s\n", DEVICE_NAME);
-	sprintf(buf + 50, "CharDev Read/Write buffer size: %d\n", BUFS);
-	sprintf(buf + 100, "Reads: %llu\n", read_counts);
+	sprintf(buf + 20, "CharDev Read/Write buffer size: %d\n", BUFS);
+	sprintf(buf + 60, "Current amount of data in the buffer: %d\n", dev_buf_amount);
+	sprintf(buf + 120, "Reads: %llu\n", read_counts);
 	sprintf(buf + 150, "Read amount: %llu\n", read_amount);
 	sprintf(buf + 200, "Writes: %llu\n", write_counts);
 	sprintf(buf + 250, "Write amount: %llu\n", write_amount);
 	sprintf(buf + 300, "First 256 bites of the cdev buf:\n");
-	memcpy(buf + 350, dev_buf, 256);
+	memcpy(buf + 350, dev_buf, dev_buf_amount);
 	dev_info(mymode_device, "%s %s %u %u", __func__, "COPIED/FPOS", PAGE, PAGE);
 	return PAGE;
 }
