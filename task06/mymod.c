@@ -7,10 +7,9 @@
 #include <linux/device/class.h>
 #include <linux/kobject.h>
 #include <linux/string.h>
-
-#define DEVICE_NAME "mymod"
-#define PROC_NAME "mymod" 
-#define DEVICE_CLASS "mymod_cdev"
+#include <linux/slab.h>
+#include <linux/ioctl.h>
+#include "mymod_uapi.h"
 
 /* device and class */
 static struct class *mymod_class;
@@ -18,10 +17,11 @@ static struct device *mymode_device;
 
 #define PAGE 1024
 
+
 #define PERMS 0644
 /* cdev buffer */
-#define BUFS PAGE * 4
-static uint8_t dev_buf[BUFS] = {0}; // {[0 ... BUFS / 2 - 1] = '1', [BUFS / 2 ... BUFS-1] = '2'}; 
+static uint32_t BUFS = PAGE * 4;
+static uint8_t * dev_buf; // {[0 ... BUFS / 2 - 1] = '1', [BUFS / 2 ... BUFS-1] = '2'}; 
 /* actual amount of data is written to buffer */
 static uint32_t dev_buf_amount;
 /* statistics to be printed in /proc and /sysfs */ 
@@ -30,7 +30,9 @@ static uint64_t write_counts;
 static uint64_t read_amount;
 static uint64_t write_amount;
 
+
 /* proc_fs data */
+#define PROC_NAME "mymod" 
 #define PROC_SIZE  PAGE
 static uint8_t proc_buf[PROC_SIZE] = {0};
 
@@ -74,6 +76,7 @@ static int open_cdev(struct inode *, struct file *);
 static ssize_t write_cdev(struct file *, const char __user *, size_t, loff_t *);
 static ssize_t read_cdev(struct file *, char __user *, size_t, loff_t *);
 static int release_cdev(struct inode *, struct file *);
+static long ioctl_cdev(struct file *, unsigned int, unsigned long);
 
 /* Define file operations (callbacks) provided by the driver */
 static const struct file_operations mymod_cdev_fops = {
@@ -82,6 +85,7 @@ static const struct file_operations mymod_cdev_fops = {
         .write = write_cdev,
         .read = read_cdev,
         .release = release_cdev,
+        .unlocked_ioctl = ioctl_cdev,
 };
 
 static int open_cdev(struct inode *this_inode, struct file *this_file) 
@@ -138,6 +142,33 @@ static int release_cdev(struct inode *this_inode, struct file *this_file)
 	return 0;
 }
 
+static long ioctl_cdev(struct file *this_file, unsigned int cmd, unsigned long arg)
+{
+	dev_info(mymode_device, "%s 0x%x 0x%lx", __func__, cmd, arg);
+	switch (cmd) {
+		case MYMOD_CLEAR_BUFFER:
+		 	dev_info(mymode_device, "Clear dev_buf");
+		 	dev_buf_amount = 0;
+			break;
+		case MYMOD_GET_BUFFER_SIZE:
+			dev_info(mymode_device, "Return dev_buf size");
+			put_user(BUFS, &arg);
+			break;
+		case MYMOD_SET_BUFFER_SIZE:
+			dev_info(mymode_device, "Set dev_buf size");
+			BUFS = arg;
+			dev_buf = krealloc(dev_buf, BUFS, GFP_KERNEL);
+			if (IS_ERR(dev_buf)) {
+				dev_err(mymode_device, "%s", "Failed to resize dev_buf");
+				return -ENOMEM;
+			}
+			break;
+		default:
+			return -ENOTTY;
+	}
+	
+	return 0;
+}
 /* device and  sysfs data */
 #define SYSFS_SIZE  PAGE
 //static uint8_t sysfs_buf[SYSFS_SIZE] = {0};
@@ -226,6 +257,12 @@ static int __init init_function(void)
 		dev_err(mymode_device, "%s", "Failed to create sysfs file");
 		goto sysfs_err;
 	}
+	
+	dev_buf = kmalloc(BUFS, GFP_KERNEL);
+	if (IS_ERR(dev_buf)) {
+		dev_err(mymode_device, "%s", "Failed to alloc dev_buf");
+		return -ENOMEM;
+	}
 
 	dev_info(mymode_device,"%s", " Init Success");
 	return 0;
@@ -250,6 +287,7 @@ cdev_err:
 
 static void __exit exit_function(void)
 {
+	kfree(dev_buf);
 	dev_info(mymode_device,"%s", "Exit start");
 	sysfs_remove_file(kernel_kobj, &cdev_attr.attr);
 	kobject_put(cdev_kobj); 
