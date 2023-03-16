@@ -6,7 +6,7 @@
 #include <linux/uaccess.h>
 #include <linux/timer.h>
 #include <linux/gpio.h>
-#include <linux/delay.h> 		//usleep(), msleep()
+#include <linux/delay.h>		//usleep(), msleep()
 #include <linux/jiffies.h>
 
 
@@ -19,10 +19,10 @@ MODULE_VERSION("0.1");                  ///< The version of the module
 #define PROC_BUFFER_SIZE 100
 #define GPIO_4 (4) //LED is connected to this GPIO
 
-static int led_state = 0; // 0 - disabled, 1 - enabled
+static int led_state; // 0 - disabled, 1 - enabled
 
 static struct timer_list  etx_timer;
-static unsigned int count = 0;
+static unsigned int count_timer;
 
 static char procfs_buffer[PROC_BUFFER_SIZE] = {0};
 static size_t procfs_buffer_size;
@@ -57,9 +57,9 @@ static struct proc_ops fops = {
 };
 
 
-void timer_callback(struct timer_list * data)
+void timer_callback(struct timer_list *data)
 {
-	pr_info("TIMER: %s() %d times\n", __func__, count++);
+	pr_info("TIMER: %s() %d times\n", __func__, count_timer++);
 
 	led_state = !led_state;
 	gpio_set_value(GPIO_4, led_state);
@@ -73,53 +73,53 @@ void timer_callback(struct timer_list * data)
 
 static int __init gpio_driver_init(void)
 {
+	pr_info("DRIVER: driver start!\n");
 
-pr_info("DRIVER: driver start!\n");
+	count_timer = 0;
 
-proc_folder = proc_mkdir(PROC_DIR_NAME, NULL);
-if (!proc_folder) {
-	pr_err("DRIVER: Error: Could not create /proc/%s/ folder\n", PROC_DIR_NAME);
-	return -ENOMEM;
-}
-
-proc_file = proc_create(PROC_FILE_NAME, 0666, proc_folder, &fops);
-if (!proc_file) {
-	pr_err("DRIVER: Error: Could not initialize /proc/%s/%s\n", PROC_DIR_NAME, PROC_FILE_NAME);
-	proc_remove(proc_file);
-	proc_remove(proc_folder);
-	return -ENOMEM;
-}
-
-if(gpio_is_valid(GPIO_4) == false){
-	pr_err("GPIO %d is not valid\n", GPIO_4);
-	goto exit;
+	proc_folder = proc_mkdir(PROC_DIR_NAME, NULL);
+	if (!proc_folder) {
+		pr_err("DRIVER: Error: Could not create /proc/%s/ folder\n", PROC_DIR_NAME);
+		return -ENOMEM;
 	}
 
-	if(gpio_request (GPIO_4,"GPIO_4") < 0){ 
-	pr_err("ERROR: GPIO %d request\n", GPIO_4);
-	goto exit;
+	proc_file = proc_create(PROC_FILE_NAME, 0666, proc_folder, &fops);
+	if (!proc_file) {
+		pr_err("DRIVER: Error: Could not initialize /proc/%s/%s\n", PROC_DIR_NAME, PROC_FILE_NAME);
+		proc_remove(proc_file);
+		proc_remove(proc_folder);
+		return -ENOMEM;
 	}
 
-gpio_direction_output (GPIO_4, 0);
+	if (gpio_is_valid(GPIO_4) == false) {
+		pr_err("GPIO %d is not valid\n", GPIO_4);
+		goto exit;
+		}
 
-pr_info("Device Driver Insert...");
+		if (gpio_request(GPIO_4, "GPIO_4") < 0) {
+		pr_err("ERROR: GPIO %d request\n", GPIO_4);
+		goto exit;
+	}
 
-gpio_set_value(GPIO_4, 1);
-led_state = 1; 
+	gpio_direction_output(GPIO_4, 0);
 
-// setup your timer to call my timer callback 
-timer_setup(&etx_timer, timer_callback, 0);
+	pr_info("Device Driver Insert...");
 
-// setup timer interval to based on TIMEOUT Macro 
-mod_timer(&etx_timer, jiffies + msecs_to_jiffies(TIMEOUT));
+	gpio_set_value(GPIO_4, 1);
+	led_state = 1;
 
-pr_info("TIMER: %s()\n", __func__);
+	// setup your timer to call my timer callback
+	timer_setup(&etx_timer, timer_callback, 0);
 
+	// setup timer interval to based on TIMEOUT Macro
+	mod_timer(&etx_timer, jiffies + msecs_to_jiffies(TIMEOUT));
 
-return 0;
+	pr_info("TIMER: %s()\n", __func__);
+
+	return 0;
 
 exit:
-return -1;
+	return -1;
 }
 
 static void __exit gpio_driver_exit(void)
@@ -135,9 +135,8 @@ static void __exit gpio_driver_exit(void)
 	proc_remove(proc_file);
 	proc_remove(proc_folder);
 	pr_info("DRIVER: /proc/%s/%s removed\n", PROC_DIR_NAME, PROC_FILE_NAME);
-	
-}
 
+}
 
 module_init(gpio_driver_init);
 module_exit(gpio_driver_exit);
