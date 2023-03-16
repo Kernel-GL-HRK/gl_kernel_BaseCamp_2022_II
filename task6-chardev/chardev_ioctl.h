@@ -1,0 +1,24 @@
+#ifndef CHARDEV_IOCTL_H
+#define CHARDEV_IOCTL_H
+
+#define CHARDEV_IOC_MAGIC 'C'
+
+enum chardev_ioctl {
+	CLEAR_BUFFER,
+	GET_BUFFER_SIZE,
+	SET_BUFFER_SIZE,
+	CHARDEV_IOC_MAXNR
+};
+
+#define CHARDEV_CLEAR_BUFFER _IO(CHARDEV_IOC_MAGIC, CLEAR_BUFFER)
+#define CHARDEV_GET_BUFFER_SIZE \
+	_IOR(CHARDEV_IOC_MAGIC, GET_BUFFER_SIZE, size_t *)
+#define CHARDEV_SET_BUFFER_SIZE \
+	_IOW(CHARDEV_IOC_MAGIC, SET_BUFFER_SIZE, size_t *)
+
+#define CLASS_NAME "chardev"
+#define DEVICE_NAME "chardev_device"
+
+#define CHARDEV_FILE "/dev/" CLASS_NAME "0"
+
+#endif
