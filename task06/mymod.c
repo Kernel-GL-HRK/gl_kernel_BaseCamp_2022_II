@@ -221,27 +221,27 @@ static int __init init_function(void)
 
 	/* Define MINOR and MAJOR of the device */
 	if (alloc_chrdev_region(&dev_num, 0, 1, DEVICE_NAME)) {
-		dev_err(mymode_device, "%s", "Failed to alloc cdev region");
+		pr_err("%s: %s\n", DEVICE_NAME, "Failed to alloc cdev region");
 		return -1;
 	}
 
 	/* Create class of the device  */
 	mymod_class = class_create(THIS_MODULE, DEVICE_CLASS);
 	if (IS_ERR(mymod_class)) {
-		dev_err(mymode_device, "%s", "Failed to create class");
+		pr_err("%s: %s\n", DEVICE_NAME, "Failed to create class");
 		goto cdev_err;
 	}
 	/* init cdev by adding owner and fops and it to the system */
 	cdev_init(&mymod_cdev, &mymod_cdev_fops);
 	if (cdev_add(&mymod_cdev, dev_num, 1)) {
-		dev_err(mymode_device, "%s", "Failed to register cdev");
+		pr_err("%s: %s\n", DEVICE_NAME, "Failed to register cdev");
 		goto class_err;
 	}
 
 	/* device_create - creates a device and registers it with sysfs  */
 	mymode_device = device_create(mymod_class, NULL, dev_num, NULL, DEVICE_NAME);
 	if (IS_ERR(mymode_device)) {
-		dev_err(mymode_device, "%s", "Failed to create /dev entry");
+		pr_err("%s: %s\n", DEVICE_NAME, "Failed to create /dev entry");
 		goto device_err;
 	}
 
