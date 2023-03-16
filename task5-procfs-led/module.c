@@ -19,14 +19,15 @@ MODULE_VERSION("0.1");
 #endif
 
 #define LED			(16)	/* LED is connected to this GPIO pin */
-#define TIMEOUT			1000	/* milliseconds */
-
 #define PROC_BUFFER_SIZE	100
 #define PROC_DIR_NAME		"hello"	/* /proc/hello/led */
 #define PROC_FILE_NAME		"led"
 
-static char   procfs_buffer[PROC_BUFFER_SIZE] = {0};
-static size_t procfs_buffer_size;
+static char   procfs_buffer_read[PROC_BUFFER_SIZE] = {0};
+static char   procfs_buffer_write[PROC_BUFFER_SIZE] = {0};
+static size_t procfs_buffer_read_size;
+static size_t procfs_buffer_write_size;
+static unsigned int timer_timeout = 1000;	/* milliseconds */
 
 static struct proc_dir_entry *proc_file;
 static struct proc_dir_entry *proc_dir;
@@ -38,7 +39,7 @@ static ssize_t hello_write(struct file *file, const char __user *buffer,
 			   size_t count, loff_t *offset);
 static inline int proc_init(void);
 static void timer_callback(struct timer_list *data);
-static inline void timer_init(void);
+static inline void timer_init(const unsigned int timeout);
 static inline int gpio_init(const unsigned int gpio_numb);
 
 #ifdef HAVE_PROC_OPS
@@ -58,10 +59,11 @@ static int __init hello_init(void)
 	int ret;
 
 	ret = proc_init();
-	if (ret != 0)
+	if (ret != 0) {
 		goto exit;
+	}
 
-	timer_init();
+	timer_init(timer_timeout);
 	ret = gpio_init(LED);
 
 exit:
@@ -92,14 +94,14 @@ static ssize_t hello_read(struct file *File, char __user *buffer,
 {
 	ssize_t to_copy, not_copied, delta;
 
-	if (!procfs_buffer_size)
+	if (!procfs_buffer_read_size) {
 		return 0;
-
-	to_copy = min(count, procfs_buffer_size);
-	not_copied = copy_to_user(buffer, procfs_buffer, to_copy);
+	}
+	to_copy = min(count, procfs_buffer_read_size);
+	not_copied = copy_to_user(buffer, procfs_buffer_read, to_copy);
 
 	delta = to_copy - not_copied;
-	procfs_buffer_size -= delta;
+	procfs_buffer_read_size -= delta;
 
 	return delta;
 }
@@ -109,12 +111,12 @@ static ssize_t hello_write(struct file *file, const char __user *buffer,
 {
 	ssize_t to_copy, not_copied, delta;
 
-	to_copy = min(count, sizeof(procfs_buffer));
+	to_copy = min(count, sizeof(procfs_buffer_write));
 
-	not_copied = copy_from_user(procfs_buffer, buffer, to_copy);
+	not_copied = copy_from_user(procfs_buffer_write, buffer, to_copy);
 	delta = to_copy - not_copied;
 
-	procfs_buffer_size = delta;
+	procfs_buffer_write_size = delta;
 
 	return delta;
 }
@@ -150,24 +152,49 @@ exit:
 
 static void timer_callback(struct timer_list *data)
 {
-	mod_timer(&etx_timer, jiffies + msecs_to_jiffies(TIMEOUT));
+	if (procfs_buffer_write_size) {
+		int ret;
+		size_t i;
+		unsigned long res;
 
-	/* toggle led and add status information to procfs_buffer */
+		ret = kstrtoul(procfs_buffer_write, 10, &res);
+
+		if (ret) {
+			pr_err("HELLO: ERROR: Incorrect input data format!\n");
+		} else {
+			timer_timeout = res;
+		}
+
+		/* clear write buffer */
+		for (i = 0; i < sizeof(procfs_buffer_write); ++i) {
+			procfs_buffer_write[i] = 0;
+		}
+		procfs_buffer_write_size = 0;
+		pr_debug("HELLO: DEBUG: timeout = %d\n", timer_timeout);
+	}
+
+	mod_timer(&etx_timer, jiffies + msecs_to_jiffies(timer_timeout));
+
+	/* toggle led and add status information to procfs_buffer_read */
 	gpio_get_value(LED) ? gpio_set_value(LED, 0) : gpio_set_value(LED, 1);
-	snprintf(procfs_buffer, sizeof(procfs_buffer),
+
+	snprintf(procfs_buffer_read, sizeof(procfs_buffer_read),
 		 "Led status = %d, Timeout = %d mSec\n",
-		 gpio_get_value(LED), TIMEOUT);
-	procfs_buffer_size = sizeof(procfs_buffer);
-	pr_debug("DEBUG: GPIO: Led status = %d", gpio_get_value(LED));
+		 gpio_get_value(LED), timer_timeout);
+
+	procfs_buffer_read_size = sizeof(procfs_buffer_read);
+
+	pr_debug("DEBUG: GPIO: Led status = %d, Timeout = %d",
+		 gpio_get_value(LED), timer_timeout);
 }
 
-static inline void timer_init(void)
+static inline void timer_init(const unsigned int timeout)
 {
 	/* setup your timer to call my_timer_callback */
 	timer_setup(&etx_timer, timer_callback, 0);
 
-	/* setup timer interval is based on TIMEOUT Macro */
-	mod_timer(&etx_timer, jiffies + msecs_to_jiffies(TIMEOUT));
+	/* setup timer interval is based on timer_timeout variable */
+	mod_timer(&etx_timer, jiffies + msecs_to_jiffies(timeout));
 
 	pr_info("HELLO: TIMER: %s()\n", __func__);
 }
