@@ -6,25 +6,27 @@
 #include <linux/uaccess.h>
 #include <linux/timer.h>
 #include <linux/jiffies.h>
+#include <linux/gpio.h>
 #include <linux/version.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sergiy Us");
-MODULE_DESCRIPTION("A simple device driver - procfs module");
+MODULE_DESCRIPTION("A simple device driver - procfs blinking led module");
 MODULE_VERSION("0.1");
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
 #define	HAVE_PROC_OPS
 #endif
 
+#define LED			(16)	/* LED is connected to this GPIO pin */
+#define TIMEOUT			1000	/* milliseconds */
+
 #define PROC_BUFFER_SIZE	100
-#define PROC_DIR_NAME		"hello"		/* /proc/hello/dummy */
-#define PROC_FILE_NAME		"dummy"
-#define TIMEOUT			1000		/* milliseconds */
+#define PROC_DIR_NAME		"hello"	/* /proc/hello/led */
+#define PROC_FILE_NAME		"led"
 
 static char   procfs_buffer[PROC_BUFFER_SIZE] = {0};
 static size_t procfs_buffer_size;
-static unsigned int timer_count;
 
 static struct proc_dir_entry *proc_file;
 static struct proc_dir_entry *proc_dir;
@@ -37,6 +39,7 @@ static ssize_t hello_write(struct file *file, const char __user *buffer,
 static inline int proc_init(void);
 static void timer_callback(struct timer_list *data);
 static inline void timer_init(void);
+static inline int gpio_init(const unsigned int gpio_numb);
 
 #ifdef HAVE_PROC_OPS
 static const struct proc_ops fops = {
@@ -55,8 +58,13 @@ static int __init hello_init(void)
 	int ret;
 
 	ret = proc_init();
-	timer_init();
+	if (ret != 0)
+		goto exit;
 
+	timer_init();
+	ret = gpio_init(LED);
+
+exit:
 	return ret;
 }
 
@@ -64,6 +72,11 @@ static void __exit hello_exit(void)
 {
 	del_timer(&etx_timer);
 	pr_info("HELLO: TIMER: %s()\n", __func__);
+
+	gpio_set_value(LED, 0);
+	gpio_unexport(LED);
+	gpio_free(LED);
+	pr_info("HELLO: GPIO: Device Driver Remove...Done!\n");
 
 	proc_remove(proc_file);
 	proc_remove(proc_dir);
@@ -83,16 +96,9 @@ static ssize_t hello_read(struct file *File, char __user *buffer,
 		return 0;
 
 	to_copy = min(count, procfs_buffer_size);
-
 	not_copied = copy_to_user(buffer, procfs_buffer, to_copy);
 
 	delta = to_copy - not_copied;
-
-	pr_debug("DEBUG: PROC: count(read) = %d\n", count);
-	pr_debug("DEBUG: PROC: delta(read) = %d\n", delta);
-	pr_debug("DEBUG: PROC: procfs_buffer_size(read) = %d\n",
-		 procfs_buffer_size);
-
 	procfs_buffer_size -= delta;
 
 	return delta;
@@ -109,10 +115,6 @@ static ssize_t hello_write(struct file *file, const char __user *buffer,
 	delta = to_copy - not_copied;
 
 	procfs_buffer_size = delta;
-
-	pr_debug("DEBUG: PROC: count(write) = %d\n", count);
-	pr_debug("DEBUG: PROC: procfs_buffer_size(write) = %d\n",
-		 procfs_buffer_size);
 
 	return delta;
 }
@@ -148,8 +150,15 @@ exit:
 
 static void timer_callback(struct timer_list *data)
 {
-	pr_debug("DEBUG: TIMER: %s() %d times\n", __func__, timer_count++);
 	mod_timer(&etx_timer, jiffies + msecs_to_jiffies(TIMEOUT));
+
+	/* toggle led and add status information to procfs_buffer */
+	gpio_get_value(LED) ? gpio_set_value(LED, 0) : gpio_set_value(LED, 1);
+	snprintf(procfs_buffer, sizeof(procfs_buffer),
+		 "Led status = %d, Timeout = %d mSec\n",
+		 gpio_get_value(LED), TIMEOUT);
+	procfs_buffer_size = sizeof(procfs_buffer);
+	pr_debug("DEBUG: GPIO: Led status = %d", gpio_get_value(LED));
 }
 
 static inline void timer_init(void)
@@ -162,3 +171,39 @@ static inline void timer_init(void)
 
 	pr_info("HELLO: TIMER: %s()\n", __func__);
 }
+
+static inline int gpio_init(const unsigned int gpio_numb)
+{
+	if (gpio_is_valid(gpio_numb) == false) {
+		pr_err("GPIO: ERROR: %d is not valid\n", gpio_numb);
+		goto exit;
+	}
+
+	if (gpio_request(gpio_numb, "GPIO") < 0) {
+		pr_err("GPIO: ERROR: %d request\n", gpio_numb);
+		goto gpio_exit;
+	}
+
+	gpio_direction_output(gpio_numb, 0);
+
+	/* Using this call the GPIO (gpio_numb) will be visible in /sys/class/gpio/
+	 * Now you can change the gpio values by using below commands also:
+	 * echo 1 > /sys/class/gpio/gpio16/value (turn ON the LED)
+	 * echo 0 > /sys/class/gpio/gpio16/value (turn OFF the LED)
+	 * cat /sys/class/gpio/gpio16/value      (read the value LED)
+	 *
+	 * the second arg prevents the direction from being changed.
+	 */
+
+	gpio_export(gpio_numb, false);
+
+	pr_info("HELLO: GPIO: Device Driver Insert...Done!!!\n");
+	gpio_set_value(gpio_numb, 1);
+	return 0;
+
+gpio_exit:
+	gpio_free(gpio_numb);
+exit:
+	return -1;
+}
+
