@@ -15,27 +15,31 @@
 static struct class *mymod_class;
 static struct device *mymode_device;
 
-#define PAGE 1024
+#define PAGE 1024	/* used to create buffer sizes for dev, sysfs and procfs */
 
 
-#define PERMS 0644
-/* cdev buffer */
-static uint32_t BUFS = PAGE * 4;
-static uint8_t *dev_buf;
+static uint32_t BUFS = PAGE * 4;	/* cdev buffer size*/
+static uint8_t *dev_buf;	/* cdev buffer */
 /* actual amount of data is written to buffer */
 static uint32_t dev_buf_amount;
 /* statistics to be printed in /proc and /sysfs */
-static uint64_t read_counts;
-static uint64_t write_counts;
-static uint64_t read_amount;
-static uint64_t write_amount;
+static uint64_t read_counts;	/* number of reads */
+static uint64_t write_counts;	/* number of writes */
+static uint64_t read_amount;	/* size of read data */
+static uint64_t write_amount;	/* size of written data */
 
 
 /* proc_fs data */
+/* permission proc_fs file */
+#define PERMS 0644
+/* proc_fs file name*/
 #define PROC_NAME "mymod"
+/* proc_fs buffer size */
 #define PROC_SIZE  PAGE
+/* proc_fs buffer */
 static uint8_t proc_buf[PROC_SIZE] = {0};
 
+/* definition of procfs entries, proc_ops and read callback */
 static struct proc_dir_entry *proc_dir, *proc_file;
 static ssize_t proc_read(struct file *filp, char __user *buf, size_t count, loff_t *pos);
 
@@ -48,6 +52,7 @@ static ssize_t proc_read(struct file *filp, char __user *buf, size_t count, loff
 	if (*pos > 0)
 		return 0;
 
+	/* Filling out the procfs buffer */
 	sprintf(proc_buf, "Module name: %s\n", DEVICE_NAME);
 	sprintf(proc_buf + 20, "CharDev Read/Write buffer size: %d\n", BUFS);
 	sprintf(proc_buf + 60, "Current amount of data in the buffer: %d\n", dev_buf_amount);
@@ -68,6 +73,7 @@ static ssize_t proc_read(struct file *filp, char __user *buf, size_t count, loff
 
 static struct cdev mymod_cdev;
 static dev_t dev_num;
+/* locking to prevent reading and writing at once */
 static uint32_t dev_is_open;
 
 /* file operations callbacks  for cdev */
@@ -90,6 +96,7 @@ static const struct file_operations mymod_cdev_fops = {
 
 static int open_cdev(struct inode *this_inode, struct file *this_file)
 {
+	/* locking to prevent reading and writing at once */
 	if (dev_is_open)
 		return -EBUSY;
 
@@ -107,10 +114,12 @@ static ssize_t write_cdev(struct file *this_file, const char __user *buf, size_t
 		return -EIO;
 
 	*pos += count;
+
+	/* Add to statistics */
 	write_counts++;
 	write_amount += count;
 
-	/*  *pos is a real  size of the written data. It updates at each write run */
+	/*  *pos is a real  size of the written data but is not global. It updates at each write run */
 	dev_buf_amount = *pos;
 	dev_info(mymode_device, "%s %s %lu %lld", __func__, "COPIED/FPOS", count, *pos);
 	return count;
@@ -118,7 +127,7 @@ static ssize_t write_cdev(struct file *this_file, const char __user *buf, size_t
 
 static ssize_t read_cdev(struct file *this_file, char __user *buf, size_t count, loff_t *pos)
 {
-/* Use dev_buf_amount instead DUFS to read real size of data. */
+	/* Use dev_buf_amount instead BUFS to read real size of data. */
 	if (*pos >= dev_buf_amount)
 		return 0;
 	if (*pos + count > dev_buf_amount)
@@ -126,20 +135,23 @@ static ssize_t read_cdev(struct file *this_file, char __user *buf, size_t count,
 	if (copy_to_user(buf, dev_buf + (*pos), count))
 		return -EIO;
 
+	*pos += count;
+
+	/* Add to statistics */
 	read_counts++;
 	read_amount += count;
-	*pos += count;
+
 	dev_info(mymode_device, "%s %s %lu %lld", __func__, "COPIED/FPOS", count, *pos);
 	return count;
 }
 
 static int release_cdev(struct inode *this_inode, struct file *this_file)
 {
-	/* clear blocking */
+	/* clear locking */
 	dev_is_open = 0;
 	return 0;
 }
-
+/* see mymod_uapi */
 static long ioctl_cdev(struct file *this_file, unsigned int cmd, unsigned long arg)
 {
 	dev_info(mymode_device, "%s 0x%x 0x%lx", __func__, cmd, arg);
@@ -169,8 +181,8 @@ static long ioctl_cdev(struct file *this_file, unsigned int cmd, unsigned long a
 }
 /* device and  sysfs data */
 #define SYSFS_SIZE  PAGE
-//static uint8_t sysfs_buf[SYSFS_SIZE] = {0};
 
+/* definition of kobj, .show callback and kobj_attribute to create sysfs entry */
 static struct kobject *cdev_kobj;
 static ssize_t sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char __user *buf);
 static struct kobj_attribute cdev_attr = {
@@ -185,7 +197,7 @@ static ssize_t sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, cha
 {
 	if (access_ok(buf, SYSFS_SIZE))
 		return -EIO;
-
+	/* Filling out the sysfs buffer */
 	sprintf(buf, "Module name: %s\n", DEVICE_NAME);
 	sprintf(buf + 20, "CharDev Read/Write buffer size: %d\n", BUFS);
 	sprintf(buf + 60, "Current amount of data in the buffer: %d\n", dev_buf_amount);
@@ -250,7 +262,7 @@ static int __init init_function(void)
 		dev_err(mymode_device, "%s", "Failed to create sysfs file");
 		goto sysfs_err;
 	}
-
+	/* allocate cdev buffer */
 	dev_buf = kmalloc(BUFS, GFP_KERNEL);
 	if (IS_ERR(dev_buf)) {
 		dev_err(mymode_device, "%s", "Failed to alloc dev_buf");
