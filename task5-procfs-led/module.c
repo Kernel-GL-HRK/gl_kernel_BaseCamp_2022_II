@@ -25,6 +25,44 @@ static struct proc_dir_entry *proc_file;
 static struct proc_dir_entry *proc_dir;
 
 static ssize_t hello_read(struct file *File, char __user *buffer,
+			  size_t count, loff_t *offset);
+static ssize_t hello_write(struct file *file, const char __user *buffer,
+			   size_t count, loff_t *offset);
+static inline int proc_init(void);
+
+#ifdef HAVE_PROC_OPS
+static const struct proc_ops fops = {
+	.proc_read  = hello_read,
+	.proc_write = hello_write,
+};
+#else
+static const struct file_operations fops = {
+	.read  = hello_read,
+	.write = hello_write,
+};
+#endif
+
+static int __init hello_init(void)
+{
+	int ret;
+
+	ret = proc_init();
+
+	return ret;
+}
+
+static void __exit hello_exit(void)
+{
+	proc_remove(proc_file);
+	proc_remove(proc_dir);
+	pr_info("HELLO: PROC: /proc/%s/%s removed\n",
+		PROC_DIR_NAME, PROC_FILE_NAME);
+}
+
+module_init(hello_init);
+module_exit(hello_exit);
+
+static ssize_t hello_read(struct file *File, char __user *buffer,
 			  size_t count, loff_t *offset)
 {
 	ssize_t to_copy, not_copied, delta;
@@ -65,25 +103,16 @@ static ssize_t hello_write(struct file *file, const char __user *buffer,
 	return delta;
 }
 
-#ifdef HAVE_PROC_OPS
-static const struct proc_ops fops = {
-	.proc_read  = hello_read,
-	.proc_write = hello_write,
-};
-#else
-static const struct file_operations fops = {
-	.read  = hello_read,
-	.write = hello_write,
-};
-#endif
-
-static int __init hello_init(void)
+static inline int proc_init(void)
 {
+	int ret = 0;
+
 	proc_dir = proc_mkdir(PROC_DIR_NAME, NULL);
 	if (!proc_dir) {
 		pr_err("HELLO: ERROR: Could not create /proc/%s directory\n",
 		       PROC_DIR_NAME);
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto exit;
 	}
 
 	proc_file = proc_create(PROC_FILE_NAME, 0666, proc_dir, &fops);
@@ -92,22 +121,14 @@ static int __init hello_init(void)
 		       PROC_DIR_NAME, PROC_FILE_NAME);
 		proc_remove(proc_file);
 		proc_remove(proc_dir);
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto exit;
 	}
 
 	pr_info("HELLO: PROC: /proc/%s/%s created\n",
 		PROC_DIR_NAME, PROC_FILE_NAME);
 
-	return 0;
+exit:
+	return ret;
 }
 
-static void __exit hello_exit(void)
-{
-	proc_remove(proc_file);
-	proc_remove(proc_dir);
-	pr_info("HELLO: PROC: /proc/%s/%s removed\n",
-		PROC_DIR_NAME, PROC_FILE_NAME);
-}
-
-module_init(hello_init);
-module_exit(hello_exit);
