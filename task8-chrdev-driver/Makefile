@@ -1,5 +1,5 @@
 ifneq ($(KERNELRELEASE),)
-obj-m := chrdev_proc.o
+obj-m := chrdev.o
 else
 KDIR ?= /lib/modules/`uname -r`/build
 PWD :=$(shell pwd)
