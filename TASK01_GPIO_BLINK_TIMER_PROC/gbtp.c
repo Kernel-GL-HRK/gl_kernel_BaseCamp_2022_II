@@ -111,13 +111,10 @@ static ssize_t procfs_timer_write(struct file *file, const char __user *buffer,
 	return buffer_size;
 }
 
-static const struct file_operations gpio_fops = { .owner = THIS_MODULE,
-						  .read = procfs_gpio_read };
+const struct proc_ops gpio_fops = { .proc_read = procfs_gpio_read };
 
-static const struct file_operations timer_fops = { .owner = THIS_MODULE,
-						   .read = procfs_timer_read,
-						   .write =
-							   procfs_timer_write };
+const struct proc_ops timer_fops = { .proc_read = procfs_timer_read,
+				     .proc_write = procfs_timer_write };
 
 static int __init gbtp_init(void)
 {
