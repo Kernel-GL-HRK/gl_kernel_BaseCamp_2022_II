@@ -12,8 +12,8 @@
 
 MODULE_LICENSE("GPL v2");
 MODULE_AUTHOR("Yurii Bezkor");
-MODULE_DESCRIPTION("GPIO feature");
-MODULE_VERSION("0.4");
+MODULE_DESCRIPTION("GPIO-TIMER-PROCFS");
+MODULE_VERSION("0.5");
 
 #define LED_DEFAULT 20
 static int led_status = -1;
@@ -29,7 +29,7 @@ static struct timer_list timer_gbtp;
 
 void timer_callback(struct timer_list *data)
 {
-	pr_info("GBTP: Timer call\n");
+	//pr_info("GBTP: Timer call\n");
 	led_status = !led_status;
 	gpio_set_value(led_pin, led_status);
 	mod_timer(&timer_gbtp, jiffies + msecs_to_jiffies(timer_count));
@@ -93,24 +93,39 @@ static ssize_t procfs_timer_read(struct file *file, char __user *buffer,
 static ssize_t procfs_timer_write(struct file *file, const char __user *buffer,
 				  size_t count_bytes, loff_t *offset)
 {
-	size_t buffer_size;
+	long timer_value;
+	int error_code;
 
-	pr_info("Write timeout\n");
+	pr_info("GBTP TimWr: try read new timeout\n");
 
 	if (*offset > 0 || count_bytes > PROCFS_BUFFER_SIZE) {
-		pr_err("Illegal buffer\n");
+		pr_err("GBTP TimWr: Illegal buffer\n");
 		return -EFAULT;
 	}
 
 	if (copy_from_user(procfs_buffer, buffer, count_bytes)) {
-		pr_err("Error copy_from_user\n");
+		pr_err("GBTP TimWr: Error copy_from_user\n");
 		return -EFAULT;
 	};
 
-	buffer_size = count_bytes;
-	pr_info("Buffer is %s\n", procfs_buffer);
+	pr_info("GBTP TimWr: Buffer is %s\n", procfs_buffer);
 
-	return buffer_size;
+	error_code = kstrtol_from_user(buffer, count_bytes, 10, &timer_value);
+	pr_info("Value is %ld\n", timer_value);
+	if (error_code) {
+		pr_err("GBTP TimeWr: Wrong input CODE=%d\n", error_code);
+		return error_code;
+	}
+	if (timer_value >= 100 && timer_value <= 10000) {
+		timer_count = (int)timer_value;
+		pr_info("GBTP TimeWr: New Timer = %d\n", timer_count);
+	} else {
+		pr_err("GBTP TimWr: Timer value must be in [100,10000]\n");
+	}
+
+	*offset = count_bytes;
+
+	return count_bytes;
 }
 
 const struct proc_ops gpio_fops = { .proc_read = procfs_gpio_read };
