@@ -8,13 +8,14 @@
 #include <linux/jiffies.h>
 #include <linux/proc_fs.h>
 #include <linux/uaccess.h>
+#include <linux/gpio.h>
 
 MODULE_LICENSE("GPL v2");
 MODULE_AUTHOR("Yurii Bezkor");
-MODULE_DESCRIPTION("ProcFS feature");
-MODULE_VERSION("0.3");
+MODULE_DESCRIPTION("GPIO feature");
+MODULE_VERSION("0.4");
 
-#define LED_DEFAULT -1
+#define LED_DEFAULT 20
 static int led_status = -1;
 static int led_pin = LED_DEFAULT;
 module_param(led_pin, int, 0644);
@@ -30,6 +31,7 @@ void timer_callback(struct timer_list *data)
 {
 	pr_info("GBTP: Timer call\n");
 	led_status = !led_status;
+	gpio_set_value(led_pin, led_status);
 	mod_timer(&timer_gbtp, jiffies + msecs_to_jiffies(timer_count));
 }
 
@@ -118,8 +120,18 @@ const struct proc_ops timer_fops = { .proc_read = procfs_timer_read,
 
 static int __init gbtp_init(void)
 {
+	int error_code;
+
 	pr_info("GBTP: LedPin = %d\n", led_pin);
 	pr_info("GBTP: TimerC = %d\n", timer_count);
+
+	error_code = gpio_request_one(led_pin, GPIOF_OUT_INIT_LOW, "LED");
+	if (error_code) {
+		pr_err("GBTP GPIO: error init GPIO = %d\n", led_pin);
+		return error_code;
+	}
+	pr_info("GBTP GPIO: Success init Led on GPIO = %d\n", led_pin);
+	led_status = 0;
 
 	procfs_dir = proc_mkdir(PROCFS_DIR_NAME, NULL);
 	if (procfs_dir == NULL) {
@@ -166,6 +178,7 @@ static void __exit gbtp_exit(void)
 	proc_remove(procfs_gpio);
 	proc_remove(procfs_timer);
 	proc_remove(procfs_dir);
+	gpio_free(led_pin);
 
 	pr_info("GBTP: Unload done!\n");
 }
