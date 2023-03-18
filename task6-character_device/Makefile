@@ -13,7 +13,7 @@ clean:
 endif
 
 check:
-	./checkpatch.pl --no-tree -f *.c *h
+	../checkpatch.pl --no-tree -f *.c *h
 
 insmod:
 	sudo insmod chardev.ko
