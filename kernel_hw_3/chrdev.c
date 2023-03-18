@@ -58,6 +58,40 @@ static struct driver_data drv_data = {
 	}
 };
 
+static ssize_t
+chrdev_buff_sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char *buff)
+{
+	pr_info("%s\n", __func__);
+	return sprintf(buff, "%s", drv_data.drv_info.buff);	
+}
+
+static ssize_t
+chrdev_buff_len_sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char *buff)
+{
+	pr_info("%s\n", __func__);
+	return sysfs_emit("%d\n", drv_data.drv_info.buff_len);
+}
+
+static ssize_t
+chrdev_read_cnt_sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char *buff)
+{
+	pr_info("%s\n", __func__);
+	return sysfs_emit("%d\n", drv_data.drv_info.read_cnt);
+}
+
+static ssize_t
+chrdev_write_cnt_sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char *buff)
+{
+	pr_info("%s\n", __func__);
+	return sysfs_emit("%d\n", drv_data.drv_info.write_cnt);
+}
+
+struct kobject *chrdev_kobj;
+struct kobj_attribute chrdev_buff_attr       = _ATTR(chrdev_buff, 0444, chrdev_buff_sysfs_show, NULL);
+struct kobj_attribute chrdev_buff_len_attr   = _ATTR(chrdev_buff_len, 0444, chrdev_buff_len_sysfs_show, NULL);
+struct kobj_attribute chrdev_read_cnt_attr   = _ATTR(chrdev_read_cnt, 0444, chrdev_read_cnt_sysfs_show, NULL);
+struct kobj_attribute chrdev_write_cnrt_attr = _ATTR(chrdev_write_cnt, 0444, chrdev_write_cnt_sysfs_show, NULL);
+
 ssize_t chrdev_read(struct file *filp, char __user *ubuf, size_t count, loff_t *off)
 {
 	size_t to_copy;
