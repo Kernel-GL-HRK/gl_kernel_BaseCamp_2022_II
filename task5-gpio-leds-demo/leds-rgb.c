@@ -41,6 +41,7 @@ static int my_dev_event(struct device *dev, struct kobj_uevent_env *env)
 	return 0;
 }
 
+static int read_from_dt(int *gpio_dt, long *direction_flag, int led_num);
 static struct file_operations gpio_leds_fops;
 
  /* Driver init */
@@ -80,6 +81,21 @@ static int  __init gpio_leds_driver_main(void)
 	if (device_create(dev_class, NULL, dev, NULL, DEVICE_NAME) == NULL) {
 		pr_err("%s: Cannot create the Device\n", DEVICE_NAME);
 		goto dev_remove;
+	}
+
+	/* Getting data from dt and register GPIO */
+
+	while (led_num < ARRAY_SIZE(leds_gpios)) {
+
+		if (!read_from_dt(&leds_gpios[led_num].gpio, &leds_gpios[led_num].flags, led_num))
+			pr_err("%s: gpio from dt found: %i", DEVICE_NAME, leds_gpios[led_num].gpio);
+
+		pr_err("%s: led %s,GPIO %i", DEVICE_NAME, led_name_dt[led_num], leds_gpios[led_num].gpio);
+		if (!gpio_is_valid(leds_gpios[led_num].gpio)) {
+			pr_err("%s: Gpio %i is not valid", DEVICE_NAME, leds_gpios[led_num].gpio);
+			goto dev_remove;
+		}
+	led_num++;
 	}
 
 	/* Multiple GPIO's request*/
@@ -134,6 +150,31 @@ static void  __exit gpio_leds_driver_exit(void)
 
 }
 
+/* Read GPIO values from dt */
+
+static int read_from_dt(int *gpio_dt, long *direction_flag, int led_num)
+{
+	struct device_node *np;
+	const char *direction[sizeof(directions[led_num])];
+
+	np = of_find_compatible_node(NULL, NULL, "gpio-leds,project1");
+	if (np) {
+
+		*gpio_dt = be32_to_cpup(of_get_property(np, led_name_dt[led_num], NULL));
+		*direction = of_get_property(np, gpio_direction_dt[led_num], NULL);
+		if (!strcmp(*direction, "in"))
+			*direction_flag = GPIOF_IN;
+		else
+			*direction_flag = GPIOF_OUT_INIT_LOW;
+
+		pr_err("%s: :found node and gpio= %d ,direction =%s for %s\n", DEVICE_NAME, *gpio_dt, *direction, leds_gpios[led_num].label);
+		return 0;
+		}
+	pr_err("%s: failed to find node", DEVICE_NAME);
+
+	return -1;
+
+}
 
 /* devsysfs open */
 static int device_file_open(struct inode *inode, struct file *file)

@@ -35,6 +35,11 @@ static struct gpio leds_gpios[] = {
 		{ 22, GPIOF_OUT_INIT_LOW,  "Blue LED"  }, /* default to OFF */
 	};
 
+/*definitions in dt*/
+static const char *led_name_dt[] = { "gpio_red", "gpio_green", "gpio_blue"};
+static const char *gpio_direction_dt[] = { "gpio_direction_red", "gpio_direction_green", "gpio_direction_blue"};
+static const char *directions[] = {"out", "out", "out"};
+
 
 /*****************************************************************************
 * Global variable or extern global variabls/functions
