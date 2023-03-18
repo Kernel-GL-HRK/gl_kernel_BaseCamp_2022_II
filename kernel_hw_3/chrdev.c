@@ -69,28 +69,28 @@ static ssize_t
 chrdev_buff_len_sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char *buff)
 {
 	pr_info("%s\n", __func__);
-	return sysfs_emit("%d\n", drv_data.drv_info.buff_len);
+	return sysfs_emit(buff, "%zu\n", drv_data.drv_info.buff_len);
 }
 
 static ssize_t
 chrdev_read_cnt_sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char *buff)
 {
 	pr_info("%s\n", __func__);
-	return sysfs_emit("%d\n", drv_data.drv_info.read_cnt);
+	return sysfs_emit(buff, "%zu\n", drv_data.drv_info.read_cnt);
 }
 
 static ssize_t
 chrdev_write_cnt_sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char *buff)
 {
 	pr_info("%s\n", __func__);
-	return sysfs_emit("%d\n", drv_data.drv_info.write_cnt);
+	return sysfs_emit(buff, "%zu\n", drv_data.drv_info.write_cnt);
 }
 
 struct kobject *chrdev_kobj;
-struct kobj_attribute chrdev_buff_attr       = _ATTR(chrdev_buff, 0444, chrdev_buff_sysfs_show, NULL);
-struct kobj_attribute chrdev_buff_len_attr   = _ATTR(chrdev_buff_len, 0444, chrdev_buff_len_sysfs_show, NULL);
-struct kobj_attribute chrdev_read_cnt_attr   = _ATTR(chrdev_read_cnt, 0444, chrdev_read_cnt_sysfs_show, NULL);
-struct kobj_attribute chrdev_write_cnrt_attr = _ATTR(chrdev_write_cnt, 0444, chrdev_write_cnt_sysfs_show, NULL);
+struct kobj_attribute chrdev_buff_attr       = __ATTR(chrdev_buff, 0444, chrdev_buff_sysfs_show, NULL);
+struct kobj_attribute chrdev_buff_len_attr   = __ATTR(chrdev_buff_len, 0444, chrdev_buff_len_sysfs_show, NULL);
+struct kobj_attribute chrdev_read_cnt_attr   = __ATTR(chrdev_read_cnt, 0444, chrdev_read_cnt_sysfs_show, NULL);
+struct kobj_attribute chrdev_write_cnt_attr  = __ATTR(chrdev_write_cnt, 0444, chrdev_write_cnt_sysfs_show, NULL);
 
 ssize_t chrdev_read(struct file *filp, char __user *ubuf, size_t count, loff_t *off)
 {
@@ -219,10 +219,46 @@ static int __init chrdev_init(void)
 	if (drv_data.pfile == NULL)
 		pr_err("%s: can not create /proc/%s file\n", __func__, DRV_PROC_NAME);
 
+	chrdev_kobj = kobject_create_and_add("chrdev_sysfs", kernel_kobj);
+	if (chrdev_kobj == NULL) {
+		pr_err("%s: Can not create kobject\n", __func__);
+		goto err_kobj;
+	}
+
+	if (sysfs_create_file(chrdev_kobj, &chrdev_buff_attr.attr)) {
+		pr_err("%s: Can not create buff attribute\n", __func__);
+		goto err_buff_attr;
+	}
+
+	if (sysfs_create_file(chrdev_kobj, &chrdev_buff_len_attr.attr)) {
+		pr_err("%s: Can not create buff_len attribute\n", __func__);
+		goto err_buff_len_attr;
+	}
+
+	if (sysfs_create_file(chrdev_kobj, &chrdev_read_cnt_attr.attr)) {
+		pr_err("%s: Can not create read_cnt attribute\n", __func__);
+		goto err_read_cnt_attr;
+	}
+
+	if (sysfs_create_file(chrdev_kobj, &chrdev_write_cnt_attr.attr)) {
+		pr_err("%s: Can not create write_cnt attribute\n", __func__);
+		goto err_write_cnt_attr;
+	}
+
 	pr_info("%s: driver %s was successfully inserted\n", __func__, drv_data.dev_data.dev_name);
 
 	return 0;
 
+err_write_cnt_attr:
+	sysfs_remove_file(chrdev_kobj, &chrdev_read_cnt_attr.attr);
+err_read_cnt_attr:
+	sysfs_remove_file(chrdev_kobj, &chrdev_buff_len_attr.attr);
+err_buff_len_attr:
+	sysfs_remove_file(chrdev_kobj, &chrdev_buff_attr.attr);
+err_buff_attr:
+	kobject_put(chrdev_kobj);
+err_kobj:
+	device_destroy(drv_data.pclass, drv_data.dev_num);
 err_dev_create:
 	class_destroy(drv_data.pclass);
 err_class_create:
@@ -235,6 +271,11 @@ err_alloc_dev_num:
 
 static void __exit chrdev_exit(void)
 {
+	sysfs_remove_file(chrdev_kobj, &chrdev_write_cnt_attr.attr);
+	sysfs_remove_file(chrdev_kobj, &chrdev_read_cnt_attr.attr);
+	sysfs_remove_file(chrdev_kobj, &chrdev_buff_len_attr.attr);
+	sysfs_remove_file(chrdev_kobj, &chrdev_buff_attr.attr);
+	kobject_put(chrdev_kobj);
 	proc_remove(drv_data.pfile);
 	device_destroy(drv_data.pclass, drv_data.dev_num);
 	class_destroy(drv_data.pclass);
