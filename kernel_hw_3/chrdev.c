@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/uaccess.h>
@@ -46,7 +47,7 @@ static char chrdev_buff[MAX_BUFF_LEN];
 
 static struct driver_data drv_data = {
 	.drv_info = {
-		.buff 	   =  chrdev_buff,
+		.buff      =  chrdev_buff,
 		.buff_len  = MAX_BUFF_LEN,
 		.read_cnt  = 0,
 		.write_cnt = 0
@@ -61,28 +62,24 @@ static struct driver_data drv_data = {
 static ssize_t
 chrdev_buff_sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char *buff)
 {
-	pr_info("%s\n", __func__);
-	return sprintf(buff, "%s", drv_data.drv_info.buff);	
+	return sprintf(buff, "%s", drv_data.drv_info.buff);
 }
 
 static ssize_t
 chrdev_buff_len_sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char *buff)
 {
-	pr_info("%s\n", __func__);
 	return sysfs_emit(buff, "%zu\n", drv_data.drv_info.buff_len);
 }
 
 static ssize_t
 chrdev_read_cnt_sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char *buff)
 {
-	pr_info("%s\n", __func__);
 	return sysfs_emit(buff, "%zu\n", drv_data.drv_info.read_cnt);
 }
 
 static ssize_t
 chrdev_write_cnt_sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char *buff)
 {
-	pr_info("%s\n", __func__);
 	return sysfs_emit(buff, "%zu\n", drv_data.drv_info.write_cnt);
 }
 
