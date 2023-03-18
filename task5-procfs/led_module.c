@@ -44,9 +44,8 @@ static ssize_t proc_read(struct file *File, char __user *buffer,
 {
 	ssize_t to_copy, not_copied, delta;
 
-	if (!procfs_buffer_size) {
+	if (!procfs_buffer_size)
 		return 0;
-	}
 
 	to_copy = min(count, procfs_buffer_size);
 	not_copied = copy_to_user(buffer, procfs_buffer, to_copy);
