@@ -6,6 +6,8 @@
 #include <linux/device.h>
 #include <linux/cdev.h>
 #include <linux/kdev_t.h>
+#include <linux/kobject.h>
+#include <linux/sysfs.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("kostiantynmakhno@gmail.com");
@@ -24,8 +26,16 @@ struct device_data {
 	char *buff;
 };
 
+struct driver_info {
+	char *buff;
+	size_t buff_len;
+	size_t read_cnt;
+	size_t write_cnt;
+};
+
 struct driver_data {
 	struct proc_dir_entry *pfile;
+	struct driver_info drv_info;
 	struct class *pclass;
 	struct device *pdevice;
 	dev_t dev_num;
@@ -35,6 +45,12 @@ struct driver_data {
 static char chrdev_buff[MAX_BUFF_LEN];
 
 static struct driver_data drv_data = {
+	.drv_info = {
+		.buff 	   =  chrdev_buff,
+		.buff_len  = MAX_BUFF_LEN,
+		.read_cnt  = 0,
+		.write_cnt = 0
+	},
 	.dev_data = {
 		.dev_name = DRV_DEVICE_NAME,
 		.buff_len = MAX_BUFF_LEN,
