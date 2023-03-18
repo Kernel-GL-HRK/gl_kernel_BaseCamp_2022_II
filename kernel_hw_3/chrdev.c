@@ -96,13 +96,17 @@ ssize_t chrdev_read(struct file *filp, char __user *ubuf, size_t count, loff_t *
 {
 	size_t to_copy;
 	struct device_data *dev_data;
+	struct driver_data *drv_data;
 
 	pr_info("%s: requested bytes from userspace %zu\n", __func__, count);
 	dev_data = (struct device_data *)filp->private_data;
+	drv_data = container_of(dev_data, struct driver_data, dev_data);
 	to_copy = min(dev_data->buff_len - *off, count);
 
 	if (to_copy == 0)
 		return 0;
+
+	drv_data->drv_info.read_cnt++;
 
 	if (copy_to_user(ubuf, dev_data->buff + *off, to_copy))
 		return -EFAULT;
@@ -117,13 +121,17 @@ ssize_t chrdev_write(struct file *filp, const char __user *ubuf, size_t count, l
 {
 	size_t to_copy;
 	struct device_data *dev_data;
+	struct driver_data *drv_data;
 
 	pr_info("%s: requested bytes from userspace %zu\n", __func__, count);
 	dev_data = (struct device_data *)filp->private_data;
+	drv_data = container_of(dev_data, struct driver_data, dev_data);
 	to_copy = min(dev_data->buff_len - *off, count);
 
 	if (to_copy == 0)
 		return 0;
+
+	drv_data->drv_info.write_cnt++;
 
 	if (copy_from_user(dev_data->buff + *off, ubuf, to_copy))
 		return -EFAULT;
