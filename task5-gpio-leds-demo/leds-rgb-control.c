@@ -83,8 +83,10 @@ int leds_control(char *buffer)
 			blink.led_num[led_triggered] = 1; //turning on current led and setting blinking delay or otherwise
 			if (blink_delay)
 				blink.blink_ms[led_triggered] = blink_delay;
-			else
+			else {
 				blink.led_num[led_triggered] = 0;
+				blink.blink_ms[led_triggered] = 0;
+				}
 			mod_timer(&blink.blinking_timer[led_triggered], jiffies + msecs_to_jiffies(0));
 		}
 
