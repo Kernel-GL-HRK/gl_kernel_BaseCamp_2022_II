@@ -16,7 +16,7 @@
 
 
 /* Use shared buffer 8 byte */
-#define BUFFER_MAX_SIZE		8
+#define BUFFER_MAX_SIZE		128
 extern unsigned char fs_buffer[BUFFER_MAX_SIZE];
 
 /*default GPIO values*/
