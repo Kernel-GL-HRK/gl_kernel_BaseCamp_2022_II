@@ -13,21 +13,25 @@
  *               a RED LED blinks when the temperature is below 75 degrees.
  *               All LEDs remain on, and the RED LED blinking when the temperature is above 75 degrees.
  *               Additionally, the driver (proc/chrdev_proc) responds to the command
- *                        \"cat /proc/chrdev_proc/chrdev_temp_blink_proc\"
- *               and outputs the message
- *                        \"temperature = %d.%d Grad\"
+ *                        "cat /proc/chrdev_proc/chrdev_temp_blink_proc"
+ *               and outputs the message:
+ *                          "temperature = %d.%d Grad"
+ *							"Led Green < %d Grad"
+ *							"Led Yellow < %d Grad"
+ *							"Led Red < %d Grad"
+ *							"Leds All > %d Grad"
  *
- * 	variables to define temperature limits in 3 ranges:
+ *  variables to define temperature limits in 3 ranges:
  *				 		to_temp_green = 40000; // Green will be lit up until this temperature
  *				 		to_temp_yellow = 60000; // Yellow will be lit up until this temperature.
  *				 		to_temp_red = 75000; // Red will be lit up until this temperature
- *				 for read and write variables, 
+ *				 for read and write variables,
  *				 example:
  *				 		/sys/kernel/chrdev_temp_blink$ sudo su // write only under super user (permission=0664)
  *				 		/sys/kernel/chrdev_temp_blink# echo 31000 > to_temp_green
  * 				 		/sys/kernel/chrdev_temp_blink$ cat to_temp_green
  *				 		31000
- *
+ *						input condition: to_temp_green < to_temp_yellow < to_temp_red
  *	working with the buffer in /dev/chrdev0
  *				 example:
  *				 /dev$ sudo su // write only under super user
@@ -63,11 +67,9 @@
 #include <linux/gpio.h> //GPIO
 #include <linux/err.h>
 
-/* /sys  /dev */
-#define CLASS_NAME "chrdev"
-#define DEVICE_NAME "chrdev_temp_blink"
-#define BUFFER_SIZE 1024
+#include "temp_led_plus_module.h"
 
+// /sys  /dev 
 static struct class *pclass;
 static struct device *pdev;
 static struct cdev chrdev_cdev;
@@ -79,10 +81,7 @@ static int is_open;
 static int data_size;
 static unsigned char data_buffer[BUFFER_SIZE];
 
-/* procfs */
-#define PROC_BUFFER_SIZE 1024
-#define PROC_DIR_NAME "chrdev_proc"
-#define PROC_FILE_NAME "chrdev_temp_blink_proc"
+static int len_proc = 0;
 
 // Buffer and size for the proc file
 static char procfs_buffer[PROC_BUFFER_SIZE] = {0};
@@ -92,23 +91,20 @@ static size_t procfs_buffer_size;
 // Thermal zone device for temperature readings
 struct thermal_zone_device *tz;
 static int temp;
+static int to_temp_buf = 0;
 static int to_temp_green = 40000;  // Green will be lit up until this temperature
 static int to_temp_yellow = 60000; // Yellow will be lit up until this temperature
 static int to_temp_red = 75000;	   // Red will be lit up until this temperature
 
-// GPIO pins for the LEDs
-#define GPIO_5 5   // RED
-#define GPIO_6 6   // YELLOW
-#define GPIO_26 26 // GREEN
-
+// GPIO led_array for the LEDs
 struct gpio led_array[] = {
 	{GPIO_5, GPIOF_OUT_INIT_HIGH, "LED_5"},
 	{GPIO_6, GPIOF_OUT_INIT_HIGH, "LED_6"},
 	{GPIO_26, GPIOF_OUT_INIT_HIGH, "LED_26"}};
+
 static int gpio_index; // 0, 1, 2
 
-// Timer Variables
-#define TIMEOUT 5000 // milliseconds   (5s)
+// Timer
 static struct timer_list timer_blink, timer_thermal;
 static bool flag_timer;
 
@@ -235,7 +231,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 }
 
 /* procfs */
-static ssize_t hello_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
+static ssize_t info_temp_proc(struct file *file, char __user *buf, size_t count, loff_t *pos)
 {
 	// Get the temperature from the thermal zone
 	if (thermal_zone_get_temp(tz, &temp))
@@ -249,17 +245,33 @@ static ssize_t hello_read(struct file *file, char __user *buf, size_t count, lof
 	// If the current position is greater than or equal to the buffer size, there's nothing more to read
 	if (*pos >= procfs_buffer_size)
 	{
+		len_proc = 0;
 		return 0;
 	}
 
 	// Format the temperature string to be written to the buffer
-	sprintf(procfs_buffer, "CPU temperature = %d.%d Grad\n", temp / 1000, temp % 1000);
+	sprintf(procfs_buffer, "\nCPU temperature = %d.%d Grad\n", temp / 1000, temp % 1000);
+	len_proc += strlen(procfs_buffer);
+	sprintf(procfs_buffer + strlen(procfs_buffer), "\nLed Green  < %d/1000 Grad\n"
+												   "Led Yellow < %d/1000 Grad\n"
+												   "Led Red    < %d/1000 Grad\n"
+												   "Leds All   > %d/1000 Grad\n"
+												   "\nranges can be changed via \n/sys/kernel/chrdev_temp_blink$\n"
+												   "only with SUPER USER\ninput format from 1 to 90000\nexample:\n"
+												   "/sys/kernel/chrdev_temp_blink# echo 31000 > to_temp_green  (31 Grad)\n\n",
+													to_temp_green,
+													to_temp_yellow,
+													to_temp_red,
+													to_temp_red);
 
 	// If reading the buffer would cause a buffer overflow, adjust the size of the buffer accordingly
 	if (*pos + procfs_buffer_size > PROC_BUFFER_SIZE)
 	{
 		procfs_buffer_size = PROC_BUFFER_SIZE - *pos;
 	}
+
+	len_proc += strlen(procfs_buffer);
+	pr_info(" ______Length of procfs_buffer: %zu\n", len_proc);
 
 	// Copy the buffer contents to user space
 	if (copy_to_user(buf, procfs_buffer + *pos, procfs_buffer_size))
@@ -275,8 +287,8 @@ static ssize_t hello_read(struct file *file, char __user *buf, size_t count, lof
 }
 
 // Create procfs file for temperature
-static const struct proc_ops hello_fops = {
-	.proc_read = hello_read,
+static const struct proc_ops read_temp_fops = {
+	.proc_read = info_temp_proc,
 };
 /* end procfs */
 
@@ -300,7 +312,15 @@ static ssize_t sysfs_green_show(struct kobject *kobj, struct kobj_attribute *att
 static ssize_t sysfs_green_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
 	pr_info("Writing - sysfs store function to_temp_green...\n");
-	sscanf(buf, "%d", &to_temp_green);
+	sscanf(buf, "%d", &to_temp_buf);
+	if (to_temp_buf < to_temp_yellow)
+	{
+		to_temp_green = to_temp_buf;
+	}
+	else
+	{
+		pr_err("Error writing to sysfs, should be TO_TEMP_GREEN < to_temp_yellow < to_temp_red\n");
+	}
 	return count;
 }
 
@@ -312,7 +332,15 @@ static ssize_t sysfs_yellow_show(struct kobject *kobj, struct kobj_attribute *at
 static ssize_t sysfs_yellow_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
 	pr_info("Writing - sysfs store function to_temp_yellow...\n");
-	sscanf(buf, "%d", &to_temp_yellow);
+	sscanf(buf, "%d", &to_temp_buf);
+	if (to_temp_green < to_temp_buf && to_temp_buf < to_temp_red)
+	{
+		to_temp_yellow = to_temp_buf;
+	}
+	else
+	{
+		pr_err("Error writing to sysfs, should be to_temp_green < TO_TEMP_YELLOW < to_temp_red\n");
+	}
 	return count;
 }
 static ssize_t sysfs_red_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
@@ -323,7 +351,15 @@ static ssize_t sysfs_red_show(struct kobject *kobj, struct kobj_attribute *attr,
 static ssize_t sysfs_red_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
 	pr_info("Writing - sysfs store function to_temp_red...\n");
-	sscanf(buf, "%d", &to_temp_red);
+	sscanf(buf, "%d", &to_temp_buf);
+	if (to_temp_yellow < to_temp_buf)
+	{
+		to_temp_red = to_temp_buf;
+	}
+	else
+	{
+		pr_err("Error writing to sysfs, should be to_temp_green < to_temp_yellow < TO_TEMP_RED\n");
+	}
 	return count;
 }
 
@@ -406,7 +442,7 @@ static int __init temp_led_init(void)
 	}
 
 	// Create proc file
-	proc_file = proc_create(PROC_FILE_NAME, 0444, proc_folder, &hello_fops);
+	proc_file = proc_create(PROC_FILE_NAME, 0444, proc_folder, &read_temp_fops);
 	if (!proc_file)
 	{
 		pr_err("Failed to create /proc/%s/%s\n", PROC_DIR_NAME, PROC_FILE_NAME);
