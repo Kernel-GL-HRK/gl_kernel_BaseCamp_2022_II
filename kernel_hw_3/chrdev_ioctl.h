@@ -4,7 +4,7 @@
 #define CHRDEV_IOC_MAGIC 'k'
 
 enum chrdev_ioc {
-	CHRDEV_CBUFF,
+	CHRDEV_CBUFF=66,
 	CHRDEV_GBUFF_LEN,
 	CHRDEV_SBUFF_LEN,
 	CHRDEV_MAX
@@ -14,5 +14,7 @@ enum chrdev_ioc {
 #define CHRDEV_IOCGBUFF_LEN	_IOR(CHRDEV_IOC_MAGIC, CHRDEV_GBUFF_LEN, size_t *)
 #define CHRDEV_IOCSBUFF_LEN	_IOW(CHRDEV_IOC_MAGIC, CHRDEV_SBUFF_LEN, size_t *)
 
+#define DRV_DEVICE_NAME "chrdev0"
+#define DEVICE		"/dev/"DRV_DEVICE_NAME
 
 #endif /* CHRDEV_IOCTL_H */
