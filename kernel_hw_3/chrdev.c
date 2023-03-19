@@ -9,6 +9,9 @@
 #include <linux/kdev_t.h>
 #include <linux/kobject.h>
 #include <linux/sysfs.h>
+#include <linux/ioctl.h>
+#include <linux/string.h>
+#include "chrdev_ioctl.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("kostiantynmakhno@gmail.com");
@@ -17,7 +20,6 @@ MODULE_VERSION("1.0");
 
 #define MAX_BUFF_LEN 1024UL
 #define DRV_CLASS_NAME "chrdev"
-#define DRV_DEVICE_NAME "chrdev0"
 #define DRV_PROC_NAME  "chrdev"
 
 struct device_data {
@@ -28,8 +30,6 @@ struct device_data {
 };
 
 struct driver_info {
-	char *buff;
-	size_t buff_len;
 	size_t read_cnt;
 	size_t write_cnt;
 };
@@ -47,8 +47,6 @@ static char chrdev_buff[MAX_BUFF_LEN];
 
 static struct driver_data drv_data = {
 	.drv_info = {
-		.buff      =  chrdev_buff,
-		.buff_len  = MAX_BUFF_LEN,
 		.read_cnt  = 0,
 		.write_cnt = 0
 	},
@@ -62,13 +60,13 @@ static struct driver_data drv_data = {
 static ssize_t
 chrdev_buff_sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char *buff)
 {
-	return sprintf(buff, "%s", drv_data.drv_info.buff);
+	return sprintf(buff, "%s", drv_data.dev_data.buff);
 }
 
 static ssize_t
 chrdev_buff_len_sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char *buff)
 {
-	return sysfs_emit(buff, "%zu\n", drv_data.drv_info.buff_len);
+	return sysfs_emit(buff, "%zu\n", drv_data.dev_data.buff_len);
 }
 
 static ssize_t
@@ -175,12 +173,61 @@ ssize_t	chrdev_proc_read(struct file *filp, char __user *ubuf, size_t count, lof
 	return to_copy;
 }
 
+long chrdev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	int ret = 0;
+	size_t buff_len;
+	struct device_data *dev_data;
+
+	if (_IOC_TYPE(cmd) != CHRDEV_IOC_MAGIC)
+		return -ENOTTY;
+	if (_IOC_NR(cmd) >= CHRDEV_MAX)
+		return -ENOTTY;
+
+	if (_IOC_DIR(cmd) & _IOC_READ)
+		ret = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
+	else if (_IOC_DIR(cmd) & _IOC_WRITE)
+		ret = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
+	if (ret)
+		return -EFAULT;
+
+	dev_data = (struct device_data *)filp->private_data;
+
+	switch (cmd) {
+	case CHRDEV_IOCCBUFF:
+		pr_info("%s: get a clear buffer command\n", __func__);
+		memset(dev_data->buff, 0, dev_data->buff_len);
+	break;
+
+	case CHRDEV_IOCGBUFF_LEN:
+		pr_info("%s: get a get buffer length command\n", __func__);
+		ret = __put_user(dev_data->buff_len, (size_t __user *)arg);
+	break;
+
+	case CHRDEV_IOCSBUFF_LEN:
+		pr_info("%s: get a set buffer length command\n", __func__);
+		ret = __get_user(buff_len, (size_t __user *)arg);
+		if (buff_len <= MAX_BUFF_LEN)
+			dev_data->buff_len = buff_len;
+		else
+			pr_info("%s: try to set invalid buffer length while max possible is %zu\n",
+				MAX_BUFF_LEN);
+	break;
+
+	default:
+		return -ENOTTY;
+	}
+
+	return ret;
+}
+
 static const struct file_operations fops = {
 	.owner   = THIS_MODULE,
 	.open    = chrdev_open,
 	.release = chrdev_release,
 	.read    = chrdev_read,
-	.write   = chrdev_write
+	.write   = chrdev_write,
+	.unlocked_ioctl = chrdev_ioctl
 };
 
 static const struct proc_ops chrdev_ops = {
