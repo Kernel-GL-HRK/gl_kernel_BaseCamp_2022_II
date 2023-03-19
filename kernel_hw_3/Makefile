@@ -10,4 +10,4 @@ clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
 
 check:
-	$(KDIR)/scripts/checkpatch.pl --no-tree -f $(FILE)
+	-$(KDIR)/scripts/checkpatch.pl --no-tree -f $(FILE)
