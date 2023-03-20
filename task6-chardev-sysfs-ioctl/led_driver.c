@@ -7,6 +7,8 @@
 #include <linux/init.h>
 #include <linux/cdev.h>
 #include <linux/gpio.h>
+#include <linux/kobject.h>
+#include <linux/sysfs.h>
 
 #define DEV_CLASS	"led_class"
 #define DEV_NAME	"led_device"
@@ -16,10 +18,16 @@
 
 #define BUFFER_SIZE	512
 
+#define DEFAULT_DELAY	500
+
+/* chardev part */
 
 dev_t dev;
 static struct class *dev_class;
 static struct cdev led_cdev;
+
+static int delay = DEFAULT_DELAY;
+static struct kobject *kobj;
 
 static int __init led_driver_init(void);
 static void __exit led_driver_exit(void);
@@ -38,7 +46,6 @@ static const struct file_operations fops = {
 	.open		= led_open,
 	.release	= led_release,
 };
-
 
 static int led_open(struct inode *inode, struct file *f)
 {
@@ -93,6 +100,29 @@ static ssize_t led_write(struct file *f,
 	return len;
 }
 
+
+/* sysfs part */
+
+static ssize_t delay_show(struct kobject *kobj,
+			  struct kobj_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", delay);
+}
+
+static ssize_t delay_store(struct kobject *kobj, struct kobj_attribute *attr,
+			   const char *buf, size_t count)
+{
+	sscanf(buf, "%d", &delay);
+	return count;
+}
+
+static struct kobj_attribute delay_attribute =
+	__ATTR(delay, 0664, delay_show, delay_store);
+
+
+
+/* init, exit part */
+
 static int __init led_driver_init(void)
 {
 	/* Allocating Major number */
@@ -139,9 +169,25 @@ static int __init led_driver_init(void)
 	gpio_direction_output(GPIO_PIN, 0);
 	gpio_export(GPIO_PIN, false);
 
+
+	/* Creating sysfs kobj */
+	kobj = kobject_create_and_add(DEV_NAME, NULL);
+	if (!kobj) {
+		pr_err("ERROR: Cannot create kobject\n");
+		goto r_gpio;
+	}
+
+	/* Creating /sys/led_device/delay file */
+	if (sysfs_create_file(kobj, &delay_attribute.attr)) {
+		pr_err("ERROR: Failed to create sysfs file\n");
+		goto r_sysfs;
+	}
+
 	pr_info("LED Driver Inserted.\n");
 	return 0;
 
+r_sysfs:
+	kobject_put(kobj);
 r_gpio:
 	gpio_free(GPIO_PIN);
 r_device:
@@ -158,12 +204,15 @@ r_unreg:
 
 static void __exit led_driver_exit(void)
 {
+	sysfs_remove_file(kobj, &delay_attribute.attr);
+	kobject_put(kobj);
 	gpio_unexport(GPIO_PIN);
 	gpio_free(GPIO_PIN);
 	device_destroy(dev_class, dev);
 	class_destroy(dev_class);
 	cdev_del(&led_cdev);
 	unregister_chrdev_region(dev, 1);
+
 	pr_info("LED Driver Removed.\n");
 }
 
