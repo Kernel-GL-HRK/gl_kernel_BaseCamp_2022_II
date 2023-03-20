@@ -1,0 +1,5 @@
+Chrdev homework: part 1
+Write simple character device driver.
+Buffer size ~1k,
+Handlers: read(), write(), open(), release()
+Proc: read() chrdev buffer print.
