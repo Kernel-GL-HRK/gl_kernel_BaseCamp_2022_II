@@ -9,6 +9,9 @@
 #include <linux/proc_fs.h>
 #include <linux/kobject.h>
 #include <linux/sysfs.h>
+#include <linux/ioctl.h>
+
+#include "chardev_ioctl.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Kushnir Vladyslav");
@@ -16,8 +19,6 @@ MODULE_DESCRIPTION("Pcharacter devace");
 MODULE_VERSION("0.1");
 
 //DEV
-#define CLASS_NAME  "my_chardev"
-#define DEVICE_NAME "my_chardev"
 #define BUFFER_SIZE 1024
 
 static struct class  *pclass;
@@ -50,6 +51,45 @@ static bool is_read;
 
 static struct kobject *chrdev_kobj;
 
+//IOCTL
+static long dev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+{
+	if (_IOC_TYPE(cmd) != SOME_MAGIC) {
+		pr_err("chardev: SOME_MAGIC failed.\n");
+		return -ENOTTY;
+	}
+
+	if (_IOC_NR(cmd) >= END_IO) {
+		pr_err("char_dev: wrong command.\n");
+		return -ENOTTY;
+	}
+
+	switch (cmd) {
+		case CDEV_CLEAR:
+			data_size = 0;
+			data_buffer[0] = '\n';
+			break;
+		case CDEV_GET_SIZE:
+			if (copy_to_user((int32_t *) arg, &data_size, sizeof(data_size))) {
+				pr_err("chardev: write failed.\n");
+				return -EFAULT;
+			}
+			break;
+		case CDEV_SET_SIZE:
+			if (*((int32_t *) arg) > BUFFER_SIZE)
+				*((int32_t *) arg) = BUFFER_SIZE;
+			
+			if (copy_from_user(&data_size, (int32_t *) arg, sizeof(data_size))) {
+				pr_err("chardev: read failed.\n");
+				return -EFAULT;
+			}
+		default:
+			pr_err("char_dev: wrong command.\n");
+			return -ENOTTY;
+	}
+	return 0;
+}
+
 //DEV
 static int dev_open(struct inode *inodep, struct file *filep)
 {
@@ -66,7 +106,7 @@ static int dev_open(struct inode *inodep, struct file *filep)
 static int dev_release(struct inode *inodep, struct file *filep)
 {
 	is_open = 0;
-	pr_info("chardev:device closed.\n");
+	pr_info("chardev: device closed.\n");
 	return 0;
 }
 
@@ -127,6 +167,7 @@ static struct file_operations fops = { //DEV
 	.release =  dev_release,
 	.read =     dev_read,
 	.write =    dev_write,
+	.unlocked_ioctl = dev_ioctl,
 };
 
 static struct proc_ops proc_fops = { //PROC

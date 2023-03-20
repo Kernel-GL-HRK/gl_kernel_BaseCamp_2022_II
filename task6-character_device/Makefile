@@ -20,3 +20,6 @@ insmod:
 
 rmmod:
 	sudo rmmod chardev
+	
+main:
+	gcc main.c -o main.out
