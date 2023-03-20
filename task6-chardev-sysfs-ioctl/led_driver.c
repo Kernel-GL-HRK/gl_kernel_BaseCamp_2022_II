@@ -9,6 +9,8 @@
 #include <linux/gpio.h>
 #include <linux/kobject.h>
 #include <linux/sysfs.h>
+#include <linux/timer.h>
+
 
 #define DEV_CLASS	"led_class"
 #define DEV_NAME	"led_device"
@@ -28,6 +30,8 @@ static struct cdev led_cdev;
 
 static int delay = DEFAULT_DELAY;
 static struct kobject *kobj;
+
+static struct timer_list timer;
 
 static int __init led_driver_init(void);
 static void __exit led_driver_exit(void);
@@ -121,6 +125,20 @@ static struct kobj_attribute delay_attribute =
 
 
 
+
+/* timer */
+
+static void timer_callback(struct timer_list *data)
+{
+	static unsigned int led_state;
+
+	led_state ^= 1;
+
+	gpio_set_value(GPIO_PIN, led_state);
+	mod_timer(&timer, jiffies + msecs_to_jiffies(delay));
+}
+
+
 /* init, exit part */
 
 static int __init led_driver_init(void)
@@ -177,11 +195,14 @@ static int __init led_driver_init(void)
 		goto r_gpio;
 	}
 
-	/* Creating /sys/led_device/delay file */
+	/* Creating sysfs delay attribute file */
 	if (sysfs_create_file(kobj, &delay_attribute.attr)) {
 		pr_err("ERROR: Failed to create sysfs file\n");
 		goto r_sysfs;
 	}
+
+	timer_setup(&timer, timer_callback, 0);
+	add_timer(&timer);
 
 	pr_info("LED Driver Inserted.\n");
 	return 0;
@@ -204,10 +225,15 @@ r_unreg:
 
 static void __exit led_driver_exit(void)
 {
+	gpio_set_value(GPIO_PIN, 0);
+	del_timer(&timer);
+
 	sysfs_remove_file(kobj, &delay_attribute.attr);
 	kobject_put(kobj);
+
 	gpio_unexport(GPIO_PIN);
 	gpio_free(GPIO_PIN);
+
 	device_destroy(dev_class, dev);
 	class_destroy(dev_class);
 	cdev_del(&led_cdev);
