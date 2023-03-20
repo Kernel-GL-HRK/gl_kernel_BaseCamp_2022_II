@@ -7,6 +7,8 @@
 #include <linux/cdev.h>
 #include <linux/kdev_t.h>
 #include <linux/proc_fs.h>
+#include <linux/kobject.h>
+#include <linux/sysfs.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Kushnir Vladyslav");
@@ -41,6 +43,12 @@ static struct proc_dir_entry *proc_folder;
 #define PROC_DIR_NAME (DEVICE_NAME"_dir")
 
 static bool is_read;
+
+//SYS
+#define SYSFS_NAME DEVICE_NAME
+#define SYSFS_ATTR_NAME DEVICE_NAME"_attr"
+
+static struct kobject *chrdev_kobj;
 
 //DEV
 static int dev_open(struct inode *inodep, struct file *filep)
@@ -126,6 +134,20 @@ static struct proc_ops proc_fops = { //PROC
 	.proc_write = proc_write
 };
 
+//SYS
+static ssize_t sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	return sysfs_emit(buf, "Size of buffer: %d.\nCapasity of buffer: %d.\nBuffer contains:\n%s\n", data_size, BUFFER_SIZE, data_buffer);
+}
+
+static ssize_t sysfs_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	return count;
+}
+
+static struct kobj_attribute chrdev_attr = __ATTR(my_chardev, 0660, sysfs_show, sysfs_store);
+
+//MAIN
 static int __init chardev_init(void)
 {
 	//DEV
@@ -167,16 +189,28 @@ static int __init chardev_init(void)
 	}
 	pr_info("chardev: proc folder /proc/%s/ created successfully.\n", PROC_DIR_NAME);
 
-	proc_file = proc_create(PROC_FILE_NAME, 0666, proc_folder, &proc_fops);
+	proc_file = proc_create(PROC_FILE_NAME, 0660, proc_folder, &proc_fops);
 	if (!proc_file) {
 		pr_err("chardev: initialize /proc/%s/%s failed.\n", PROC_DIR_NAME, PROC_FILE_NAME);
 		goto proc_exit;
 	}
 	pr_info("chardev: /proc/%s/%s initialized successfully.\n", PROC_DIR_NAME, PROC_FILE_NAME);
 
+	//SYS
+	chrdev_kobj = kobject_create_and_add(SYSFS_NAME, NULL);
+
+	if (sysfs_create_file(chrdev_kobj, &chrdev_attr.attr)) {
+		pr_err("chardev: initialize /sys/%s failed.\n", SYSFS_NAME);
+		goto sys_exit;
+	}
+	pr_info("chardev: /sys/%s initialized successfully.\n", SYSFS_NAME);
+
 	pr_info("chardev: modele init successfully.\n");
 	return 0;
 
+sys_exit: //SYS
+	sysfs_remove_file(NULL, &chrdev_attr.attr);
+	kobject_put(chrdev_kobj);
 proc_exit: //PROC
 	proc_remove(proc_file);
 	proc_remove(proc_folder);
@@ -191,6 +225,10 @@ cdev_exit:
 
 static void __exit chardev_exit(void)
 {
+	//SYS
+	sysfs_remove_file(NULL, &chrdev_attr.attr);
+	kobject_put(chrdev_kobj);
+
 	//PROC
 	proc_remove(proc_file);
 	proc_remove(proc_folder);
