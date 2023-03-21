@@ -66,7 +66,9 @@
 #include <linux/timer.h>
 #include <linux/gpio.h> //GPIO
 #include <linux/err.h>
+#include <linux/ioctl.h>
 
+#include "chrdev_ioctl.h"
 #include "temp_led_plus_module.h"
 
 // /sys  /dev 
@@ -81,7 +83,10 @@ static int is_open;
 static int data_size;
 static unsigned char data_buffer[BUFFER_SIZE];
 
-static int len_proc = 0;
+data_buffer_info_t q; // ioctl struc
+//static int32_t ioctl_val;
+
+static int len_proc = 0; // Length of procfs_buffer
 
 // Buffer and size for the proc file
 static char procfs_buffer[PROC_BUFFER_SIZE] = {0};
@@ -96,13 +101,7 @@ static int to_temp_green = 40000;  // Green will be lit up until this temperatur
 static int to_temp_yellow = 60000; // Yellow will be lit up until this temperature
 static int to_temp_red = 75000;	   // Red will be lit up until this temperature
 
-// GPIO led_array for the LEDs
-struct gpio led_array[] = {
-	{GPIO_5, GPIOF_OUT_INIT_HIGH, "LED_5"},
-	{GPIO_6, GPIOF_OUT_INIT_HIGH, "LED_6"},
-	{GPIO_26, GPIOF_OUT_INIT_HIGH, "LED_26"}};
-
-static int gpio_index; // 0, 1, 2
+// static int gpio_index; // 0, 1, 2
 
 // Timer
 static struct timer_list timer_blink, timer_thermal;
@@ -212,9 +211,8 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 {
 	int ret;
 
-	pr_info("chrdev: write to file %s\n", filep->f_path.dentry->d_name.name); // filep->f_inode.dentry->d_iname
-	pr_info("chrdev: write to device %d:%d\n", imajor(filep->f_inode), iminor(filep->f_inode));
-
+	pr_info("chrdev0: write to file %s\n", filep->f_path.dentry->d_name.name); // filep->f_inode.dentry->d_iname
+	pr_info("chrdev0: write to device %d:%d\n", imajor(filep->f_inode), iminor(filep->f_inode));
 	data_size = len;
 	if (data_size > BUFFER_SIZE)
 		data_size = BUFFER_SIZE;
@@ -225,10 +223,110 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 		pr_err("chrdev: copy_from_user failed: %d\n", ret);
 		return -EFAULT;
 	}
-
-	pr_info("chrdev: %d bytes written\n", data_size);
+	pr_info("chrdev0: __data_buffer__ = %s", data_buffer);
+	pr_info("chrdev0: %d bytes written\n", data_size);
 	return data_size;
 }
+
+// ioctl
+static long dev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+{
+	int err = 0;
+	pr_info("chrdev: %s() cmd=0x%x arg=0x%lx\n", __func__, cmd, arg);
+
+	if(_IOC_TYPE(cmd) != CDEV_IOC_MAGIC)
+	{
+		pr_err("chrdev: CDEV_IOC_MAGIC err!\n");
+		return -ENOTTY;
+	}
+
+	if (_IOC_NR(cmd) >= CDEV_IOC_MAXNR)
+	{
+		pr_err("chrdev: CDEV_IOC_MAXNR err!\n");
+		return -ENOTTY;
+	}
+
+	if (_IOC_DIR(cmd) & _IOC_READ)
+	{
+		err = ! access_ok((void __user *)arg, _IOC_SIZE(cmd));
+	}
+
+	if (_IOC_DIR(cmd) & _IOC_WRITE)
+	{
+		err = ! access_ok((void __user *)arg, _IOC_SIZE(cmd));
+	}
+
+	if (err)
+	{
+		pr_err("chrdev: _IOC_READ / _IOC_WRITE err! = %d\n", err);
+		return -EFAULT;
+	}
+
+	switch (cmd)
+	{
+	case CDEV_WR_VALUE:
+		if (copy_from_user(&q, (data_buffer_info_t *)arg, sizeof(data_buffer_info_t)))
+		{
+			pr_err("chrdev: data write : Err!\n");
+		}
+		pr_info("chrdev WR_VALUE q.ioctl_from_user_value = %d\n", q.ioctl_from_user_value);
+
+		break;
+	case CDEV_RD_VALUE:
+		q.ioctl_to_user_value = q.ioctl_from_user_value;
+		if (copy_to_user((data_buffer_info_t *)arg, &q, sizeof(data_buffer_info_t)))
+		{
+			pr_err("chrdev: data read : Err!\n");
+		}
+		pr_info("chrdev RD_VALUE q.ioctl_to_user_value = %d\n", q.ioctl_to_user_value);
+		break;
+	case CDEV_CLEAR_BUFFER:
+		memset(data_buffer, '\0', 1);
+		pr_info("chrdev CLEAR_BUFFER data_buffer = %s\n", data_buffer);
+		break;
+	case CDEV_GET_BUFFER_SIZE:
+		q.ioctl_arr_size_val = sizeof(data_buffer);
+		// q.ioctl_str_size_val = strlen(data_buffer);
+		q.ioctl_str_size_val = data_size;
+		// snprintf(q.ioctl_data_buffer, sizeof(q.ioctl_data_buffer), "%s", data_buffer);
+
+		if (copy_to_user((data_buffer_info_t *)arg, &q, sizeof(data_buffer_info_t)))
+		{
+			pr_err("chrdev: CDEV_GET_BUFFER_SIZE data read : Err!\n");
+		}
+		pr_info("chrdev CDEV_GET_BUFFER_SIZE data_buffer[BUFFER_SIZE] array size is %d Byte\n", q.ioctl_arr_size_val);
+		pr_info("chrdev CDEV_GET_BUFFER_SIZE the size of the string including the character '0' = %d Byte\n", q.ioctl_str_size_val);
+		break;
+	case CDEV_WRRD_ARR_VALUE:
+		if (copy_from_user(&q, (data_buffer_info_t *)arg, sizeof(data_buffer_info_t)))
+		{
+			pr_err("chrdev: data write : Err!\n");
+		}
+		pr_info("chrdev WR_VALUE q.ioctl_from_user_value = %d\n", q.ioctl_from_user_value);
+		memcpy(q.ioctl_data_buffer, data_buffer, q.ioctl_from_user_value);
+		
+		if (copy_to_user((data_buffer_info_t *)arg, &q, sizeof(data_buffer_info_t)))
+		{
+			pr_err("chrdev: CDEV_GET_BUFFER_SIZE data read : Err!\n");
+		}
+		q.ioctl_to_user_value = 0; // copy into User Space can
+		pr_info("chrdev CDEV_WRRD_ARR_VALUE data_buffer[%d] = %.*s\n", q.ioctl_from_user_value, q.ioctl_from_user_value, q.ioctl_data_buffer);
+		break;
+	default:
+		pr_warn("chrdev: invalid cmd(%u)\n", cmd);
+		break;
+	}
+	return 0;
+}
+
+static struct file_operations fops =
+{
+		.open = dev_open,
+		.release = dev_release,
+		.read = dev_read,
+		.write = dev_write,
+		.unlocked_ioctl = dev_ioctl,
+};
 
 /* procfs */
 static ssize_t info_temp_proc(struct file *file, char __user *buf, size_t count, loff_t *pos)
@@ -259,10 +357,10 @@ static ssize_t info_temp_proc(struct file *file, char __user *buf, size_t count,
 												   "\nranges can be changed via \n/sys/kernel/chrdev_temp_blink$\n"
 												   "only with SUPER USER\ninput format from 1 to 90000\nexample:\n"
 												   "/sys/kernel/chrdev_temp_blink# echo 31000 > to_temp_green  (31 Grad)\n\n",
-													to_temp_green,
-													to_temp_yellow,
-													to_temp_red,
-													to_temp_red);
+			to_temp_green,
+			to_temp_yellow,
+			to_temp_red,
+			to_temp_red);
 
 	// If reading the buffer would cause a buffer overflow, adjust the size of the buffer accordingly
 	if (*pos + procfs_buffer_size > PROC_BUFFER_SIZE)
@@ -291,14 +389,6 @@ static const struct proc_ops read_temp_fops = {
 	.proc_read = info_temp_proc,
 };
 /* end procfs */
-
-static struct file_operations fops =
-	{
-		.open = dev_open,
-		.release = dev_release,
-		.read = dev_read,
-		.write = dev_write,
-};
 /*************** Sysfs functions **********************/
 unsigned int sysfs_val = 0;
 
@@ -404,7 +494,7 @@ static int __init temp_led_init(void)
 	pr_info("chrdev: device class created successfully\n");
 
 	// Create device node
-	pdev = device_create(pclass, NULL, dev, NULL, CLASS_NAME "0"); //    /dev/chrdev0     CLASS_NAME
+	pdev = device_create(pclass, NULL, dev, NULL, CLASS_NAME"0"); //    /dev/chrdev0     CLASS_NAME
 	if (IS_ERR(pdev))
 	{
 		goto device_err;
