@@ -8,19 +8,19 @@
 #include <linux/cdev.h>
 #include <linux/kdev_t.h>
 #include <linux/err.h>
+#include <linux/kobject.h>
+#include <linux/string.h>
+#include <linux/sysfs.h>
+
 
 
 MODULE_LICENSE("GPL");                  ///< The license type -- this affects runtime behavior
 MODULE_AUTHOR("Yevhen Kolesnyk");       ///< The author -- visible when you use modinfo
-MODULE_DESCRIPTION("Character device driver with Proc Interface");  ///< The description -- see modinfo
+MODULE_DESCRIPTION("Character device driver with Proc and Sys Interface");  ///< The description -- see modinfo
 MODULE_VERSION("0.1");                  ///< The version of the module
 
 
 #define BUFFER_SIZE 1024
-
-
-static char procfs_buffer[BUFFER_SIZE] = {0};
-static size_t procfs_buffer_size;
 
 static struct proc_dir_entry *proc_file;
 static struct proc_dir_entry *proc_folder;
@@ -40,23 +40,61 @@ dev_t dev = 0;
 static int major;
 static int is_open;
 
-static int data_size = 0;
-static unsigned char data_buffer[BUFFER_SIZE];
+static size_t buffer_size = 0;
+static unsigned char data_buffer[BUFFER_SIZE] = {0};;
+
+
+static int dev_read_count;
+static int dev_write_count;
+
+
+static ssize_t data_buffer_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	pr_info("chrdev: sysfs show data_buffer_show");
+	if (buffer_size == 0)
+		return sprintf(buf, "\n");
+	return sprintf(buf, "%s\n", data_buffer);
+}
+
+static ssize_t buffer_size_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	pr_info("chrdev: sysfs show buffer_size_show");
+	return sprintf(buf, "%d\n", buffer_size);
+}
+
+static ssize_t dev_read_count_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	pr_info("chrdev: sysfs show dev_read_count_show");
+	return sprintf(buf, "%d\n", dev_read_count);
+}
+
+static ssize_t dev_write_count_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	pr_info("chrdev: sysfs show dev_write_count_show");
+	return sprintf(buf, "%d\n", dev_write_count);
+}
+
+static struct kobject *chrdev_kobj;
+struct kobj_attribute data_buffer_attr = __ATTR(chrdev_buffer, 0660, data_buffer_show, NULL);
+struct kobj_attribute data_buffer_size_attr = __ATTR(chrdev_buffer_size, 0660, buffer_size_show, NULL);
+struct kobj_attribute dev_read_count_attr = __ATTR(chrdev_dev_read_count, 0660, dev_read_count_show, NULL);
+struct kobj_attribute dev_write_count_attr = __ATTR(chrdev_dev_write_call_count, 0660, dev_write_count_show, NULL);
+
 
 
 static ssize_t proc_fs_read(struct file *File, char __user *buffer, size_t count, loff_t *offset)
 {
 	ssize_t to_copy, not_copied, delta;
 
-	if (procfs_buffer_size == 0)
+	if (buffer_size == 0)
 		return 0;
 
-	to_copy = min(count, procfs_buffer_size);
+	to_copy = min(count, buffer_size);
 
-	not_copied = copy_to_user(buffer, procfs_buffer, to_copy);
+	not_copied = copy_to_user(buffer, data_buffer, to_copy);
 
 	delta = to_copy - not_copied;
-	procfs_buffer_size -= delta;
+	buffer_size -= delta;
 
 	return delta;
 }
@@ -89,13 +127,15 @@ static int dev_release(struct inode *inodep, struct file *filep)
 
  static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *offset)
  {
+	
 	int ret;
 
+	dev_read_count++;
 
 	pr_info("chrdev: read from file %s\n", filep->f_path.dentry->d_iname); 
 	pr_info("chrdev: read from device %d:%d\n", imajor(filep->f_inode), iminor (filep->f_inode));
 
-	if (len > data_size) len = data_size;
+	if (len > buffer_size) len = buffer_size;
 
 	ret = copy_to_user(buffer, data_buffer, len); 
 	if (ret) { 
@@ -103,37 +143,34 @@ static int dev_release(struct inode *inodep, struct file *filep)
 		return -EFAULT;
 	}
 
-	data_size = 0; 
+	buffer_size = 0; 
 
 	pr_info("chrdev: %zu bytes read\n", len);
 	return len;
  }
 
  static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, loff_t *offset)
-{
+{	
 	int ret;
 
-	
-	data_size = len;
-	if (data_size> BUFFER_SIZE) data_size = BUFFER_SIZE;
+	dev_write_count++;
 
-	ret = copy_from_user(data_buffer, buffer, data_size);
+
+	pr_info("chrdev: write to file %s\n", filep->f_path.dentry->d_iname);
+	pr_info("chrdev: write to device %d: %d\n", imajor(filep->f_inode), iminor (filep->f_inode));
+
+	buffer_size = len;
+	if (buffer_size> BUFFER_SIZE) buffer_size = BUFFER_SIZE;
+
+	ret = copy_from_user(data_buffer, buffer, buffer_size);
 
 	if (ret) {
 		pr_err("chrdev: copy_from_user failed: %d\n", ret); 
 		return -EFAULT;
 	}
 
-
-	procfs_buffer_size = sprintf(procfs_buffer, data_buffer);
-
-	memcpy(procfs_buffer, data_buffer, data_size);
-	procfs_buffer_size = data_size;
-
-
-
-	pr_info("chrdev: %d bytes written\n", data_size);
-	return data_size;
+	pr_info("chrdev: %d bytes written\n", buffer_size);
+	return buffer_size;
 }
 
 static struct file_operations fops =
@@ -145,12 +182,12 @@ static struct file_operations fops =
 };
 
 
-
-
 static int __init chrdev_init(void)
 {
+	dev_read_count = 0;
+	dev_write_count = 0;
     is_open = 0;
-    data_size = 0;
+    buffer_size = 0;
     major = alloc_chrdev_region(&dev, 0, 1, DEVICE_NAME);
 
     if (major < 0) {
@@ -193,23 +230,71 @@ static int __init chrdev_init(void)
     }
     pr_info("chrdev: proc file created successfully\n");
 
-    return 0;
+/*Creating a directory in /sys/kernel/ */
 
-proc_file_err:
-    remove_proc_entry(PROC_FILE_NAME, proc_folder);
-proc_dir_err:
-    remove_proc_entry(PROC_DIR_NAME, NULL);
-device_err:
-    device_destroy(pclass, dev);
-class_err:
-    class_destroy(pclass);
-cdev_err:
-    unregister_chrdev_region(dev, 1);
-    return -EFAULT;
+	chrdev_kobj = kobject_create_and_add("chrdev_sysfs", kernel_kobj);
+
+/*Creating sysfs file for etx_value*/
+
+
+	if(sysfs_create_file(chrdev_kobj, &data_buffer_attr.attr)){ 
+		pr_err("chrdev: cannot create sysfs file\n"); 
+		goto sysfs_buffer_err;
+	}
+
+	if(sysfs_create_file(chrdev_kobj, &data_buffer_size_attr.attr)){ 
+		pr_err("chrdev: cannot create sysfs file\n"); 
+		goto sysfs_buffer_size_err;
+	}
+
+	if(sysfs_create_file(chrdev_kobj, &dev_read_count_attr.attr)){ 
+		pr_err("chrdev: cannot create sysfs file\n"); 
+		goto sysfs_read_count_err;
+	}
+
+	if(sysfs_create_file(chrdev_kobj, &dev_write_count_attr.attr)){ 
+		pr_err("chrdev: cannot create sysfs file\n"); 
+		goto sysfs_write_count_err;
+	}
+
+	pr_info("chrdev: device driver insmod success\n"); 
+	return 0;
+
+	sysfs_write_count_err:
+	sysfs_remove_file(kernel_kobj, &dev_read_count_attr.attr); 
+
+	sysfs_read_count_err:
+	sysfs_remove_file(kernel_kobj, &data_buffer_size_attr.attr); 
+
+	sysfs_buffer_size_err:
+	sysfs_remove_file(kernel_kobj, &data_buffer_attr.attr); 
+
+	sysfs_buffer_err:
+	kobject_put (chrdev_kobj);
+
+
+	proc_file_err:
+		remove_proc_entry(PROC_FILE_NAME, proc_folder);
+	proc_dir_err:
+		remove_proc_entry(PROC_DIR_NAME, NULL);
+	device_err:
+		device_destroy(pclass, dev);
+	class_err:
+		class_destroy(pclass);
+	cdev_err:
+		unregister_chrdev_region(dev, 1);
+		return -EFAULT;
 }
 
 static void __exit chrdev_exit(void)
 {
+
+	kobject_put (chrdev_kobj);
+	sysfs_remove_file(kernel_kobj, &dev_read_count_attr.attr); 
+	sysfs_remove_file(kernel_kobj, &data_buffer_size_attr.attr); 
+	sysfs_remove_file(kernel_kobj, &data_buffer_attr.attr); 
+	sysfs_remove_file(kernel_kobj, &dev_write_count_attr.attr);
+
 	device_destroy (pclass, dev);
 	class_destroy(pclass);
 	cdev_del(&chrdev_cdev);
