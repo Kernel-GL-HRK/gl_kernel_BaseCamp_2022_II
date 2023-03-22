@@ -3,3 +3,7 @@ Write simple character device driver.
 Buffer size ~1k,
 Handlers: read(), write(), open(), release()
 Proc: read() chrdev buffer print.
+
+Chrdev homework: part 2
+Add capability to character device driver
+Sysfs: read() chrdev buffer print
