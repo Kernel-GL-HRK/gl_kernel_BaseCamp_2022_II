@@ -6,9 +6,9 @@ cd ./release/tmp/guessanumber/
 gcc guess.c -o game
 
 until [ "$guest" = "n" ]; do
-
-echo "	y) play"
-echo "	n) exit"
+echo "	Wanna play a game?"
+echo "	y) yes"
+echo "	n) no"
 echo " number) number of rounds"
 
 read guest
