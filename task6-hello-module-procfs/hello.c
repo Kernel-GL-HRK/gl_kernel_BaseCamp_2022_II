@@ -8,13 +8,13 @@
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Kriz");
-MODULE_DESCRIPTION("Hello_world module with simple canculator (sum, sub and mul)");
+MODULE_DESCRIPTION("Hello_world module with simple calculator (sum, sub and mul)");
 MODULE_VERSION("0.1");
 
 #define PROC_BUFFER_SIZE 100
 
 static char   procfs_buffer[PROC_BUFFER_SIZE] = {0};
-static size_t procfs_buffer_size = 0;
+static size_t procfs_buffer_size = 0; 
 
 static struct proc_dir_entry *proc_file;
 static struct proc_dir_entry *proc_folder;
@@ -24,41 +24,22 @@ static struct proc_dir_entry *proc_folder;
 
 static ssize_t hello_read(struct file *File, char __user* buffer, size_t count, loff_t *offset)
 {
-	ssize_t to_copy, not_copied, delta;
-	
-	if(0 == procfs_buffer_size)
-	{
-		return 0;
-	}
-	
-	to_copy = min(count, procfs_buffer_size);
+	int ret;
 
-	not_copied = copy_to_user(buffer, procfs_buffer, to_copy);
+	if (*offset > 0)
+		ret = 0;
 
-	delta = to_copy - not_copied;
-	procfs_buffer_size =- delta;
+	if (copy_to_user(buffer, procfs_buffer, procfs_buffer_size))
+		return -EIO;
 
-	return delta;
+	*offset += procfs_buffer_size;
+	ret = procfs_buffer_size;
+
+	return ret;
 }
-
-/*static ssize_t hello_write(struct file *file, const char __user* buffer, size_t  count, loff_t *offset)
-{
-	ssize_t to_copy, not_copied, delta;
-	
-	to_copy = min(count, PROC_BUFFER_SIZE);
-	
-	not_copied = copy_from_user(procfs_buffer, buffer, to_copy);
-
-	delta = to_copy - not_copied;
-
-	procfs_buffer_size = delta;
-
-	return delta;
-}*/
 
 static struct proc_ops fops = {
 	.proc_read = hello_read
-	//.proc_write = hello_write
 };
 
 static int op1 = -1;
@@ -81,7 +62,6 @@ static int __init hello_init(void) {
 	if(!proc_file)
 	{
 		pr_err("HELLO: Error: Could not initialize /proc/%s/%s\n", PROC_DIR_NAME, PROC_FILE_NAME);
-		proc_remove(proc_file);
 		proc_remove(proc_folder);
 		return -ENOMEM;
 	}
