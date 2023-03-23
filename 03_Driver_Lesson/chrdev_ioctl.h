@@ -4,23 +4,21 @@
 /* ioctl */
 #define CDEV_IOC_MAGIC 'V'
 
-enum cdev_ioctl
-{
-    WR_VALUE,
-    RD_VALUE,
-    CLEAR_BUFFER,
-    GET_BUFFER_SIZE,
-    SET_BUFFER_SIZE,
-    CDEV_IOC_MAXNR, /* keep last */
+enum cdev_ioctl {
+	WR_VALUE,
+	RD_VALUE,
+	CLEAR_BUFFER,
+	GET_BUFFER_SIZE,
+	SET_BUFFER_SIZE,
+	CDEV_IOC_MAXNR, /* keep last */
 };
 
-typedef struct
-{
-    unsigned int ioctl_to_user_value;
-    unsigned int ioctl_from_user_value;
-    unsigned int ioctl_arr_size_val;
-    unsigned int ioctl_str_size_val;
-    unsigned char ioctl_data_buffer[1024];
+typedef struct {
+	unsigned int ioctl_to_user_value;
+	unsigned int ioctl_from_user_value;
+	unsigned int ioctl_arr_size_val;
+	unsigned int ioctl_str_size_val;
+	unsigned char ioctl_data_buffer[1024];
 } data_buffer_info_t;
 
 #define CDEV_WR_VALUE        _IOW(CDEV_IOC_MAGIC, WR_VALUE, data_buffer_info_t *)

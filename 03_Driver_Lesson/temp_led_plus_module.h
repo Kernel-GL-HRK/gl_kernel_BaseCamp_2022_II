@@ -18,9 +18,9 @@
 
 // GPIO led_array for the LEDs
 struct gpio led_array[] = {
-    {GPIO_5, GPIOF_OUT_INIT_HIGH, "LED_5"},
-    {GPIO_6, GPIOF_OUT_INIT_HIGH, "LED_6"},
-    {GPIO_26, GPIOF_OUT_INIT_HIGH, "LED_26"}};
+	{GPIO_5, GPIOF_OUT_INIT_HIGH, "LED_5"},
+	{GPIO_6, GPIOF_OUT_INIT_HIGH, "LED_6"},
+	{GPIO_26, GPIOF_OUT_INIT_HIGH, "LED_26"}};
 
 static int gpio_index; // 0, 1, 2
 

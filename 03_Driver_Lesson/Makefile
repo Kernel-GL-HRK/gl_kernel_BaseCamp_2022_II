@@ -15,4 +15,3 @@ clean:
 
 clean_all:
 	make -C $(KDIR) M=$(shell pwd) clean
-	

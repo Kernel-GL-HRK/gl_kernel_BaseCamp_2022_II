@@ -22,21 +22,21 @@
  *							"Leds All > %d Grad"
  *
  *  variables to define temperature limits in 3 ranges:
- *				 		to_temp_green = 40000; // Green will be lit up until this temperature
- *				 		to_temp_yellow = 60000; // Yellow will be lit up until this temperature.
- *				 		to_temp_red = 75000; // Red will be lit up until this temperature
+ *						to_temp_green = 40000; // Green will be lit up until this temperature
+ *						to_temp_yellow = 60000; // Yellow will be lit up until this temperature.
+ *						to_temp_red = 75000; // Red will be lit up until this temperature
  *				 for read and write variables,
  *				 example:
- *				 		/sys/kernel/chrdev_temp_blink$ sudo su // write only under super user (permission=0664)
- *				 		/sys/kernel/chrdev_temp_blink# echo 31000 > to_temp_green
- * 				 		/sys/kernel/chrdev_temp_blink$ cat to_temp_green
- *				 		31000
+ *						/sys/kernel/chrdev_temp_blink$ sudo su // write only under super user (permission=0664)
+ *						/sys/kernel/chrdev_temp_blink# echo 31000 > to_temp_green
+ *						/sys/kernel/chrdev_temp_blink$ cat to_temp_green
+ *						31000
  *						input condition: to_temp_green < to_temp_yellow < to_temp_red
  *	working with the buffer in /dev/chrdev0
  *				 example:
  *				 /dev$ sudo su // write only under super user
  *				 /dev# echo test messeg 123 > chrdev0
- *				 /dev$ cat chrdev_temp_blink0
+ *				 /dev$ cat chrdev0
  *				 test messeg 123
  *				 /dev$dmesg  // output the device number (Major, Minor) and the size of the transmitted information in bytes
  *
@@ -45,12 +45,13 @@
  *               GPIO_6     YELLOW
  *               GPIO_26    GREEN
  *
- * 	Tested with Linux raspberrypi [5.10.103+]
+ *	Tested with Linux raspberrypi [5.10.103+]
  */
 
 #include <linux/init.h>
 #include <linux/fs.h>
 #include <linux/kernel.h>
+//#include <linux/minmax.h> // min_t();
 #include <linux/module.h>
 #include <linux/device.h>  // device fs
 #include <linux/thermal.h> // Thermal Zone  Temp
@@ -71,11 +72,11 @@
 #include "chrdev_ioctl.h"
 #include "temp_led_plus_module.h"
 
-// /sys  /dev 
+// /sys  /dev
 static struct class *pclass;
 static struct device *pdev;
 static struct cdev chrdev_cdev;
-dev_t dev = 0; // Major Minor
+dev_t dev; // Major Minor
 
 static int major;
 static int is_open;
@@ -86,7 +87,7 @@ static unsigned char data_buffer[BUFFER_SIZE];
 data_buffer_info_t q; // ioctl struc
 //static int32_t ioctl_val;
 
-static int len_proc = 0; // Length of procfs_buffer
+static int len_proc; // Length of procfs_buffer
 
 // Buffer and size for the proc file
 static char procfs_buffer[PROC_BUFFER_SIZE] = {0};
@@ -96,7 +97,7 @@ static size_t procfs_buffer_size;
 // Thermal zone device for temperature readings
 struct thermal_zone_device *tz;
 static int temp;
-static int to_temp_buf = 0;
+static int to_temp_buf;
 static int to_temp_green = 40000;  // Green will be lit up until this temperature
 static int to_temp_yellow = 60000; // Yellow will be lit up until this temperature
 static int to_temp_red = 75000;	   // Red will be lit up until this temperature
@@ -113,14 +114,11 @@ static struct proc_dir_entry *proc_folder;
 // Timer callback function for blinking LEDs
 void timer_blink_callback(struct timer_list *data)
 {
-	if (flag_timer == false)
-	{
+	if (flag_timer == false) {
 		gpio_set_value(led_array[gpio_index].gpio, 0);
 		mod_timer(&timer_blink, jiffies + msecs_to_jiffies(10));
 		// pr_info("led_array[gpio_index= %d].gpio = %d\n", gpio_index, led_array[gpio_index].gpio);
-	}
-	else
-	{
+	} else {
 		gpio_set_value(led_array[gpio_index].gpio, 1);
 		mod_timer(&timer_blink, jiffies + msecs_to_jiffies(1));
 	}
@@ -131,33 +129,25 @@ void timer_blink_callback(struct timer_list *data)
 void thermal_callback(struct timer_list *data)
 {
 	if (thermal_zone_get_temp(tz, &temp))
-	{
 		pr_err("%s Failed to get temperature\n", __func__);
-	}
+
 	// pr_info("Temperature: %d\n", temp);
-	if (temp < to_temp_green)
-	{ // LED GREEN blinklicht
+	if (temp < to_temp_green) { // LED GREEN blinklicht
 		gpio_index = 2;
 		gpio_set_value(GPIO_5, 0);
 		gpio_set_value(GPIO_6, 0);
 		gpio_set_value(GPIO_26, 1);
-	}
-	else if (temp < to_temp_yellow)
-	{ // LED YELLOW blinklicht
+	} else if (temp < to_temp_yellow) { // LED YELLOW blinklicht
 		gpio_index = 1;
 		gpio_set_value(GPIO_5, 0);
 		gpio_set_value(GPIO_6, 1);
 		gpio_set_value(GPIO_26, 0);
-	}
-	else if (temp < to_temp_red)
-	{ // LED RED blinklicht
+	} else if (temp < to_temp_red) { // LED RED blinklicht
 		gpio_index = 0;
 		gpio_set_value(GPIO_5, 1);
 		gpio_set_value(GPIO_6, 0);
 		gpio_set_value(GPIO_26, 0);
-	}
-	else
-	{ // LED RED blinklicht, YELLOW und GREEN licht
+	} else { // LED RED blinklicht, YELLOW und GREEN licht
 		gpio_index = 0;
 		gpio_set_value(GPIO_5, 1);
 		gpio_set_value(GPIO_6, 1);
@@ -168,8 +158,7 @@ void thermal_callback(struct timer_list *data)
 
 static int dev_open(struct inode *inodep, struct file *filep)
 {
-	if (is_open)
-	{
+	if (is_open) {
 		pr_err("chrdev: already open\n");
 		return -EBUSY;
 	}
@@ -196,8 +185,7 @@ static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *of
 		len = data_size;
 
 	ret = copy_to_user(buffer, data_buffer, len);
-	if (ret)
-	{
+	if (ret) {
 		pr_err("chrdev: copy_to_user failed: %d\n", ret);
 		return -EFAULT;
 	}
@@ -218,8 +206,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 		data_size = BUFFER_SIZE;
 
 	ret = copy_from_user(data_buffer, buffer, data_size);
-	if (ret)
-	{
+	if (ret) {
 		pr_err("chrdev: copy_from_user failed: %d\n", ret);
 		return -EFAULT;
 	}
@@ -232,56 +219,50 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 static long dev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	int err = 0;
+
 	pr_info("chrdev: %s() cmd=0x%x arg=0x%lx\n", __func__, cmd, arg);
 
-	if(_IOC_TYPE(cmd) != CDEV_IOC_MAGIC)
-	{
+	if (_IOC_TYPE(cmd) != CDEV_IOC_MAGIC) {
 		pr_err("chrdev: CDEV_IOC_MAGIC err!\n");
 		return -ENOTTY;
 	}
 
-	if (_IOC_NR(cmd) >= CDEV_IOC_MAXNR)
-	{
+	if (_IOC_NR(cmd) >= CDEV_IOC_MAXNR) {
 		pr_err("chrdev: CDEV_IOC_MAXNR err!\n");
 		return -ENOTTY;
 	}
 
 	if (_IOC_DIR(cmd) & _IOC_READ)
-	{
-		err = ! access_ok((void __user *)arg, _IOC_SIZE(cmd));
-	}
+		err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
+
 
 	if (_IOC_DIR(cmd) & _IOC_WRITE)
-	{
-		err = ! access_ok((void __user *)arg, _IOC_SIZE(cmd));
-	}
+		err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
 
-	if (err)
-	{
+
+	if (err) {
 		pr_err("chrdev: _IOC_READ / _IOC_WRITE err! = %d\n", err);
 		return -EFAULT;
 	}
 
-	switch (cmd)
-	{
+	switch (cmd) {
 	case CDEV_WR_VALUE:
 		if (copy_from_user(&q, (data_buffer_info_t *)arg, sizeof(data_buffer_info_t)))
-		{
 			pr_err("chrdev: data write : Err!\n");
-		}
+
 		pr_info("chrdev WR_VALUE q.ioctl_from_user_value = %d\n", q.ioctl_from_user_value);
 
 		break;
 	case CDEV_RD_VALUE:
 		q.ioctl_to_user_value = q.ioctl_from_user_value;
 		if (copy_to_user((data_buffer_info_t *)arg, &q, sizeof(data_buffer_info_t)))
-		{
 			pr_err("chrdev: data read : Err!\n");
-		}
+
 		pr_info("chrdev RD_VALUE q.ioctl_to_user_value = %d\n", q.ioctl_to_user_value);
 		break;
 	case CDEV_CLEAR_BUFFER:
 		memset(data_buffer, '\0', 1);
+		data_size = 0;
 		pr_info("chrdev CLEAR_BUFFER data_buffer = %s\n", data_buffer);
 		break;
 	case CDEV_GET_BUFFER_SIZE:
@@ -291,25 +272,21 @@ static long dev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		// snprintf(q.ioctl_data_buffer, sizeof(q.ioctl_data_buffer), "%s", data_buffer);
 
 		if (copy_to_user((data_buffer_info_t *)arg, &q, sizeof(data_buffer_info_t)))
-		{
 			pr_err("chrdev: CDEV_GET_BUFFER_SIZE data read : Err!\n");
-		}
+
 		pr_info("chrdev CDEV_GET_BUFFER_SIZE data_buffer[BUFFER_SIZE] array size is %d Byte\n", q.ioctl_arr_size_val);
 		pr_info("chrdev CDEV_GET_BUFFER_SIZE the size of the string including the character '0' = %d Byte\n", q.ioctl_str_size_val);
 		break;
 	case CDEV_WRRD_ARR_VALUE:
 		if (copy_from_user(&q, (data_buffer_info_t *)arg, sizeof(data_buffer_info_t)))
-		{
 			pr_err("chrdev: data write : Err!\n");
-		}
+
 		pr_info("chrdev WR_VALUE q.ioctl_from_user_value = %d\n", q.ioctl_from_user_value);
 		memcpy(q.ioctl_data_buffer, data_buffer, q.ioctl_from_user_value);
-		
-		if (copy_to_user((data_buffer_info_t *)arg, &q, sizeof(data_buffer_info_t)))
-		{
-			pr_err("chrdev: CDEV_GET_BUFFER_SIZE data read : Err!\n");
-		}
 		q.ioctl_to_user_value = 0; // copy into User Space can
+		if (copy_to_user((data_buffer_info_t *)arg, &q, sizeof(data_buffer_info_t)))
+			pr_err("chrdev: CDEV_GET_BUFFER_SIZE data read : Err!\n");
+
 		pr_info("chrdev CDEV_WRRD_ARR_VALUE data_buffer[%d] = %.*s\n", q.ioctl_from_user_value, q.ioctl_from_user_value, q.ioctl_data_buffer);
 		break;
 	default:
@@ -319,8 +296,8 @@ static long dev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	return 0;
 }
 
-static struct file_operations fops =
-{
+static const struct file_operations fops = {
+
 		.open = dev_open,
 		.release = dev_release,
 		.read = dev_read,
@@ -333,16 +310,14 @@ static ssize_t info_temp_proc(struct file *file, char __user *buf, size_t count,
 {
 	// Get the temperature from the thermal zone
 	if (thermal_zone_get_temp(tz, &temp))
-	{
 		pr_err("Failed to get temperature\n");
-	}
+
 
 	// Determine the size of the buffer to be read
-	procfs_buffer_size = min(count, (size_t)PROC_BUFFER_SIZE);
+	procfs_buffer_size = min_t(size_t, count, PROC_BUFFER_SIZE);
 
 	// If the current position is greater than or equal to the buffer size, there's nothing more to read
-	if (*pos >= procfs_buffer_size)
-	{
+	if (*pos >= procfs_buffer_size) {
 		len_proc = 0;
 		return 0;
 	}
@@ -354,7 +329,7 @@ static ssize_t info_temp_proc(struct file *file, char __user *buf, size_t count,
 												   "Led Yellow < %d/1000 Grad\n"
 												   "Led Red    < %d/1000 Grad\n"
 												   "Leds All   > %d/1000 Grad\n"
-												   "\nranges can be changed via \n/sys/kernel/chrdev_temp_blink$\n"
+												   "\nranges can be changed via\n/sys/kernel/chrdev_temp_blink$\n"
 												   "only with SUPER USER\ninput format from 1 to 90000\nexample:\n"
 												   "/sys/kernel/chrdev_temp_blink# echo 31000 > to_temp_green  (31 Grad)\n\n",
 			to_temp_green,
@@ -364,18 +339,15 @@ static ssize_t info_temp_proc(struct file *file, char __user *buf, size_t count,
 
 	// If reading the buffer would cause a buffer overflow, adjust the size of the buffer accordingly
 	if (*pos + procfs_buffer_size > PROC_BUFFER_SIZE)
-	{
 		procfs_buffer_size = PROC_BUFFER_SIZE - *pos;
-	}
 
 	len_proc += strlen(procfs_buffer);
 	pr_info(" ______Length of procfs_buffer: %zu\n", len_proc);
 
 	// Copy the buffer contents to user space
 	if (copy_to_user(buf, procfs_buffer + *pos, procfs_buffer_size))
-	{
 		return -EFAULT;
-	}
+
 
 	// Update the current position in the buffer
 	*pos += procfs_buffer_size;
@@ -390,7 +362,7 @@ static const struct proc_ops read_temp_fops = {
 };
 /* end procfs */
 /*************** Sysfs functions **********************/
-unsigned int sysfs_val = 0;
+unsigned int sysfs_val;
 
 // This function will be called when we read the sysfs file
 static ssize_t sysfs_green_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
@@ -402,15 +374,15 @@ static ssize_t sysfs_green_show(struct kobject *kobj, struct kobj_attribute *att
 static ssize_t sysfs_green_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
 	pr_info("Writing - sysfs store function to_temp_green...\n");
-	sscanf(buf, "%d", &to_temp_buf);
+	// sscanf(buf, "%d", &to_temp_buf);
+	if (kstrtoint(buf, 10, &to_temp_buf))
+		pr_err("Error writing to sysfs\n");
+
 	if (to_temp_buf < to_temp_yellow)
-	{
 		to_temp_green = to_temp_buf;
-	}
 	else
-	{
 		pr_err("Error writing to sysfs, should be TO_TEMP_GREEN < to_temp_yellow < to_temp_red\n");
-	}
+
 	return count;
 }
 
@@ -422,15 +394,15 @@ static ssize_t sysfs_yellow_show(struct kobject *kobj, struct kobj_attribute *at
 static ssize_t sysfs_yellow_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
 	pr_info("Writing - sysfs store function to_temp_yellow...\n");
-	sscanf(buf, "%d", &to_temp_buf);
+	// sscanf(buf, "%d", &to_temp_buf);
+	if (kstrtoint(buf, 10, &to_temp_buf))
+		pr_err("Error writing to sysfs\n");
+
 	if (to_temp_green < to_temp_buf && to_temp_buf < to_temp_red)
-	{
 		to_temp_yellow = to_temp_buf;
-	}
 	else
-	{
 		pr_err("Error writing to sysfs, should be to_temp_green < TO_TEMP_YELLOW < to_temp_red\n");
-	}
+
 	return count;
 }
 static ssize_t sysfs_red_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
@@ -441,15 +413,15 @@ static ssize_t sysfs_red_show(struct kobject *kobj, struct kobj_attribute *attr,
 static ssize_t sysfs_red_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
 	pr_info("Writing - sysfs store function to_temp_red...\n");
-	sscanf(buf, "%d", &to_temp_buf);
+	//sscanf(buf, "%d", &to_temp_buf);
+	if (kstrtoint(buf, 10, &to_temp_buf))
+		pr_err("Error writing to sysfs\n");
+
 	if (to_temp_yellow < to_temp_buf)
-	{
 		to_temp_red = to_temp_buf;
-	}
 	else
-	{
 		pr_err("Error writing to sysfs, should be to_temp_green < to_temp_yellow < TO_TEMP_RED\n");
-	}
+
 	return count;
 }
 
@@ -467,19 +439,17 @@ static int __init temp_led_init(void)
 
 	// Allocate device number
 	major = alloc_chrdev_region(&dev, 0, 1, DEVICE_NAME); // dev = Major, 0 = Minor, 1 = device, DEVICE_NAME
-	if (major < 0)
-	{
+	if (major < 0) {
 		pr_err("chrdev: register_chrdev failed %d\n", major);
 		return major;
 	}
 	pr_info("-------------chrdev: register_chrdev ok, major = %d minor = %d-------------\n", MAJOR(dev), MINOR(dev));
-	
+
 	// Creating cdev structure
 	cdev_init(&chrdev_cdev, &fops);
 
 	// Adding character device to the system
-	if ((cdev_add(&chrdev_cdev, dev, 1)) < 0)
-	{ // 1 = number of devices in the system
+	if ((cdev_add(&chrdev_cdev, dev, 1)) < 0) { // 1 = number of devices in the system
 		pr_err("chrdev: cannot add the device to the system\n");
 		goto cdev_err;
 	}
@@ -488,53 +458,46 @@ static int __init temp_led_init(void)
 	// Create device class
 	pclass = class_create(THIS_MODULE, CLASS_NAME);
 	if (IS_ERR(pclass))
-	{
 		goto class_err;
-	}
+
 	pr_info("chrdev: device class created successfully\n");
 
 	// Create device node
 	pdev = device_create(pclass, NULL, dev, NULL, CLASS_NAME"0"); //    /dev/chrdev0     CLASS_NAME
 	if (IS_ERR(pdev))
-	{
 		goto device_err;
-	}
+
 	pr_info("chrdev: device node created successfully\n");
 
 	// Create a directory in /sys/kernel/
 	chrdev_kobj = kobject_create_and_add(DEVICE_NAME, kernel_kobj); // "chrdev_sysfs"
 
 	// Creating sysfs file for to_temp_green
-	if (sysfs_create_file(chrdev_kobj, &to_temp_green_attr.attr))
-	{
+	if (sysfs_create_file(chrdev_kobj, &to_temp_green_attr.attr)) {
 		pr_err("chrdev: cannot create sysfs file to_temp_green_attr\n");
 		goto sysfs_err;
 	}
 	// Creating sysfs file for to_temp_yellow
-	if (sysfs_create_file(chrdev_kobj, &to_temp_yellow_attr.attr))
-	{
+	if (sysfs_create_file(chrdev_kobj, &to_temp_yellow_attr.attr)) {
 		pr_err("chrdev: cannot create sysfs file to_temp_yellow_attr\n");
 		goto sysfs_err;
 	}
 	// Creating sysfs file for to_temp_red
-	if (sysfs_create_file(chrdev_kobj, &to_temp_red_attr.attr))
-	{
+	if (sysfs_create_file(chrdev_kobj, &to_temp_red_attr.attr)) {
 		pr_err("chrdev: cannot create sysfs file to_temp_red_attr\n");
 		goto sysfs_err;
 	}
 	/* procfs */
 	// Create proc directory
 	proc_folder = proc_mkdir(PROC_DIR_NAME, NULL);
-	if (!proc_folder)
-	{
+	if (!proc_folder) {
 		pr_err("Failed to create /proc/%s\n", PROC_DIR_NAME);
 		return -ENOMEM;
 	}
 
 	// Create proc file
 	proc_file = proc_create(PROC_FILE_NAME, 0444, proc_folder, &read_temp_fops);
-	if (!proc_file)
-	{
+	if (!proc_file) {
 		pr_err("Failed to create /proc/%s/%s\n", PROC_DIR_NAME, PROC_FILE_NAME);
 		proc_remove(proc_folder);
 		return -ENOMEM;
@@ -542,8 +505,7 @@ static int __init temp_led_init(void)
 	/* end procfs */
 
 	// LED Driver Registration
-	if (gpio_request_array(led_array, ARRAY_SIZE(led_array)))
-	{
+	if (gpio_request_array(led_array, ARRAY_SIZE(led_array))) {
 		pr_err("Failed to request GPIO array\n");
 		return -1;
 	}
@@ -554,19 +516,15 @@ static int __init temp_led_init(void)
 
 	// Get Thermal Zone
 	tz = thermal_zone_get_zone_by_name("cpu-thermal");
-	if (!tz)
-	{
+	if (!tz) {
 		pr_err("thermal_zone_get_zone_by_name error\n");
 		return -EINVAL;
 	}
 	if (thermal_zone_get_temp(tz, &temp))
-	{
 		pr_err("Failed to get temperature\n");
-	}
 	else
-	{
 		pr_info("CPU Temperature: %d\n", temp / 1000);
-	}
+
 
 	// Start Timer
 	mod_timer(&timer_blink, jiffies + msecs_to_jiffies(TIMEOUT));
@@ -588,7 +546,7 @@ class_err:
 	class_destroy(pclass);
 cdev_err:
 	cdev_del(&chrdev_cdev);
-	
+
 	return 0;
 }
 
