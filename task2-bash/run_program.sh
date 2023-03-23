@@ -19,8 +19,6 @@ run_program () {
     done
 }
 
-COUNT=0
-
 while true
 do
     #each iteration ask user to press "y" to continue, "n" to exit, 
