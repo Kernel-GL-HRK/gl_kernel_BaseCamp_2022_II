@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SRC_CODE="../task1-simple-program/guess_a_number.c"
-PROGRAM="guesanumber"
+PROGRAM="guessanumber"
 DEST_PATH="/tmp/$PROGRAM"
 ARCHIVE="$PROGRAM.tar.gz"
 
