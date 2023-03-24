@@ -20,7 +20,7 @@ MODULE_VERSION("0.1");
 #define PROC_BUFFER_SIZE 500
 #define PROC_FILE_NAME   "dummy"
 #define PROC_DIR_NAME    "chrdev"
-
+#define PERMS 0644
 
 static int is_open;
 static int data_size;
@@ -42,51 +42,28 @@ static struct proc_dir_entry *proc_file, *proc_folder;
 dev_t dev = 0;					
 
 
-static ssize_t proc_chrdev_read(struct file *filep, char __user *buffer, size_t count, loff_t *offset)
+static ssize_t proc_chrdev_read(struct file *filep, char __user *buffer, size_t len, loff_t *offset)
 {
-	ssize_t to_copy, not_copied, delta;
+	pr_info("%s: read from file %s\n", DEVICE_NAME, filep->f_path.dentry->d_iname);
+	pr_info("%s: read from device %d:%d\n", DEVICE_NAME, imajor(filep->f_inode), iminor(filep->f_inode));
 
-	/*sprintf("Module name: %s\n", DEVICE_NAME);
-	sprintf("CharDev Read/Write buffer: %d\n", data_size);
-	sprintf("CharDev Read/Write buffer size: %d\n", BUFFER_SIZE);
-	sprintf("Reads: %llu\n", read_counts);
-	sprintf("Read amount: %llu\n", read_amount);
-	sprintf("Writes: %llu\n", write_counts);
-	sprintf("Write amount: %llu\n", write_amount);*/
-
-	
-	if(0 == procfs_buffer_size)
+	if (len > data_size) 
 	{
-		return 0;
+		len = data_size; 
 	}
 	
-	to_copy = min(count, procfs_buffer_size);
-
-	not_copied = copy_to_user(buffer, procfs_buffer, to_copy);
-
-	delta = to_copy - not_copied;
-	procfs_buffer_size =- delta;
-
-	return delta;
-
-
-
-	/*if (*offset > 0)
-		return 0;
-		
-	sprintf(procfs_buffer, "Module name: %s\n", DEVICE_NAME);
-	sprintf(procfs_buffer + 50,  "CharDev Read/Write buffer: %d\n", data_size);
-	sprintf(procfs_buffer + 100, "CharDev Read/Write buffer size: %d\n", BUFFER_SIZE);
-	sprintf(procfs_buffer + 150, "Reads: %llu\n", read_counts);
-	sprintf(procfs_buffer + 200, "Read amount: %llu\n", read_amount);
-	sprintf(procfs_buffer + 250, "Writes: %llu\n", write_counts);
-	sprintf(procfs_buffer + 300, "Write amount: %llu\n", write_amount);
-	
-	if (copy_to_user(buffer, procfs_buffer, PROC_BUFFER_SIZE))
+	if (copy_to_user(buffer, data_buffer, len)) 
+	{
+		pr_err("%s: copy_to_user failed\n", DEVICE_NAME);
 		return -EIO;
-		
-	*offset += PROC_BUFFER_SIZE;
-	return PROC_BUFFER_SIZE;*/
+	}
+
+	data_size = 0;
+	pr_info("%s: %zu bytes read\n", DEVICE_NAME, len);
+
+	read_counts++;
+	read_amount += len;
+	return len;
 }
 
 static struct proc_ops proc_fops = {
@@ -112,7 +89,7 @@ static int dev_release(struct inode *inodep, struct file *filep)
 
 static ssize_t dev_read(struct file *filep, char __user *buffer, size_t len, loff_t *offset)
 {
-	pr_info("%s: read from file %s\n", DEVICE_NAME, filep->f_path.dentry->d_iname);//-------------------------------
+	pr_info("%s: read from file %s\n", DEVICE_NAME, filep->f_path.dentry->d_iname);
 	pr_info("%s: read from device %d:%d\n", DEVICE_NAME, imajor(filep->f_inode), iminor(filep->f_inode));
 
 	if (len > data_size) len = data_size; 
@@ -127,7 +104,6 @@ static ssize_t dev_read(struct file *filep, char __user *buffer, size_t len, lof
 
 	read_counts++;
 	read_amount += len;
-	//----------------------------------------------------------------------------------------------------
 	return len;
 }
 
@@ -150,13 +126,14 @@ static ssize_t dev_write(struct file *filep, const char __user *buffer, size_t l
 	write_counts++;
 	write_amount += len;
 	pr_info("%s: %d bytes written\n", DEVICE_NAME, data_size);
+
 	return data_size;
 }
 
 /*Callbacks provided by the driver*/
 static struct file_operations chrdev_fops =
 {
-	.owner = THIS_MODULE,//?
+	.owner = THIS_MODULE,
 	.open = dev_open,
 	.release = dev_release,
 	.read = dev_read,
@@ -168,7 +145,7 @@ unsigned int sysfs_val = 0;
 static ssize_t sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	printk(KERN_INFO "Reading - sysfs show func...\n");
-	return sprintf(buf,"%d\n%d\n",sysfs_val, BUFFER_SIZE);
+	return sprintf(buf,"%d\n%d\ndev_read() calls: %lld\ndev_write() calls: %lld\n",sysfs_val, BUFFER_SIZE, read_counts, write_counts);
 }
 
 static ssize_t sysfs_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
