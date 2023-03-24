@@ -1,0 +1,26 @@
+/*
+ * leds-project dts overlay
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	fragment@0 {
+    		target-path = "/";
+    		__overlay__ {
+        	     gpio-leds {
+               			compatible = "gpio-leds,project1";
+				gpio_red   = <17>;
+				gpio_direction_red = "out";
+				gpio_green = <27>;
+				gpio_direction_green = "out";
+				gpio_blue  = <22>;
+				gpio_direction_blue = "out";	
+        			};
+			     };
+
+		   };
+};
+
+
