@@ -144,7 +144,9 @@ static ssize_t delay_show(struct kobject *kobj,
 static ssize_t delay_store(struct kobject *kobj, struct kobj_attribute *attr,
 			   const char *buf, size_t count)
 {
-	sscanf(buf, "%d", &delay);
+	if (kstrtos32(buf, 0, &delay) < 0)
+		delay = DEFAULT_DELAY;
+
 	return count;
 }
 
