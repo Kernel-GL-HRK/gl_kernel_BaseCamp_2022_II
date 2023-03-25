@@ -10,16 +10,13 @@
 #include <linux/kobject.h>
 #include <linux/sysfs.h>
 #include <linux/timer.h>
+#include "led_driver.h"
 
-
-#define DEV_CLASS	"led_class"
-#define DEV_NAME	"led_device"
 
 #define GPIO_PIN	26
 #define DEVICE_DESC	"gpio26"
 
 #define BUFFER_SIZE	512
-
 #define DEFAULT_DELAY	500
 
 /* chardev part */
