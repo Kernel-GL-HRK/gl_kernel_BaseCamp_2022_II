@@ -10,6 +10,9 @@
 #include <linux/kobject.h>
 #include <linux/sysfs.h>
 #include <linux/timer.h>
+#include <linux/ioctl.h>
+#include <linux/uaccess.h>
+
 #include "led_driver.h"
 
 
@@ -25,7 +28,7 @@ dev_t dev;
 static struct class *dev_class;
 static struct cdev led_cdev;
 
-static int delay = DEFAULT_DELAY;
+static int32_t delay = DEFAULT_DELAY;
 static struct kobject *kobj;
 
 static struct timer_list timer;
@@ -39,6 +42,7 @@ static ssize_t led_read(struct file *f,
 			char __user *buf, size_t len, loff_t *off);
 static ssize_t led_write(struct file *f,
 			 const char *buf, size_t len, loff_t *off);
+static long led_ioctl(struct file *f, unsigned int cmd, unsigned long arg);
 
 static const struct file_operations fops = {
 	.owner		= THIS_MODULE,
@@ -46,7 +50,11 @@ static const struct file_operations fops = {
 	.write		= led_write,
 	.open		= led_open,
 	.release	= led_release,
+	.unlocked_ioctl = led_ioctl,
 };
+
+
+/* chrdrv part */
 
 static int led_open(struct inode *inode, struct file *f)
 {
@@ -102,6 +110,29 @@ static ssize_t led_write(struct file *f,
 }
 
 
+/* ioctl part */
+
+static long led_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
+{
+	switch (cmd) {
+	case LED_WR_DELAY:
+		if (copy_from_user(&delay, (int32_t *) arg, sizeof(delay)))
+			pr_err("Data write error!");
+		pr_info("Delay changed to %d\n", delay);
+		break;
+	case LED_RD_DELAY:
+		if (copy_to_user((int32_t *) arg, &delay, sizeof(delay)))
+			pr_err("Data read error!");
+		pr_info("Delay is %d\n", delay);
+		break;
+	default:
+		return -ENOTTY;
+	}
+
+	return 0;
+}
+
+
 /* sysfs part */
 
 static ssize_t delay_show(struct kobject *kobj,
@@ -119,7 +150,6 @@ static ssize_t delay_store(struct kobject *kobj, struct kobj_attribute *attr,
 
 static struct kobj_attribute delay_attribute =
 	__ATTR(delay, 0664, delay_show, delay_store);
-
 
 
 

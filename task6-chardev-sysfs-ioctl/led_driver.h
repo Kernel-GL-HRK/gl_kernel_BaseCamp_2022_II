@@ -1,7 +1,7 @@
 #ifndef __led_driver_h__
 #define __led_driver_h__
 
-#define IOCTL_MAGIC	"W"
+#define IOCTL_MAGIC	'W'
 
 enum drv_ioctl {
 	WR_DELAY = 1,
