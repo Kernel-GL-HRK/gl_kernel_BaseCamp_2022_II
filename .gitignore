@@ -13,4 +13,5 @@ script/
 */.vscode/
 */.vscode-ctags
 task2-bash/release/
+test.*
 
