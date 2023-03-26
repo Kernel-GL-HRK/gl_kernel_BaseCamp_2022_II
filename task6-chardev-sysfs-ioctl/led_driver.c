@@ -22,6 +22,10 @@
 #define BUFFER_SIZE	512
 #define DEFAULT_DELAY	500
 
+#define MIN_DELAY_VALUE	100
+#define MAX_DELAY_VALUE	30000
+
+
 /* chardev part */
 
 dev_t dev;
@@ -114,17 +118,37 @@ static ssize_t led_write(struct file *f,
 
 static long led_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
 {
+	int32_t value;
+
+	pr_info("%s()  cmd = 0x%x  arg = 0x%lx\n", __func__, cmd, arg);
+
+	if (_IOC_TYPE(cmd) != IOCTL_MAGIC) {
+		pr_err("Wrong magic number!\n");
+		return -ENOTTY;
+	}
+
+	if (_IOC_NR(cmd) >= IOCTL_MAXN) {
+		pr_err("Wrong command!\n");
+		return -ENOTTY;
+	}
+
 	switch (cmd) {
 	case LED_WR_DELAY:
-		if (copy_from_user(&delay, (int32_t *) arg, sizeof(delay)))
+		if (copy_from_user(&value, (int32_t *) arg, sizeof(value)))
 			pr_err("Data write error!");
-		pr_info("Delay changed to %d\n", delay);
+
+		if (value >= MIN_DELAY_VALUE && value <= MAX_DELAY_VALUE) {
+			delay = value;
+			pr_info("Delay changed to %d\n", delay);
+		}
 		break;
+
 	case LED_RD_DELAY:
 		if (copy_to_user((int32_t *) arg, &delay, sizeof(delay)))
 			pr_err("Data read error!");
 		pr_info("Delay is %d\n", delay);
 		break;
+
 	default:
 		return -ENOTTY;
 	}
