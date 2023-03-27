@@ -8,15 +8,18 @@
 #include <linux/kdev_t.h>
 #include <linux/uaccess.h>
 #include <linux/err.h>
+#include <linux/ioctl.h>
+
+#include "cdev_ioctl.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Kriz");
-MODULE_DESCRIPTION("Simple character device driver witn procfs and sysfs");
+MODULE_DESCRIPTION("Simple character device driver witn procfs, sysfs and ioctl");
 MODULE_VERSION("0.1");
 
-#define CLASS_NAME  	"chrdev"
-#define DEVICE_NAME 	"chrdev_simple"
 #define BUFFER_SIZE 	 1024
+#define MAX_BUFFER_SIZE	 1024
+
 #define PROC_BUFFER_SIZE 500
 #define PROC_FILE_NAME   "dummy"
 #define PROC_DIR_NAME    "chrdev"
@@ -25,8 +28,6 @@ MODULE_VERSION("0.1");
 static int is_open;
 static int data_size;
 static unsigned char data_buffer[BUFFER_SIZE];
-static uint8_t procfs_buffer[PROC_BUFFER_SIZE] = {0};
-static size_t procfs_buffer_size = 0;
 
 /*statistics for /proc and /sysfs*/
 static uint64_t read_counts;
@@ -39,7 +40,10 @@ static struct class *pclass;
 static struct device *pdev;
 static struct cdev chrdev_cdev; 
 static struct proc_dir_entry *proc_file, *proc_folder;
-dev_t dev = 0;					
+dev_t dev = 0;
+
+/*ioctl*/
+static int32_t ioctl_val;					
 
 
 static ssize_t proc_chrdev_read(struct file *filep, char __user *buffer, size_t len, loff_t *offset)
@@ -130,6 +134,92 @@ static ssize_t dev_write(struct file *filep, const char __user *buffer, size_t l
 	return data_size;
 }
 
+/*ioctl*/
+static long dev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+{
+	int err = 0;
+
+	pr_info("%s: %s() cmd=0x%x arg=0x%lx\n", DEVICE_NAME, __func__, cmd, arg);
+
+	if(_IOC_TYPE(cmd) != CDEV_IOC_MAGIC) //тип cmd не співпадає з magic
+	{
+		pr_err("%s: %s\n", DEVICE_NAME, "CDEV_IOC_MAGIC err");
+		return -ENOTTY;
+	}
+
+	if(_IOC_NR(cmd) >= CDEV_IOC_MAXNR) //cmd number is not max number in enum
+	{
+		pr_err("%s: %s\n", DEVICE_NAME, "CDEV_IOC_MAXNR err");
+		return -ENOTTY;
+	}
+
+	if(_IOC_DIR(cmd) & _IOC_READ) 	//cmd direction is read, memory accessiable
+	{
+		err = ! access_ok((void __user *)arg, _IOC_SIZE(cmd));
+	}
+
+	if(_IOC_DIR(cmd) & _IOC_WRITE) 	//cmd direction is write, memory accessiable
+	{
+		err = ! access_ok((void __user *)arg, _IOC_SIZE(cmd));
+	}
+
+	if(err)
+	{
+		pr_err("%s: %s\n", DEVICE_NAME, "_IOC_READ/_IOC_WRITE err");
+		return -EFAULT;
+	}
+
+	switch(cmd)
+	{
+	case CDEV_WR_VALUE:
+		if (copy_from_user(&ioctl_val, (int32_t*) arg, sizeof(ioctl_val)))
+		{
+			pr_err("%s: %s\n", DEVICE_NAME, "data write: err");
+		}
+		pr_info("%s: %s %d\n", DEVICE_NAME, "WR_VALUE ioctl_val =", ioctl_val);
+		break;
+	case CDEV_RD_VALUE:
+		if (copy_to_user((int32_t*) arg, &ioctl_val, sizeof(ioctl_val)))
+		{
+			pr_err("%s: %s\n", DEVICE_NAME, "data read: err");
+		}
+		pr_info("%s: %s %d\n", DEVICE_NAME, "RD_VALUE ioctl_val =", ioctl_val);
+		break;
+	case CDEV_CLEAR_BUFFER:
+		data_size = 0;
+		data_buffer[0] = '\0';
+		pr_info("chrdev:  CLEAR_BUFFER\n");
+		break;
+	case CDEV_GET_BUFFER_SIZE:
+		if (copy_to_user((int32_t *)arg, &data_size, sizeof(data_size))) 
+		{
+			pr_err("chrdev:  GET_BUFFER_SIZE err\n");
+			err = -ENOTTY;
+		}
+		pr_info("chrdev:  GET_BUFFER_SIZE buffer size=%d\n", data_size);
+		break;
+	case CDEV_SET_BUFFER_SIZE:
+		if (copy_from_user(&data_size, (int32_t *)arg, sizeof(data_size))) 
+		{
+			pr_err("chrdev:  SET_BUFFER_SIZE err\n");
+			err = -ENOTTY;
+		}
+		if (data_size > MAX_BUFFER_SIZE)
+		{
+			data_size = MAX_BUFFER_SIZE;
+		}
+		pr_info("chrdev: buffer size is %d\n", data_size);
+		break;
+	default:
+		pr_warn("%s: %s(%u)\n", DEVICE_NAME, "invalid cmd", cmd);
+		return -EFAULT;
+		break;
+
+	}
+
+	return 0;
+}
+
 /*Callbacks provided by the driver*/
 static struct file_operations chrdev_fops =
 {
@@ -138,6 +228,7 @@ static struct file_operations chrdev_fops =
 	.release = dev_release,
 	.read = dev_read,
 	.write = dev_write,
+	.unlocked_ioctl = dev_ioctl,
 };
 
 unsigned int sysfs_val = 0;

@@ -1,7 +1,9 @@
-ifneq ($(KERNELRELEASE),)
-obj-m := chrdev.o
-else
-KDIR ?= /lib/modules/`uname -r`/build
+obj-m := chrdev_proc_sysfs_ioctl.o
+
+export ARCH=arm
+export CROSS_COMPILE=arm-linux-gnueabihf-
+export KDIR=~/Embear/linux
+
 PWD :=$(shell pwd)
 
 default:
@@ -9,4 +11,3 @@ default:
 
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
-endif
