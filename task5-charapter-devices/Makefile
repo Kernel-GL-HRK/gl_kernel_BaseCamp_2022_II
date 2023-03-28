@@ -1,22 +1,22 @@
-ifneq ($(KERNELRELEASE),)
-	obj-m := CharDev.o
-else 
-	KDIR ?= /lib/modules/`uname -r`/build
+INS=CharDev
 
-INS=CharDev #Write your name of module without extension
+ifneq ($(KERNELRELEASE),)
+    obj-m := $(INS).o
+else
+    KDIR ?= /lib/modules/`uname -r`/build
 
 .PHONY: default clean ins rm
 
-default: #default build
+default:
 	$(MAKE) -C $(KDIR) M=$$PWD
 
-clean: #clean unecessary files
+clean:
 	$(MAKE) -C $(KDIR) M=$$PWD clean
 
-ins: default #buliding and installing module into kernel
-	sudo insmod "${INS}.ko"
+ins: default
+	sudo insmod "${INS}.ko" &
 
-rm: #deleting module from kernel 
-	sudo rmmod ${INS} 
+rm:
+	sudo rmmod ${INS}
 
 endif
