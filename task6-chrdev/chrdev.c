@@ -11,21 +11,19 @@
 #include <linux/uaccess.h>
 #include <linux/version.h>
 
+#include "cdev_ioctl.h"
+
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sergiy Us");
-MODULE_DESCRIPTION("A simple character device driver - procfs, sysfs, chrdev");
+MODULE_DESCRIPTION("Character device driver - procfs, sysfs, chrdev and ioctl");
 MODULE_VERSION("0.1");
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
 #define	HAVE_PROC_OPS
 #endif
 
-#define BUFFER_SIZE		1024
 #define PROC_DIR_NAME		"chrdir"	/* /proc/chrdir/chrdev */
 #define PROC_FILE_NAME		"chrdev"
-
-#define CLASS_NAME		"chrdev"
-#define DEVICE_NAME		"chrdev0"	/* /dev/chrdev0 */
 
 #define SYS_DIR_NAME		"chrdir"	/* /sys/chrdir */
 #define SYS_FILE_NAME		"chrdev"	/* /sys/chrdir/chrdev */
@@ -55,6 +53,7 @@ static ssize_t proc_read(struct file *file, char __user *buffer,
 			 size_t count, loff_t *offset);
 static ssize_t sysfs_show(struct kobject *kobj, struct kobj_attribute *attr,
 			  char *buf);
+static long dev_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
 
 struct kobject *chrdev_kobj;
 struct kobj_attribute chrdev_attr = __ATTR(chrdev, 0660, sysfs_show, NULL);
@@ -64,6 +63,7 @@ static const struct file_operations fops = {
 	.release = dev_release,
 	.read  = dev_read,
 	.write = dev_write,
+	.unlocked_ioctl = dev_ioctl,
 };
 
 #ifdef HAVE_PROC_OPS
@@ -287,6 +287,7 @@ static ssize_t proc_read(struct file *file, char __user *buffer,
 		cnt = 0;
 		return 0;
 	}
+
 	to_copy = min(count, procfs_buffer_size);
 	not_copied = copy_to_user(buffer, data_buffer, to_copy);
 
@@ -317,11 +318,19 @@ static ssize_t sysfs_show(struct kobject *kobj, struct kobj_attribute *attr,
 		 "devfs: calls (write)	= %u\n",
 		 data_size, BUFFER_SIZE, dev_read_count, dev_write_count);
 
-	/* copy data_buffer to sysfs buf */
+	/* copy data_buffer to sysfs buf
+	 * if the last element in the buffer is not '\n' -
+	 * a new line is added to the end
+	 */
 	if (data_size > 0) {
 		for (i = 0; i < data_size; ++i) {
 			buf[i] = data_buffer[i];
 		}
+
+		if (buf[i - 1] != '\n') {
+			buf[i] = '\n';
+		}
+		++i;
 	}
 
 	/* add service buffer to sysfs buf */
@@ -332,5 +341,92 @@ static ssize_t sysfs_show(struct kobject *kobj, struct kobj_attribute *attr,
 	}
 
 	return i;
+}
+
+static long dev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+{
+	int err = 0;
+	int new_size;
+
+	pr_info("CHRDEV: IOCTL:	%s() cmd=0x%x arg=0x%lx\n", __func__, cmd, arg);
+
+	if (_IOC_TYPE(cmd) != CDEV_IOC_MAGIC) {
+		pr_err("CHRDEV: IOCTL: ERROR: CDEV_IOC_MAGIC error!\n");
+		err = -ENOTTY;
+		goto exit;
+	}
+
+	if (_IOC_NR(cmd) >= CDEV_IOC_MAXNR) {
+		pr_err("CHRDEV: IOCTL: ERROR: CDEV_IOC_MAXNR error!\n");
+		err = -ENOTTY;
+		goto exit;
+	}
+
+	if (_IOC_DIR(cmd) & _IOC_READ) {
+		err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
+	}
+
+	if (_IOC_DIR(cmd) & _IOC_WRITE) {
+		err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
+	}
+
+	if (err) {
+		pr_err("CHRDEV: IOCTL: ERROR: _IOC_READ/_IOC_WRITE error!\n");
+		err = -EFAULT;
+		goto exit;
+	}
+
+	/* The buffer is not actually cleared, we write zero to the
+	 * data_size variable. This allows you not to lose the contents
+	 * of the buffer at the next resize.
+	 * Setting the new buffer size is done through validation.
+	 */
+	switch (cmd) {
+	case CDEV_CLR_VALUE:
+		data_size = 0;
+		if (copy_to_user((int32_t *)arg, &data_size, sizeof(data_size))) {
+			pr_err("CHRDEV: IOCTL: ERROR: clear buffer : error\n");
+			err = -EFAULT;
+		} else {
+			pr_info("CHRDEV: IOCTL: CLR_BUFFER_RETN data_size = %d\n",
+				data_size);
+		}
+		break;
+
+	case CDEV_GET_VALUE:
+		if (copy_to_user((int32_t *)arg, &data_size, sizeof(data_size))) {
+			pr_err("CHRDEV: IOCTL: ERROR: read buffer size : error\n");
+			err = -EFAULT;
+		} else {
+			pr_info("CHRDEV: IOCTL: GET_BUFFER_SIZE data_size = %d\n",
+				data_size);
+		}
+		break;
+
+	case CDEV_SET_VALUE:
+		if (copy_from_user(&new_size, (int32_t *)arg, sizeof(new_size))) {
+			pr_err("CHRDEV: IOCTL: ERROR: set buffer size : error!\n");
+			err = -EFAULT;
+		} else {
+			if (new_size > BUFFER_SIZE || new_size < 0) {
+				pr_err("CHRDEV: IOCTL: ERROR: ");
+				pr_err("wrong new buffer size!\n");
+				err = -EFAULT;
+			} else {
+				data_size = new_size;
+				pr_info("CHRDEV: IOCTL: SET_BUFFER_SIZE ");
+				pr_info("data_size = %d\n", data_size);
+			}
+		}
+		break;
+
+	default:
+		pr_warn("CHRDEV: IOCTL: WARNING: invalid command : %u\n", cmd);
+		err = -EFAULT;
+		break;
+	}
+
+exit:
+	return err;
 }
 

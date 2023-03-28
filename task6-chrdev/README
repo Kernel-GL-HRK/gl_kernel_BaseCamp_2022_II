@@ -7,3 +7,9 @@ Proc: read() chrdev buffer print.
 Chrdev homework: part 2
 Add capability to character device driver
 Sysfs: read() chrdev buffer print
+
+Chrdev homework: part 3
+Add ioctl capability to character device driver
+ioctl:	:CLEAR_BUFFER		buffer clear: size = 0, '\0'
+	:GET_BUFFER_SIZE	buffer size get
+	:SET_BUFFER_SIZE	check if val < BUFFER_SIZE
