@@ -38,18 +38,20 @@ static ssize_t gpio_read(struct file *File, char __user *buffer, size_t count, l
 {
 	ssize_t to_copy, not_copied, delta;
 
-	if (procfs_buffer_size == 0)
+	if (*offset >= procfs_buffer_size)
 		return 0;
 
-	to_copy = min(count, procfs_buffer_size);
+	to_copy = min(count, procfs_buffer_size - (size_t)*offset);
 
-	not_copied = copy_to_user(buffer, procfs_buffer, to_copy);
+	not_copied = copy_to_user(buffer, procfs_buffer_size + *offset, to_copy);
 
 	delta = to_copy - not_copied;
-	procfs_buffer_size -= delta;
+	*offset += delta;
 
 	return delta;
 }
+
+
 
 static struct proc_ops fops = {
 	.proc_read = gpio_read,
@@ -86,7 +88,6 @@ static int __init gpio_driver_init(void)
 	proc_file = proc_create(PROC_FILE_NAME, 0666, proc_folder, &fops);
 	if (!proc_file) {
 		pr_err("DRIVER: Error: Could not initialize /proc/%s/%s\n", PROC_DIR_NAME, PROC_FILE_NAME);
-		proc_remove(proc_file);
 		proc_remove(proc_folder);
 		return -ENOMEM;
 	}
@@ -94,9 +95,9 @@ static int __init gpio_driver_init(void)
 	if (gpio_is_valid(GPIO_4) == false) {
 		pr_err("GPIO %d is not valid\n", GPIO_4);
 		goto exit;
-		}
+	}
 
-		if (gpio_request(GPIO_4, "GPIO_4") < 0) {
+	if (gpio_request(GPIO_4, "GPIO_4") < 0) {
 		pr_err("ERROR: GPIO %d request\n", GPIO_4);
 		goto exit;
 	}
@@ -119,7 +120,7 @@ static int __init gpio_driver_init(void)
 	return 0;
 
 exit:
-	return -1;
+	return -ENODEV;
 }
 
 static void __exit gpio_driver_exit(void)
