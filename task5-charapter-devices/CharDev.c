@@ -28,7 +28,7 @@ struct class *class_tree;
 struct device *device_file;
 struct cdev device;
 struct file_operations dev_fops;
-dev_t MM = 0;
+dev_t MM;
 
 struct proc_dir_entry *proc_file;
 struct proc_dir_entry *proc_dir;
@@ -42,7 +42,7 @@ struct file_operations dev_fops = {
 		.write = dev_write,
 };
 
-static int __init matrix_init(void) 
+static int __init matrix_init(void)
 {
 	// CHARAPTER
 	if (alloc_chrdev_region(&MM, 0, 1, DEVICE_NAME) < 0) {
@@ -106,8 +106,10 @@ cdev_err:
 	return -1;
 }
 
-static void __exit matrix_exit(void) 
+static void __exit matrix_exit(void)
 {
+	uint8_t i;
+
 	device_destroy(class_tree, MM);
 	class_destroy(class_tree);
 	cdev_del(&device);
@@ -117,7 +119,7 @@ static void __exit matrix_exit(void)
 	proc_remove(proc_file);
 	proc_remove(proc_dir);
 	pr_info("matrix: procFS removed\n");
-	uint8_t i;
+
 	for (i = 0; i < NUM_COL_ROW; i++) {
 		gpio_unexport(rows[i]);
 		gpio_unexport(cols[i]);

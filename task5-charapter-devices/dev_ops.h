@@ -15,7 +15,7 @@
 #define CLASS_NAME "Keypad"
 #define DEVICE_NAME "Matrix"
 //TO SELECT THE OUTPUT DIRECTION OF CALCULATION RESULTS
-#define FIRST_NOTICE 	"----------------------------------------------------------------------\n"\
+#define FIRST_NOTICE	"----------------------------------------------------------------------\n"\
 						"Calculator status messages will be displayed in - ?\n"\
 						"To change calculator output direction, write in /dev/Matrix file:\n"\
 						"\t1 - dmesg (output in syslog file);\n"\
