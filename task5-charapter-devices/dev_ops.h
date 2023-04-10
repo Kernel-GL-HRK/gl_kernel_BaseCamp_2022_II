@@ -32,6 +32,9 @@
 #define READ_END		4
 
 extern uint8_t buffer_chrdev[MAX_BUFFER];
+extern uint32_t dev_write_count;
+extern uint32_t dev_read_count;
+
 
 extern struct class *class_tree;
 extern struct device *device_file;

@@ -11,14 +11,18 @@
 #include <linux/proc_fs.h>
 #include <linux/types.h>
 #include <linux/uaccess.h>
+#include <linux/kobject.h>
+#include <linux/sysfs.h>
+#include "linux/kobject_ns.h"
 #include "proc_ops.h"
 #include "dev_ops.h"
 #include "keypad.h"
+#include "sys_ops.h"
 
 MODULE_AUTHOR("Muravka Roman");
 MODULE_DESCRIPTION("Simple charapter device - Matrix keypad");
 MODULE_LICENSE("GPL");
-MODULE_VERSION("1.2");
+MODULE_VERSION("2.0");
 
 struct proc_ops proc_fops = {
 	.proc_read = procFS_read,
@@ -34,6 +38,17 @@ struct proc_dir_entry *proc_file;
 struct proc_dir_entry *proc_dir;
 struct proc_ops proc_fops;
 // Matrix variables
+
+struct kobject *Dstate = NULL;
+struct kobj_attribute Fstate = {
+	.attr = {
+		.name = FILE_SYSFS,
+		.mode = 0666
+	},
+	.show = sysfs_show,
+	.store = sysfs_store
+};
+
 
 struct file_operations dev_fops = {
 		.open = dev_open,
@@ -71,7 +86,18 @@ static int __init matrix_init(void)
 		goto device_err;
 	}
 	pr_info("matrix: device file on the path /dev/%s created succesfully\n", DEVICE_NAME);
-
+	//SysFS
+	Dstate = kobject_create_and_add(FOLDER_SYSFS, NULL);
+	if (!Dstate) { 
+		pr_err("matrix-sysfs: cannot create folder sysFS\n");
+		goto sysfs_err;
+	}
+	
+	if (sysfs_create_file(Dstate, &Fstate.attr)) {
+		pr_err("matrix-sysfs: cannot create file sysFS\n");
+		goto sysfs_err;
+	}
+	pr_info("matrix-sysfs: file /sys/%s/%s is created\n", FOLDER_SYSFS, FILE_SYSFS);
 	// PROC
 	proc_dir = proc_mkdir(PROC_DIR_NAME, NULL);
 	if (!proc_dir) {
@@ -94,6 +120,9 @@ static int __init matrix_init(void)
 
 	return 0;
 // ERROR OPERATIONS
+sysfs_err:
+	sysfs_remove_file(Dstate, &Fstate.attr);
+	kobject_put(Dstate);
 proc_err:
 	proc_remove(proc_dir);
 device_err:
@@ -110,6 +139,8 @@ static void __exit matrix_exit(void)
 {
 	uint8_t i;
 
+	sysfs_remove_file(Dstate, &Fstate.attr);
+	kobject_put(Dstate);
 	device_destroy(class_tree, MM);
 	class_destroy(class_tree);
 	cdev_del(&device);

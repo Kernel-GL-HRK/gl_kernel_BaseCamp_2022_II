@@ -16,6 +16,8 @@
 MODULE_LICENSE("GPL");
 
 uint8_t buffer_chrdev[MAX_BUFFER] = {0};
+uint32_t dev_write_count = 0;
+uint32_t dev_read_count = 0;
 
 // Charapter file operations
 int dev_open(struct inode *inodep, struct file *filep)
@@ -41,6 +43,7 @@ ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *offset)
 	case READ_FIRST_MSG:
 			output_choice_message();
 			*offset = READ_MSG;
+			dev_read_count++;
 			break;
 	case READ_MSG:
 		if (calc_out == DEV || calc_out == ALL) {
@@ -92,6 +95,8 @@ ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *offset)
 
 ssize_t dev_write(struct file *filep, const char *buffer, size_t len, loff_t *offset)
 {
+	dev_write_count++;
+
 	enum calc_out_e calc_out = get_calc_out();
 	uint8_t wr_buffer[MAX_BUFFER] = {0};
 	uint32_t i;
