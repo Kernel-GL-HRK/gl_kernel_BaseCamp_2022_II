@@ -9,6 +9,7 @@
 #include <linux/printk.h>
 #include <linux/types.h>
 #include <linux/uaccess.h>
+
 //MAX SIZE OF CHARDEV AND PROC BUFFERS
 #define MAX_BUFFER 1024
 //SYS AND DEV
@@ -51,5 +52,7 @@ int dev_close(struct inode *inodep, struct file *filep);
 ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *offset);
 
 ssize_t dev_write(struct file *filep, const char *buffer, size_t len, loff_t *offset);
+
+long dev_ioctl(struct file *filep, unsigned int cmd, unsigned long arg);
 
 void output_choice_message(void);

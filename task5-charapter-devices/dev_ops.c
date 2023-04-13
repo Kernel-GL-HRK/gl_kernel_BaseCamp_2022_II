@@ -9,9 +9,11 @@
 #include <linux/printk.h>
 #include <linux/types.h>
 #include <linux/uaccess.h>
+#include <linux/ioctl.h>
 #include "proc_ops.h"
 #include "keypad.h"
 #include "dev_ops.h"
+#include "ioctl_cmd.h"
 
 MODULE_LICENSE("GPL");
 
@@ -129,6 +131,33 @@ ssize_t dev_write(struct file *filep, const char *buffer, size_t len, loff_t *of
 	calc_out = ALL;
 	put_calc_out(calc_out);
 	return len;
+}
+
+long dev_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
+{
+	enum calc_out_e calc_out = get_calc_out();
+
+	if (_IOC_TYPE(cmd) != IOCTL_MAGIC) {
+		pr_err("matrix-ioctl: program of user space chooses wrong device\n");
+		return -ENOKEY;
+	}
+
+	switch (_IOC_NR(cmd)) {
+	case DMESG:
+		pr_info("matrix-ioctl: result output will be desplayed in dmesg\n");
+		calc_out = DMESG;
+		break;
+	case DEV:
+		pr_info("matrix-ioctl: result output will be desplayed in dev\n");
+		calc_out = DEV;
+		break;
+	case ALL:
+		pr_info("matrix-ioctl: result output will be desplayed in dmesg\n");
+		calc_out = ALL;
+		break;
+	}
+	put_calc_out(calc_out);
+	return 0;
 }
 
 void output_choice_message(void)

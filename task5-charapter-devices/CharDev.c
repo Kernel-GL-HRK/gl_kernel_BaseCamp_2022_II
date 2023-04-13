@@ -39,7 +39,7 @@ struct proc_dir_entry *proc_dir;
 struct proc_ops proc_fops;
 // Matrix variables
 
-struct kobject *Dstate = NULL;
+struct kobject *Dstate;
 struct kobj_attribute Fstate = {
 	.attr = {
 		.name = FILE_SYSFS,
@@ -55,6 +55,7 @@ struct file_operations dev_fops = {
 		.release = dev_close,
 		.read = dev_read,
 		.write = dev_write,
+		.unlocked_ioctl = dev_ioctl,
 };
 
 static int __init matrix_init(void)
@@ -88,11 +89,11 @@ static int __init matrix_init(void)
 	pr_info("matrix: device file on the path /dev/%s created succesfully\n", DEVICE_NAME);
 	//SysFS
 	Dstate = kobject_create_and_add(FOLDER_SYSFS, NULL);
-	if (!Dstate) { 
+	if (!Dstate) {
 		pr_err("matrix-sysfs: cannot create folder sysFS\n");
 		goto sysfs_err;
 	}
-	
+
 	if (sysfs_create_file(Dstate, &Fstate.attr)) {
 		pr_err("matrix-sysfs: cannot create file sysFS\n");
 		goto sysfs_err;
