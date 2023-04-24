@@ -7,7 +7,7 @@
 
 #define EXIT 5
 
-int main()
+int main(void)
 {
 	int32_t file_desc;
 	uint32_t ch;
@@ -19,7 +19,7 @@ int main()
 		printf("file is not opened\n");
 		return -1;
 	}
-	
+
 	do {
 	printf("Menu of choice led:\n");
 	printf("1 - red;\n2 - green\n3 - blue\n4 - switch off all leds;\n5 - exit.\n");

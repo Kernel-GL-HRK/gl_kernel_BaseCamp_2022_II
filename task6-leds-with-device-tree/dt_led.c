@@ -36,12 +36,12 @@ MODULE_DESCRIPTION("RGB with using device tree and timers");
 #define MAX_BUFFER			1024
 #define MAX_HEADER_ROWS		20
 #define MAX_HEADER_COLS		2
-const uint8_t gpio_to_pin[] = {//HEADER 
+const uint8_t gpio_to_pin[] = {//HEADER
 	0xff, 0xff,//			[---*---][---*---]
 	2, 0xff,//			[gpio_02][---*---]
 	3, 0xff,//			[gpio_03][---*---]
 	4, 14,//			[gpio_04][gpio_14]
-	0xff, 15,//			[---*---][gpio_15]			
+	0xff, 15,//			[---*---][gpio_15]
 	17, 18,//			[gpio_17][gpio_18]
 	27, 0xff,//			[gpio_27][---*---]
 	22, 23,//			[gpio_22][gpio_23]
@@ -66,7 +66,7 @@ enum {
 //CHECK GPIO NUMBERS
 #define RED_NUM_IS_GPIO		0b100
 #define GREEN_NUM_IS_GPIO	0b010
-#define BLUE_NUM_IS_GPIO	0b001								
+#define BLUE_NUM_IS_GPIO	0b001
 //DEV and CLASS
 #define CLASS_NAME	"rgb"
 #define DEVICE_NAME	"setup_leds"
@@ -84,17 +84,17 @@ struct device *dev_file;//dev/*
 dev_t MM;//major and minor
 
 struct timer_list timer_red;//timer for red led
-uint32_t msec_red = 1000;			
+uint32_t msec_red = 1000;
 struct timer_list timer_green;//timer for green led
 uint32_t msec_green = 1000;
 struct timer_list timer_blue;//timer for blue led
 uint32_t msec_blue = 1000;
 
-struct rgb_s{//for storing values of device tree 
+struct rgb_s{//for storing values of device tree
 	uint32_t red;
 	uint32_t green;
 	uint32_t blue;
-}rgb = {0, 0, 0};
+} rgb = {0, 0, 0};
 
 struct of_device_id id[] = {//for struct of platform driver
 	{.compatible = "brightlight,mydev,RGB",},
@@ -103,18 +103,17 @@ struct of_device_id id[] = {//for struct of platform driver
 MODULE_DEVICE_TABLE(of, id);//optional. It must be used, if funchion dt_probe() is in separate lib.
 
 /*It is need to check values of gpio leds in device tree file*/
-int32_t check_gpio(uint32_t red, uint32_t green, uint32_t blue) 
+int32_t check_gpio(uint32_t red, uint32_t green, uint32_t blue)
 {
 	uint32_t i, j;
 	uint32_t curPin = 0;
 	int32_t result = 0;
-	
-	if ((red == green) || (red == blue) || (green == blue)) 
+
+	if ((red == green) || (red == blue) || (green == blue))
 		return -1;
 
-	for(i = 1; i <= MAX_HEADER_ROWS; i++) {
-		for(j = 1; j <= MAX_HEADER_COLS; j++, curPin++) {
-				
+	for (i = 1; i <= MAX_HEADER_ROWS; i++) {
+		for (j = 1; j <= MAX_HEADER_COLS; j++, curPin++) {
 			if (gpio_to_pin[curPin] == red)
 				result |= RED_NUM_IS_GPIO;
 			else if (gpio_to_pin[curPin] == green)
@@ -123,7 +122,7 @@ int32_t check_gpio(uint32_t red, uint32_t green, uint32_t blue)
 				result |= BLUE_NUM_IS_GPIO;
 		}
 	}
-		
+
 	return result;
 }
 
@@ -139,7 +138,7 @@ void interrupt_red(struct timer_list *data)
 	break;
 	}
 
-	if(msec_red == OFF)
+	if (msec_red == OFF)
 		gpio_set_value(rgb.red, OFF);
 	else
 		mod_timer(&timer_red, jiffies + msecs_to_jiffies(msec_red));
@@ -156,7 +155,7 @@ void interrupt_green(struct timer_list *data)
 	break;
 	}
 
-	if(msec_green == OFF)
+	if (msec_green == OFF)
 		gpio_set_value(rgb.green, OFF);
 	else
 		mod_timer(&timer_green, jiffies + msecs_to_jiffies(msec_green));
@@ -173,7 +172,7 @@ void interrupt_blue(struct timer_list *data)
 	break;
 	}
 
-	if(msec_blue == OFF)
+	if (msec_blue == OFF)
 		gpio_set_value(rgb.blue, OFF);
 	else
 		mod_timer(&timer_blue, jiffies + msecs_to_jiffies(msec_blue));
@@ -182,7 +181,7 @@ void interrupt_blue(struct timer_list *data)
 int dt_probe(struct platform_device *pdev)
 {
 	struct device *dev_node = &pdev->dev; //there is all properties of device tree
-	
+
 	if (device_property_present(dev_node, DT_RED_LED)) {
 		int err;
 		err = device_property_read_u32(dev_node, DT_RED_LED, &rgb.red);
@@ -212,7 +211,7 @@ int dt_probe(struct platform_device *pdev)
 		}
 	}
 	pr_info("rgb-gpio: value of %s property: %d\n", DT_BLUE_LED, rgb.blue);
-	
+
 	if (check_gpio(rgb.red, rgb.green, rgb.blue) < 0) {
 		pr_err("rgb-check: gpio pins must have diference values\n");
 		return 0;
@@ -243,7 +242,7 @@ int dt_probe(struct platform_device *pdev)
 	}
 	if (check_gpio(rgb.red, rgb.green, rgb.blue) == 0)
 		pr_err("rgb-check: not one led is connected to gpio\n");
-	return 0;	
+	return 0;
 }
 /*This function will be called if device tree for this module would be uploaded*/
 int dt_remove(struct platform_device *pdev)
@@ -277,14 +276,13 @@ struct platform_driver rgb_driver = { //for registration platform driver and wor
 	},
 };
 /*It display information about values that store in device tree into procFS*/
-ssize_t procfs_read(struct file *filep, char *buf, size_t len, loff_t *of) {
+ssize_t procfs_read(struct file *filep, char *buf, size_t len, loff_t *of)
+{
 	uint8_t proc_info[MAX_BUFFER] = {0};
 	uint8_t temp_buf[256] = {0};
 	uint32_t i, j, curPin = 0;
 	size_t to_copy;
 
-	
-	
 	switch (*of) {
 	case INFO_PART_1:
 		if (check_gpio(rgb.red, rgb.green, rgb.blue) < 0) {
@@ -300,25 +298,25 @@ ssize_t procfs_read(struct file *filep, char *buf, size_t len, loff_t *of) {
 		goto copy_to_buffer;
 		break;
 	case INFO_PART_2:
-		for(i = 1; i <= MAX_HEADER_ROWS; i++) {
-			for(j = 1; j <= MAX_HEADER_COLS; j++, curPin++) {
+		for (i = 1; i <= MAX_HEADER_ROWS; i++) {
+			for (j = 1; j <= MAX_HEADER_COLS; j++, curPin++) {
 				if (gpio_to_pin[curPin] == rgb.red) {
-					if((j % 2) != 0) 
+					if ((j % 2) != 0)
 						sprintf(temp_buf, PROC_INFO_PART_2, " red ");
 					else
 						sprintf(temp_buf, PROC_INFO_PART_2"\n", " red ");
 				} else if (gpio_to_pin[curPin] == rgb.green) {
-					if((j % 2) != 0) 
+					if ((j % 2) != 0)
 						sprintf(temp_buf, PROC_INFO_PART_2, "green");
 					else
 						sprintf(temp_buf, PROC_INFO_PART_2"\n", "green");
 				} else if (gpio_to_pin[curPin] == rgb.blue) {
-					if((j % 2) != 0) 
+					if ((j % 2) != 0)
 						sprintf(temp_buf, PROC_INFO_PART_2, "blue ");
 					else
 						sprintf(temp_buf, PROC_INFO_PART_2"\n", "blue ");
 				} else {
-					if((j % 2) != 0) 
+					if ((j % 2) != 0)
 						sprintf(temp_buf, PROC_INFO_PART_2, "  *  ");
 					else
 						sprintf(temp_buf, PROC_INFO_PART_2"\n", "  *  ");
@@ -348,7 +346,8 @@ struct proc_ops proc_fops = {
 	.proc_read = procfs_read,
 };
 
-long ioctl_op(struct file *filep, unsigned int cmd, unsigned long arg)  {
+long ioctl_op(struct file *filep, unsigned int cmd, unsigned long arg)
+{
 	uint32_t msec_rgb;
 	size_t to_copy;
 
@@ -364,7 +363,7 @@ long ioctl_op(struct file *filep, unsigned int cmd, unsigned long arg)  {
 		switch (_IOC_NR(cmd)) {
 		case RED:
 			msec_red = msec_rgb;
-			if(msec_red == OFF)
+			if (msec_red == OFF)
 				pr_info("rgb-ioctl: red led is switched off");
 			else
 				pr_info("rgb-ioctl: red led will work every %d msec\n", msec_red);
@@ -372,7 +371,7 @@ long ioctl_op(struct file *filep, unsigned int cmd, unsigned long arg)  {
 			break;
 		case GREEN:
 			msec_green = msec_rgb;
-			if(msec_green == OFF)
+			if (msec_green == OFF)
 				pr_info("rgb-ioctl: green led is switched off");
 			else
 				pr_info("rgb-ioctl: green led will work every %d msec\n", msec_green);
@@ -380,7 +379,7 @@ long ioctl_op(struct file *filep, unsigned int cmd, unsigned long arg)  {
 			break;
 		case BLUE:
 			msec_blue = msec_rgb;
-			if(msec_blue == OFF)
+			if (msec_blue == OFF)
 				pr_info("rgb-ioctl: blue led is switched off");
 			else
 				pr_info("rgb-ioctl: blue led will work every %d msec\n", msec_blue);
@@ -408,7 +407,7 @@ int rgb_init(void)
 	pr_info("-----------------------------------------------------------\n");
 	pr_info("rgb: module was downloaded\n");
 	{//Creating proc file
-		proc_file = proc_create(PROC_FILE_NAME, 0666, NULL, &proc_fops);
+		proc_file = proc_create(PROC_FILE_NAME, 0444, NULL, &proc_fops);
 		if (proc_file == NULL) {
 			pr_err("rgb-proc: cannot create a file /proc/%s", PROC_FILE_NAME);
 			return -ENOMEM;
@@ -440,7 +439,7 @@ int rgb_init(void)
 			goto class_err;
 		}
 		pr_info ("rgb-class: class on path /sys/class/%s, was created\n", CLASS_NAME);
-		
+
 		dev_file = device_create(class_folder, NULL, MM, NULL, DEVICE_NAME);
 		if (IS_ERR(dev_file)) {
 			pr_err("rgb-dev: file on path /dev/%s, cannot create\n", DEVICE_NAME);
