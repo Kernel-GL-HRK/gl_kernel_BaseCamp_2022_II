@@ -1,4 +1,5 @@
 obj-m += hello_procfs.o
+obj-m += led-gpio-proc.o
 
 PWD := $(CURDIR)
 
