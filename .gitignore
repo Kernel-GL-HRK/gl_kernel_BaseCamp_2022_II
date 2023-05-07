@@ -2,6 +2,7 @@
 *.lib
 *.a
 *.so
+*.o.d
 task4-module/.*.*
 task4-module/*.mod
 task4-module/*.mod.*
@@ -9,11 +10,8 @@ task4-module/Module.symvers
 task4-module/modules.order
 debug/
 script/
+*/.vscode/
+*/.vscode-ctags
 task2-bash/release/
-task4-module/.vscode-ctags
-task4-module/.vscode/
-task5-proc_fs/.vscode-ctags
-/task5-proc_fs/.vscode/
-/task6-gpio-and-timer/.module.o.d
-/task6-gpio-and-timer/.vscode-ctags
+test.*
 
