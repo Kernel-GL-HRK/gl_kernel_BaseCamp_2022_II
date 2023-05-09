@@ -5,7 +5,11 @@
 #include <linux/err.h>
 #include <linux/printk.h>
 #include <linux/slab.h>
+#include <linux/string.h>
+#include <linux/delay.h>
+#include <linux/pwm.h>
 #include "platform_driver.h"
+#include "servo_ctl.h"
 
 MODULE_LICENSE("GPL");
 MODULE_DEVICE_TABLE(of, dt_id);
@@ -22,6 +26,7 @@ struct platform_driver dev_servo = {
 		.of_match_table = dt_id
 	},
 };
+struct pwm_device *servo;
 
 int32_t create_platform_driver(void)
 {
@@ -47,18 +52,93 @@ int dt_probe(struct platform_device *devp)
 {
 	struct device *node_of_servo = &devp->dev;
 	uint32_t servo_pwm_channel;
-	uint8_t *servo_mode;
+	const char *servo_mode;
+	uint32_t error;
 
-	device_property_read_u32(node_of_servo, PR_CHANNEL, &servo_pwm_channel);
-	pr_info("servo-dt-property: pwm channel for servo: %d\n", servo_pwm_channel);
+	{//Reading pwm channel for servo from device tree
+		error = device_property_present(node_of_servo, PR_CHANNEL);
+		if (!error) {
+			pr_err("servo-dt-property: %s property is not present\n", PR_CHANNEL);
+			return -error;
+		}
 
-	device_property_read_string(node_of_servo, PR_MODE, (const char **)&servo_mode);
-	pr_info("servo-dt-property: pwm mode for servo: %s\n", servo_mode);
-	kfree(servo_mode);
+		error = device_property_read_u32(node_of_servo, PR_CHANNEL, &servo_pwm_channel);
+		if (error) {
+			pr_err("servo-dt-property: %s property can not read\n", PR_CHANNEL);
+			return -error;
+		}
+
+		pr_info("servo-dt-property: pwm channel for servo: %d\n", servo_pwm_channel);
+	}
+	{//Reading servo mode from device tree
+		error = device_property_present(node_of_servo, PR_MODE);
+		if (!error) {
+			pr_err("servo-dt-property: %s property is not present\n", PR_MODE);
+			return -error;
+		}
+
+		error = device_property_read_string(node_of_servo, PR_MODE, &servo_mode);
+		if (error) {
+			pr_err("servo-dt-property: %s property can not read\n", PR_MODE);
+			return -error;
+		}
+
+		pr_info("servo-dt-property: pwm mode for servo: %s\n", servo_mode);
+	}
+	{//Requesting pwm channel for servo
+		servo = pwm_request(servo_pwm_channel, "servo-module");
+		if(IS_ERR(servo)) {
+			pr_err("servo-dt-pwm: can not request pwm channel #%d", servo_pwm_channel);
+			return PTR_ERR(servo);
+		}
+	}
+
+	if(strcmp(servo_mode, "absolute") == 0) {
+		servo_set_angle_abs(180);
+		msleep(1000);
+		servo_set_angle_abs(125);
+		msleep(1000);
+		servo_set_angle_abs(130);
+		msleep(1000);
+		servo_set_angle_abs(25);
+		msleep(1000);
+		servo_set_angle_abs(75);
+		msleep(1000);
+		servo_set_angle_abs(0);
+		msleep(1000);
+	}
+	if(strcmp(servo_mode, "relative") == 0) {
+		servo_set_angle_rel(190);
+		msleep(1000);
+		servo_set_angle_rel(1);
+		msleep(1000);
+		servo_set_angle_rel(-50);
+		msleep(1000);
+		servo_set_angle_rel(25);
+		msleep(1000);
+		servo_set_angle_rel(-100);
+		msleep(1000);
+		servo_set_angle_rel(-233);
+		msleep(1000);
+		servo_set_angle_rel(0);
+		msleep(1000);
+	}
 	return 0;
 }
 
 int dt_remove(struct platform_device *devp)
 {
+	uint32_t i;
+	{
+		for(i = 0; i < 20; i++)
+			if(currentAngle == 0) {
+				servo_set_angle_abs(170);
+			}
+			else 
+				servo_set_angle_abs(0);
+	}
+	servo_set_angle_abs(0);
+
+	pwm_free(servo);
 	return 0;
 }
