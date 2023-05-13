@@ -9,7 +9,7 @@
 			servo {
 				compatible = "servo, SG-90";
 				pwm-channel = <0>;
-				mode = "absolute"; //absolute or relative
+				mode = "relative"; //absolute or relative
 			};
 		};
 	};

@@ -1,12 +1,15 @@
-#include <linux/module.h>	//for macros of module
-#include <linux/cdev.h>		//for functions and structures cdev
-#include <linux/device.h>	//for functions and structures device
-#include <linux/kdev_t.h>	//for macroses and types major and minor numbers
-#include <linux/fs.h>		//for calls read() and write()
-#include <linux/uaccess.h>	//for copy_to(from)_user
-#include <linux/err.h>		//for definions of system errors
-#include <linux/printk.h>	//for printk
+#include <linux/module.h>		//for macros of module
+#include <linux/cdev.h>			//for functions and structures cdev
+#include <linux/device.h>		//for functions and structures device
+#include <linux/kdev_t.h>		//for macroses and types major and minor numbers
+#include <linux/fs.h>			//for calls read() and write()
+#include <linux/uaccess.h>		//for copy_to(from)_user
+#include <linux/err.h>			//for definions of system errors
+#include <linux/printk.h>		//for printk
+#include <linux/string.h>		//for string operations
 #include "sys_dev.h"
+#include "servo_ctl.h"			//for currentAngle variable
+#include "platform_driver.h"	//for servo_params
 
 dev_t MM;
 struct cdev device;
@@ -84,11 +87,69 @@ void remove_devFS(void)
 
 ssize_t dev_read(struct file *filep, char *to_user, size_t len, loff_t *offs)
 {
-	return 0;
+	int8_t buffer_for_copy[MAX_BUFFER_SIZE] = {0};
+	size_t to_copy = 0;
+	struct servo_params status_servo;
+
+	status_servo = get_servo_description();
+	if (!strcmp(status_servo.status, "enabled")) {
+		to_copy = snprintf(buffer_for_copy, MAX_BUFFER_SIZE, "\rCurrent angle of servo = [%d]        ", currentAngle);
+		to_copy = min(to_copy, len);
+	} else {
+		to_copy = snprintf(buffer_for_copy, MAX_BUFFER_SIZE, "\rCurrent angle of servo = [undefined]");
+		to_copy = min(to_copy, len);
+	}
+
+	if(copy_to_user(to_user, buffer_for_copy, to_copy)) {
+		pr_err("servo-dev-read: can not send buffer to user\n");
+		return -ENOMEM;
+	}
+
+	return to_copy;
 }
 
 ssize_t dev_write(struct file *filep, const char *from_user, size_t len, loff_t *offs)
 {
+	int8_t buffer_for_copy[MAX_BUFFER_SIZE] = {0};
+	int32_t converted = 0, polarity = 0;
+	uint32_t i, not_converted = 0;
+	struct servo_params status_servo;
+
+	if(copy_from_user(buffer_for_copy, from_user, len)) {
+		pr_err("servo-dev-write: can not send buffer to kernel\n");
+		return -ENOMEM;
+	}
+
+	for(i = 0; i < len; i++) {
+		if ((buffer_for_copy[i] >= '0') && (buffer_for_copy[i] <= '9'))
+			converted = (converted * 10) + (buffer_for_copy[i] - '0');
+		else if ((buffer_for_copy[i] == '-') && (converted == 0)) {
+			polarity = 1;
+			not_converted++;
+		} else {
+			not_converted++;\
+		}
+	}
+
+	if(not_converted == len) {
+		pr_warn("servo-dev-write: buffer does not have ane digits, servo will not move\n");
+		return len;
+	}
+
+	status_servo = get_servo_description();
+	if(!strcmp(status_servo.status, "enabled")) {
+		if(!strcmp(status_servo.mode, "absolute")) {
+			servo_set_angle_abs(converted);
+		} else if (!strcmp(status_servo.mode, "relative")) {
+			if(polarity)
+				converted *= -1;
+			servo_set_angle_rel(converted);
+		} else {
+			pr_warn("servo-dev-write: servo mode in device tree is wrong, servo will not move\n");
+		}
+	} else {
+		pr_warn("servo-dev-write: servo is disabled, servo will not move\n");
+	}
 	return len;
 }
 

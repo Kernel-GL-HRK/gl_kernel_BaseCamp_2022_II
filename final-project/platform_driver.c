@@ -27,6 +27,7 @@ struct platform_driver dev_servo = {
 	},
 };
 struct pwm_device *servo;
+static struct servo_params servo_device = {.status = "disabled"}; 
 
 int32_t create_platform_driver(void)
 {
@@ -51,8 +52,6 @@ void remove_platform_driver(void)
 int dt_probe(struct platform_device *devp)
 {
 	struct device *node_of_servo = &devp->dev;
-	uint32_t servo_pwm_channel;
-	const char *servo_mode;
 	uint32_t error;
 
 	{//Reading pwm channel for servo from device tree
@@ -62,13 +61,13 @@ int dt_probe(struct platform_device *devp)
 			return -error;
 		}
 
-		error = device_property_read_u32(node_of_servo, PR_CHANNEL, &servo_pwm_channel);
+		error = device_property_read_u32(node_of_servo, PR_CHANNEL, &servo_device.pwm_channel);
 		if (error) {
 			pr_err("servo-dt-property: %s property can not read\n", PR_CHANNEL);
 			return -error;
 		}
 
-		pr_info("servo-dt-property: pwm channel for servo: %d\n", servo_pwm_channel);
+		pr_info("servo-dt-property: pwm channel for servo: %d\n", servo_device.pwm_channel);
 	}
 	{//Reading servo mode from device tree
 		error = device_property_present(node_of_servo, PR_MODE);
@@ -77,68 +76,41 @@ int dt_probe(struct platform_device *devp)
 			return -error;
 		}
 
-		error = device_property_read_string(node_of_servo, PR_MODE, &servo_mode);
+		error = device_property_read_string(node_of_servo, PR_MODE, (const char **)&servo_device.mode);
 		if (error) {
 			pr_err("servo-dt-property: %s property can not read\n", PR_MODE);
 			return -error;
 		}
 
-		pr_info("servo-dt-property: pwm mode for servo: %s\n", servo_mode);
+		pr_info("servo-dt-property: pwm mode for servo: %s\n", servo_device.mode);
 	}
 	{//Requesting pwm channel for servo
-		servo = pwm_request(servo_pwm_channel, "servo-module");
+		servo = pwm_request(servo_device.pwm_channel, "servo-module");
 		if(IS_ERR(servo)) {
-			pr_err("servo-dt-pwm: can not request pwm channel #%d", servo_pwm_channel);
+			pr_err("servo-dt-pwm: can not request pwm channel #%d", servo_device.pwm_channel);
 			return PTR_ERR(servo);
 		}
+		strcpy(servo_device.status, "enabled"); 
 	}
-
-	if(strcmp(servo_mode, "absolute") == 0) {
-		servo_set_angle_abs(180);
-		msleep(1000);
-		servo_set_angle_abs(125);
-		msleep(1000);
-		servo_set_angle_abs(130);
-		msleep(1000);
-		servo_set_angle_abs(25);
-		msleep(1000);
-		servo_set_angle_abs(75);
-		msleep(1000);
-		servo_set_angle_abs(0);
-		msleep(1000);
-	}
-	if(strcmp(servo_mode, "relative") == 0) {
-		servo_set_angle_rel(190);
-		msleep(1000);
-		servo_set_angle_rel(1);
-		msleep(1000);
-		servo_set_angle_rel(-50);
-		msleep(1000);
-		servo_set_angle_rel(25);
-		msleep(1000);
-		servo_set_angle_rel(-100);
-		msleep(1000);
-		servo_set_angle_rel(-233);
-		msleep(1000);
-		servo_set_angle_rel(0);
-		msleep(1000);
+	{//Test
+		uint32_t i;
+		for(i = 0; i < 5; i++) {
+			servo_set_angle_abs(MAX_ANGLE);
+			servo_set_angle_abs(MIN_ANGLE);
+		}
 	}
 	return 0;
 }
 
 int dt_remove(struct platform_device *devp)
 {
-	uint32_t i;
-	{
-		for(i = 0; i < 20; i++)
-			if(currentAngle == 0) {
-				servo_set_angle_abs(170);
-			}
-			else 
-				servo_set_angle_abs(0);
-	}
 	servo_set_angle_abs(0);
-
 	pwm_free(servo);
+	strcpy(servo_device.status, "disabled"); 
 	return 0;
+}
+
+struct servo_params get_servo_description(void)
+{
+	return servo_device;
 }

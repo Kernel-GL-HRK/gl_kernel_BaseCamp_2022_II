@@ -31,18 +31,22 @@ int32_t servo_set_angle_abs(uint32_t angle)
 	currentAngle = angle;
 	pr_info("servo-ctl: servomotor rotaded to  %d degrees\n", currentAngle);
 
-	return 0;
+	return currentAngle;
 }
 
 int32_t servo_set_angle_rel(int32_t angle)
 {
 	uint64_t converted;
+	int32_t rel_angle = angle;
+
 	if(angle > (int32_t)(MAX_ANGLE - currentAngle)) {
 		pr_warn("servo-ctl: angle more than 170 degrees. servomotot will rotate to 170 degrees\n");
 		angle = MAX_ANGLE;
+		rel_angle = MAX_ANGLE - currentAngle;
 	} else if ((int32_t)(angle + currentAngle) < 0) {
 		pr_warn("servo-ctl: angle more than 0 degrees. servomotot will rotate to 0 degrees\n");
 		angle = MIN_ANGLE;
+		rel_angle = MIN_ANGLE - currentAngle;
 	} else 
 		angle = angle + currentAngle;
 	pwm_disable(servo);
@@ -54,9 +58,9 @@ int32_t servo_set_angle_rel(int32_t angle)
 		msleep(DELAY_FOR_DEG * (currentAngle - angle));
 	else
 		msleep(DELAY_FOR_DEG * (angle - currentAngle));
-
-	currentAngle = angle;
-	pr_info("servo-ctl: servomotor rotaded %d degrees(%d)\n", MAX_ANGLE - currentAngle, currentAngle);
 	
-	return 0;
+	currentAngle = angle;
+	pr_info("servo-ctl: servomotor rotaded %d degrees(%d)\n", rel_angle, currentAngle);
+	
+	return currentAngle;
 }
