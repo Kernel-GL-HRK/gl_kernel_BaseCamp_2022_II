@@ -19,19 +19,19 @@ static int servo_init(void)
 	{//Device Tree
 		pr_info("servo: Creating platform driver file system\n");
 		err = create_platform_driver();
-		if(err)
+		if (err)
 			goto dt_err;
 	}
 	{//DEV
 		pr_info("servo: Creating /dev file system\n");
 		err = create_devFS();
-		if(err)
+		if (err)
 			goto dev_err;
 	}
 	{//PROC
 		pr_info("servo: Creating /proc file system\n");
 		err = create_procFS();
-		if(err)
+		if (err)
 			goto proc_err;
 	}
 	return 0;
@@ -44,7 +44,7 @@ dt_err:
 	return err;
 }
 
-static void servo_exit(void) 
+static void servo_exit(void)
 {
 	pr_info("servo: Removing /dev file system\n");
 	remove_devFS();

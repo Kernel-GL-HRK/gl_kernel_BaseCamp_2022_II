@@ -3,7 +3,7 @@
 #define FREQ_FOR_SERVO	20000000
 #define MAX_DUTY_CYCLE	2500000
 #define MIN_DUTY_CYCLE	500000
-#define DELAY_FOR_DEG	2	
+#define DELAY_FOR_DEG	2
 #define MAX_ANGLE		170
 #define MIN_ANGLE		0
 

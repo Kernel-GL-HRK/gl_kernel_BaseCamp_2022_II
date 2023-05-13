@@ -26,8 +26,9 @@ int32_t create_devFS(void)
 {
 	{//MAJOR AND MINOR
 		int32_t err;
+
 		err = alloc_chrdev_region(&MM, 0, 1, CLASS_NAME);
-		if(err < 0) {
+		if (err < 0) {
 			pr_err("servo-dev-MM: can not create Major and Minor numbers\n");
 			return -ENOMEM;
 		}
@@ -35,9 +36,10 @@ int32_t create_devFS(void)
 	}
 	{//ADD DEVICE TO SYSTEM WITH FS
 		int32_t err;
+
 		cdev_init(&device, &dev_fs);
 		err = cdev_add(&device, MM, 1);
-		if(err) {
+		if (err) {
 			pr_err("servo-dev-cdev: can not add device to system\n");
 			goto cdev_err;
 		}
@@ -45,7 +47,7 @@ int32_t create_devFS(void)
 	}
 	{//SYS/CLASS/*
 		class_folder = class_create(THIS_MODULE, CLASS_NAME);
-		if(IS_ERR(class_folder)) {
+		if (IS_ERR(class_folder)) {
 			pr_err("servo-dev-class: class on path - /sys/class/%s, can not be created\n", CLASS_NAME);
 			goto class_err;
 		}
@@ -54,7 +56,7 @@ int32_t create_devFS(void)
 	}
 	{//DEV/*
 		dev_file = device_create(class_folder, NULL, MM, NULL, DEVICE_NAME);
-		if(IS_ERR(dev_file)) {
+		if (IS_ERR(dev_file)) {
 			pr_err("servo-dev-device: device file on path - /dev/%s, can not be created\n", DEVICE_NAME);\
 			goto dev_err;
 		}
@@ -100,7 +102,7 @@ ssize_t dev_read(struct file *filep, char *to_user, size_t len, loff_t *offs)
 		to_copy = min(to_copy, len);
 	}
 
-	if(copy_to_user(to_user, buffer_for_copy, to_copy)) {
+	if (copy_to_user(to_user, buffer_for_copy, to_copy)) {
 		pr_err("servo-dev-read: can not send buffer to user\n");
 		return -ENOMEM;
 	}
@@ -115,12 +117,12 @@ ssize_t dev_write(struct file *filep, const char *from_user, size_t len, loff_t 
 	uint32_t i, not_converted = 0;
 	struct servo_params status_servo;
 
-	if(copy_from_user(buffer_for_copy, from_user, len)) {
+	if (copy_from_user(buffer_for_copy, from_user, len)) {
 		pr_err("servo-dev-write: can not send buffer to kernel\n");
 		return -ENOMEM;
 	}
 
-	for(i = 0; i < len; i++) {
+	for (i = 0; i < len; i++) {
 		if ((buffer_for_copy[i] >= '0') && (buffer_for_copy[i] <= '9'))
 			converted = (converted * 10) + (buffer_for_copy[i] - '0');
 		else if ((buffer_for_copy[i] == '-') && (converted == 0)) {
@@ -131,19 +133,19 @@ ssize_t dev_write(struct file *filep, const char *from_user, size_t len, loff_t 
 		}
 	}
 
-	if(not_converted == len) {
+	if (not_converted == len) {
 		pr_warn("servo-dev-write: buffer does not have ane digits, servo will not move\n");
 		return len;
 	}
 
 	status_servo = get_servo_description();
-	if(!strcmp(status_servo.status, "enabled")) {
-		if(!strcmp(status_servo.mode, "absolute")) {
+	if (!strcmp(status_servo.status, "enabled")) {
+		if (!strcmp(status_servo.mode, "absolute")) {
 			servo_set_angle_abs(converted);
 		} else if (!strcmp(status_servo.mode, "relative")) {
-			if(polarity)
+			if (polarity)
 				converted *= -1;
-			servo_set_angle_rel(converted);
+			servo_set_angle_rel (converted);
 		} else {
 			pr_warn("servo-dev-write: servo mode in device tree is wrong, servo will not move\n");
 		}
@@ -155,6 +157,6 @@ ssize_t dev_write(struct file *filep, const char *from_user, size_t len, loff_t 
 
 int access_to_dev(struct device *dev, struct kobj_uevent_env *env)
 {
-  add_uevent_var(env, "DEVMODE=%#o", 0666);
-  return 0;
+	add_uevent_var(env, "DEVMODE=%#o", 0666);
+	return 0;
 }

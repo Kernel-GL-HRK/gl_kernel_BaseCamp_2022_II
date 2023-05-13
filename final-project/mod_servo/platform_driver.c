@@ -27,7 +27,7 @@ struct platform_driver dev_servo = {
 	},
 };
 struct pwm_device *servo;
-static struct servo_params servo_device = {.status = "disabled"}; 
+static struct servo_params servo_device = {.status = "disabled"};
 
 int32_t create_platform_driver(void)
 {
@@ -86,15 +86,16 @@ int dt_probe(struct platform_device *devp)
 	}
 	{//Requesting pwm channel for servo
 		servo = pwm_request(servo_device.pwm_channel, "servo-module");
-		if(IS_ERR(servo)) {
+		if (IS_ERR(servo)) {
 			pr_err("servo-dt-pwm: can not request pwm channel #%d", servo_device.pwm_channel);
 			return PTR_ERR(servo);
 		}
-		strcpy(servo_device.status, "enabled"); 
+		strcpy(servo_device.status, "enabled");
 	}
 	{//Test
 		uint32_t i;
-		for(i = 0; i < 5; i++) {
+		
+		for (i = 0; i < 5; i++) {
 			servo_set_angle_abs(MAX_ANGLE);
 			servo_set_angle_abs(MIN_ANGLE);
 		}
@@ -106,7 +107,7 @@ int dt_remove(struct platform_device *devp)
 {
 	servo_set_angle_abs(0);
 	pwm_free(servo);
-	strcpy(servo_device.status, "disabled"); 
+	strcpy(servo_device.status, "disabled");
 	return 0;
 }
 
