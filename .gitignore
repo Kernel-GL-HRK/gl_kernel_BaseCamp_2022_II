@@ -1,7 +1,0 @@
-.vscode/
-*.out
-*.o
-checkpatch.pl
-*.EXPERIMENTAL-checkpatch-fixes
-*.a
-*.so
