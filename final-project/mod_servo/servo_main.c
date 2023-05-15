@@ -13,7 +13,7 @@ MODULE_AUTHOR("Muravka Roman");
 MODULE_DESCRIPTION("Driver for servo with devFS, procFS, Device Tree");
 MODULE_VERSION("0.1");
 
-static int servo_init(void)
+static int __init servo_init(void)
 {
 	int32_t err = 0;
 	{//Device Tree
@@ -44,7 +44,7 @@ dt_err:
 	return err;
 }
 
-static void servo_exit(void)
+static void __exit servo_exit(void)
 {
 	pr_info("servo: Removing /dev file system\n");
 	remove_devFS();

@@ -10,33 +10,40 @@ MODULE_LICENSE("GPL");
 
 uint32_t currentAngle = 0;
 
-int32_t servo_set_angle_abs(uint32_t angle)
+static void servo_turn(uint32_t angle)
 {
 	uint64_t converted;
 
-	if (angle > MAX_ANGLE) {
-		pr_warn("servo-ctl: angle more than 170 degrees. servomotor will rotate to 170 degrees\n");
-		angle = MAX_ANGLE;
-	}
 	pwm_disable(servo);
 
 	converted = (((MAX_DUTY_CYCLE - MIN_DUTY_CYCLE) / 170) * angle) + MIN_DUTY_CYCLE;
 	pwm_config(servo, converted, FREQ_FOR_SERVO);
 	pwm_enable(servo);
+
 	if (currentAngle > angle)
 		msleep(DELAY_FOR_DEG * (currentAngle - angle));
 	else
 		msleep(DELAY_FOR_DEG * (angle - currentAngle));
 
 	currentAngle = angle;
-	pr_info("servo-ctl: servomotor rotaded to  %d degrees\n", currentAngle);
+}
+
+int32_t servo_set_angle_abs(uint32_t angle)
+{
+	if (angle > MAX_ANGLE) {
+		pr_warn("servo-ctl: angle more than 170 degrees. servomotor will rotate to 170 degrees\n");
+		angle = MAX_ANGLE;
+	}
+	servo_turn(angle);
+
+	pr_info("servo-ctl: servomotor rotaded %d\n", currentAngle);
 
 	return currentAngle;
 }
 
 int32_t servo_set_angle_rel(int32_t angle)
 {
-	uint64_t converted;
+	
 	int32_t rel_angle = angle;
 
 	if (angle > (int32_t)(MAX_ANGLE - currentAngle)) {
@@ -49,17 +56,8 @@ int32_t servo_set_angle_rel(int32_t angle)
 		rel_angle = MIN_ANGLE - currentAngle;
 	} else
 		angle = angle + currentAngle;
-	pwm_disable(servo);
-
-	converted = (((MAX_DUTY_CYCLE - MIN_DUTY_CYCLE) / 170) * angle) + MIN_DUTY_CYCLE;
-	pwm_config(servo, converted, FREQ_FOR_SERVO);
-	pwm_enable(servo);
-	if (currentAngle > angle)
-		msleep(DELAY_FOR_DEG * (currentAngle - angle));
-	else
-		msleep(DELAY_FOR_DEG * (angle - currentAngle));
-
-	currentAngle = angle;
+	servo_turn(angle);
+	
 	pr_info("servo-ctl: servomotor rotaded %d degrees(%d)\n", rel_angle, currentAngle);
 
 	return currentAngle;

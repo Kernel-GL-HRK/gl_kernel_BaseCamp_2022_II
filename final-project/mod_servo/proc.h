@@ -20,11 +20,5 @@
 						"        2.2) relative - the servo will scroll the specified number of degrees depending on the previous location\n"\
 						"------------------------------------------------------------------------------------------------------------------\n"\
 
-
-extern struct proc_dir_entry *proc_file;
-extern struct proc_ops proc_fops;
-
 int32_t create_procFS(void);
 void remove_procFS(void);
-
-ssize_t proc_read (struct file *filep, char *to_user, size_t len, loff_t *offs);

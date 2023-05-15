@@ -12,44 +12,17 @@
 #include "servo_ctl.h"
 
 MODULE_LICENSE("GPL");
-MODULE_DEVICE_TABLE(of, dt_id);
 
-struct of_device_id dt_id[] = {
+static struct of_device_id dt_id[] = {
 	{.name = NAME_OF_DT_NODE},
 	{}
 };
-struct platform_driver dev_servo = {
-	.probe = dt_probe,
-	.remove = dt_remove,
-	.driver = {
-		.name = "servo_driver",
-		.of_match_table = dt_id
-	},
-};
+MODULE_DEVICE_TABLE(of, dt_id);
+
 struct pwm_device *servo;
 static struct servo_params servo_device = {.status = "disabled"};
 
-int32_t create_platform_driver(void)
-{
-	int32_t err;
-
-	err = platform_driver_register(&dev_servo);
-	if (err) {
-		pr_err("servo-dt: driver can not register\n");
-		return -err;
-	}
-	pr_info("servo-dt: driver is registered\n");
-
-	return 0;
-}
-
-void remove_platform_driver(void)
-{
-	platform_driver_unregister(&dev_servo);
-	pr_info("servo-dt: driver is unregistered\n");
-}
-
-int dt_probe(struct platform_device *devp)
+static int dt_probe(struct platform_device *devp)
 {
 	struct device *node_of_servo = &devp->dev;
 	uint32_t error;
@@ -58,14 +31,10 @@ int dt_probe(struct platform_device *devp)
 		error = device_property_present(node_of_servo, PR_CHANNEL);
 		if (!error) {
 			pr_err("servo-dt-property: %s property is not present\n", PR_CHANNEL);
-			return -error;
+			return -ENOKEY;
 		}
 
-		error = device_property_read_u32(node_of_servo, PR_CHANNEL, &servo_device.pwm_channel);
-		if (error) {
-			pr_err("servo-dt-property: %s property can not read\n", PR_CHANNEL);
-			return -error;
-		}
+		device_property_read_u32(node_of_servo, PR_CHANNEL, &servo_device.pwm_channel);
 
 		pr_info("servo-dt-property: pwm channel for servo: %d\n", servo_device.pwm_channel);
 	}
@@ -73,14 +42,9 @@ int dt_probe(struct platform_device *devp)
 		error = device_property_present(node_of_servo, PR_MODE);
 		if (!error) {
 			pr_err("servo-dt-property: %s property is not present\n", PR_MODE);
-			return -error;
+			return -ENOKEY;
 		}
-
-		error = device_property_read_string(node_of_servo, PR_MODE, (const char **)&servo_device.mode);
-		if (error) {
-			pr_err("servo-dt-property: %s property can not read\n", PR_MODE);
-			return -error;
-		}
+		device_property_read_string(node_of_servo, PR_MODE, (const char **)&servo_device.mode);
 
 		pr_info("servo-dt-property: pwm mode for servo: %s\n", servo_device.mode);
 	}
@@ -103,15 +67,43 @@ int dt_probe(struct platform_device *devp)
 	return 0;
 }
 
-int dt_remove(struct platform_device *devp)
+static int dt_remove(struct platform_device *devp)
 {
 	servo_set_angle_abs(0);
 	pwm_free(servo);
 	strcpy(servo_device.status, "disabled");
 	return 0;
 }
+static struct platform_driver dev_servo = {
+	.probe = dt_probe,
+	.remove = dt_remove,
+	.driver = {
+		.name = "servo_driver",
+		.of_match_table = dt_id
+	},
+};
 
 struct servo_params get_servo_description(void)
 {
 	return servo_device;
+}
+
+int32_t create_platform_driver(void)
+{
+	int32_t err;
+
+	err = platform_driver_register(&dev_servo);
+	if (err) {
+		pr_err("servo-dt: driver can not register\n");
+		return err;
+	}
+	pr_info("servo-dt: driver is registered\n");
+
+	return 0;
+}
+
+void remove_platform_driver(void)
+{
+	platform_driver_unregister(&dev_servo);
+	pr_info("servo-dt: driver is unregistered\n");
 }
