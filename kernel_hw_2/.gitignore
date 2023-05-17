@@ -1,0 +1,7 @@
+*.ko*
+!*.ko
+*.mod*
+*.symvers
+modules*
+.*
+!.gitignore
