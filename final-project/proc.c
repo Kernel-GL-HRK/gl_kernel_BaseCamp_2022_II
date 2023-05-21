@@ -4,6 +4,7 @@
 #include <linux/err.h>
 #include <linux/printk.h>
 #include "proc.h"
+#include "platform_driver.h"
 
 ssize_t proc_read (struct file *filep, char *to_user, size_t len, loff_t *offs);
 
@@ -33,5 +34,40 @@ void remove_procFS(void)
 
 ssize_t proc_read (struct file *filep, char *to_user, size_t len, loff_t *offs)
 {
+	size_t to_copy;
+	int8_t buffer_for_copy[PROC_MAX_BUFFER_SIZE] = {0};
+	struct ultrasound_desc gpio_of_ultrasound;
+
+	if (PROC_MAX_BUFFER_SIZE > len) {
+		pr_err("ultrasound-proc-read: too little space of mem to output text to file\n");
+		return -ENOMEM;
+	}
+	gpio_of_ultrasound = get_ultra_description();
+	switch (*offs) {
+	case FIRST_MESSAGE:
+		to_copy = snprintf(buffer_for_copy, PROC_MAX_BUFFER_SIZE, INTRODUCTION);
+		goto ready_for_sending;
+	case US_TRIG:
+		if (!strcmp(gpio_of_ultrasound.status, "disconnected"))
+			to_copy = snprintf(buffer_for_copy, PROC_MAX_BUFFER_SIZE, "ECHO PIN = [undefined]\n");
+		else
+			to_copy = snprintf(buffer_for_copy, PROC_MAX_BUFFER_SIZE, "ECHO PIN = [%d]\n", gpio_of_ultrasound.echo_pin);
+
+		goto ready_for_sending;
+	case US_ECHO:
+		if (!strcmp(gpio_of_ultrasound.status, "disconnected"))
+			to_copy = snprintf(buffer_for_copy, PROC_MAX_BUFFER_SIZE, "TRIGGER PIN = [undefined]\n");
+		else
+			to_copy = snprintf(buffer_for_copy, PROC_MAX_BUFFER_SIZE, "TRIGGER PIN = [%d]\n", gpio_of_ultrasound.trig_pin);
+
+		goto ready_for_sending;
+	}
 	return 0;
+ready_for_sending:
+	if (copy_to_user(to_user, buffer_for_copy, to_copy)) {
+		pr_err("ultrasound-proc-read: can not copy to user space\n");
+		return -ENOMEM;
+	}
+	*offs = *offs + 1;
+	return to_copy;
 }

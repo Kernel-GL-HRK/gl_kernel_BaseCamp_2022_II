@@ -7,9 +7,10 @@
 #include <linux/err.h>		
 #include <linux/printk.h>	
 #include "sys_dev.h"
+#include "platform_driver.h"
+#include "timer_and_irq.h"
 
 ssize_t dev_read (struct file *filep, char *to_user, size_t len, loff_t *offs);
-ssize_t dev_write (struct file *filep, const char *from_user, size_t len, loff_t *offs);
 int access_to_dev(struct device *dev, struct kobj_uevent_env *env);
 
 dev_t MM;
@@ -18,7 +19,6 @@ struct class *class_folder;
 struct device *dev_file;
 struct file_operations dev_fs = {
 	.read = dev_read,
-	.write = dev_write,
 };
 
 MODULE_LICENSE("GPL");
@@ -88,12 +88,26 @@ void remove_devFS(void)
 
 ssize_t dev_read(struct file *filep, char *to_user, size_t len, loff_t *offs)
 {
-	return 0;
-}
+	
+	int8_t buffer_for_copy[MAX_BUFFER_SIZE] = {0};
+	size_t to_copy = 0;
+	struct ultrasound_desc gpio_of_ultrasound;
 
-ssize_t dev_write(struct file *filep, const char *from_user, size_t len, loff_t *offs)
-{
-	return len;
+	gpio_of_ultrasound = get_ultra_description();
+	if (!strcmp(gpio_of_ultrasound.status, "connected")) {
+		to_copy = snprintf(buffer_for_copy, MAX_BUFFER_SIZE, "\rCurrent distance to a nearest barrier = [%d]        ", get_distance());
+		to_copy = min(to_copy, len);
+	} else {
+		to_copy = snprintf(buffer_for_copy, MAX_BUFFER_SIZE, "\rCurrent distance to a nearest barrier = [undefined]");
+		to_copy = min(to_copy, len);
+	}
+
+	if (copy_to_user(to_user, buffer_for_copy, to_copy)) {
+		pr_err("ultrasound-dev-read: can not send buffer to user\n");
+		return -ENOMEM;
+	}
+
+	return to_copy;
 }
 
 int access_to_dev(struct device *dev, struct kobj_uevent_env *env)

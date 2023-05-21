@@ -9,3 +9,5 @@
 
 int32_t run_ultrasound(void);
 void stop_ultrasound(void);
+
+uint32_t get_distance(void);

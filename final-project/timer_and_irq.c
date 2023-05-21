@@ -40,9 +40,9 @@ irqreturn_t irq_handler_echo(int irq, void *dev_id)
         
         if (duration > 0) {
             do_div(duration, 58);
-            distance = duration;
-            pr_warn("ultrasound-interrupts-irq: distance = %d sm;\n", distance);
+            distance = (duration <= 400) ? duration : 401;
         }
+
         break;
     }
 	isToggled = gpio_status;
@@ -95,5 +95,10 @@ void stop_ultrasound(void)
 {
 	del_timer(&trigger_running);
 	free_irq(gpio_to_irq(gpio_of_ultrasound.echo_pin), NULL);
+}
+
+uint32_t get_distance(void)
+{
+	return distance;
 }
 
