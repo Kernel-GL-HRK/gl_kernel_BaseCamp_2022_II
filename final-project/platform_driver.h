@@ -6,9 +6,6 @@
 #define PR_ECHO			"echo_pin"
 #define PR_TRIG			"trig_pin"
 
-extern struct of_device_id dt_id[];
-extern struct platform_driver dev_ultrasound;
-
 struct ultrasound_desc {
 	uint32_t echo_pin;
 	uint32_t trig_pin;

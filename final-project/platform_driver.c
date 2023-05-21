@@ -9,11 +9,9 @@
 #include <linux/gpio.h>
 #include "asm-generic/gpio.h"
 #include "platform_driver.h"
-#include "timer_and_interrupts.h"
+#include "timer_and_irq.h"
 
 MODULE_LICENSE("GPL");
-MODULE_DEVICE_TABLE(of, dt_id);
-
 
 int dt_probe(struct platform_device *devp);
 int dt_remove(struct platform_device *devp);
@@ -24,6 +22,8 @@ struct of_device_id dt_id[] = {
 	{.name = NAME_OF_DT_NODE},
 	{}
 };
+MODULE_DEVICE_TABLE(of, dt_id);
+
 struct platform_driver dev_ultrasound = {
 	.probe = dt_probe,
 	.remove = dt_remove,
@@ -84,11 +84,37 @@ int dt_probe(struct platform_device *devp)
 		pr_info("ultrasound-dt-property: number of trigger pin for ultrasound: %d\n", ultra_trig);
 		ultrasound.trig_pin = ultra_trig;
 	}
+	{//Requesting pins for ultrasound driver
+		error = gpio_request(ultrasound.trig_pin, "trigger pin for ultrasound\n");
+		if (error < 0) {
+			pr_err("ultrasound-dt-gpio: can not request trigger pin #%d\n", ultrasound.trig_pin);
+			return error;
+		}
+		gpio_direction_output(ultrasound.trig_pin, 0);
+
+		error = gpio_request(ultrasound.echo_pin, "echo pin for ultrasound\n");
+		if (error < 0) {
+			pr_err("ultrasound-dt-gpio: can not request echo pin #%d\n", ultrasound.echo_pin);
+			return error;
+		}
+		gpio_direction_input(ultrasound.echo_pin);
+
+		pr_info("ultrasound-dt-gpio: pins (echo: %d; trigger: %d) are requested\n", ultrasound.echo_pin, ultrasound.trig_pin);		
+
+		sprintf(ultrasound.status,  "connected");
+	}
+
+	run_ultrasound();
 	return 0;
 }
 
 int dt_remove(struct platform_device *devp)
-{	
+{
+	stop_ultrasound();
+	gpio_free(ultrasound.echo_pin);
+	gpio_free(ultrasound.trig_pin);
+	sprintf(ultrasound.status,  "disconnected");
+	
 	pr_info("ultrasound-dt: device tree is uploaded, gpios are free\n");
 	return 0;
 }
