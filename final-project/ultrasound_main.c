@@ -16,6 +16,12 @@ MODULE_VERSION("0.1");
 static int ultrasound_init(void)
 {
 	int32_t err = 0;
+	{//Device Tree
+		pr_info("ultrasound: Creating platform driver file system\n");
+		err = create_platform_driver();
+		if(err)
+			goto dt_err;
+	}
 	{//DEV
 		pr_info("ultrasound: Creating /dev file system\n");
 		err = create_devFS();
@@ -33,6 +39,8 @@ static int ultrasound_init(void)
 proc_err:
 	remove_devFS();
 dev_err:
+	remove_platform_driver();
+dt_err:
 	return err;
 }
 
@@ -42,6 +50,8 @@ static void ultrasound_exit(void)
 	remove_devFS();
 	pr_info("ultrasound: Removing /proc file system\n");
 	remove_procFS();
+	pr_info("ultrasound: Removing platform driver file system\n");
+	remove_platform_driver();
 }
 
 module_init(ultrasound_init);
