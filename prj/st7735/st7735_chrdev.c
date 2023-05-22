@@ -1,6 +1,6 @@
-#include <linux/init.h>         // Macros used to mark up functions e.g., __init __exit
-#include <linux/module.h>       // Core header for loading LKMs into the kernel
-#include <linux/kernel.h>       // Contains types, macros, functions for the kernel
+#include <linux/init.h>		 // Macros used to mark up functions e.g., __init __exit
+#include <linux/module.h>		// Core header for loading LKMs into the kernel
+#include <linux/kernel.h>		// Contains types, macros, functions for the kernel
 #include <linux/proc_fs.h>
 #include <linux/uaccess.h>
 #include <linux/fs.h>
@@ -14,17 +14,17 @@
 #include <linux/ioctl.h>
 
 #include <linux/spi/spi.h>
-#include <linux/delay.h> 
-#include <linux/gpio.h> 
+#include <linux/delay.h>
+#include <linux/gpio.h>
 
 #include "cdev_ioctl.h"
 #include "st7735.h"
 
 
-MODULE_LICENSE("GPL");                  ///< The license type -- this affects runtime behavior
-MODULE_AUTHOR("Yevhen Kolesnyk");       ///< The author -- visible when you use modinfo
-MODULE_DESCRIPTION("Character device driver with Proc, Sys Interface and IOCTL");  ///< The description -- see modinfo
-MODULE_VERSION("0.1");                  ///< The version of the module
+MODULE_LICENSE("GPL");				  ///< The license type -- this affects runtime behavior
+MODULE_AUTHOR("Yevhen Kolesnyk");		///< The author -- visible when you use modinfo
+MODULE_DESCRIPTION("Character device driver for st7735 with Proc, Sys Interface and IOCTL");  ///< The description -- see modinfo
+MODULE_VERSION("0.1");				  ///< The version of the module
 
 static struct spi_device *spi;
 
@@ -50,7 +50,7 @@ static size_t buffer_size;
 static unsigned char data_buffer[MAX_BUFFER_SIZE] = {0};
 
 
-static unsigned char color_name [MAX_COLOR_NAME_SIZE] = {0};
+static unsigned char color_name[MAX_COLOR_NAME_SIZE] = {0};
 
 
 struct display_font dev_font;
@@ -143,7 +143,7 @@ static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *of
 
 	buffer_size = 0;
 
-	
+
 
 	pr_info("st7735: %zu bytes read\n", len);
 	return len;
@@ -169,7 +169,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 
 	pr_info("st7735: %d bytes written\n", buffer_size);
 
-	if (ST7735_DrawString(data_buffer, buffer_size , &dev_font, spi))
+	if (ST7735_DrawString(data_buffer, buffer_size, &dev_font, spi))
 		pr_err("st7735: ST7735_DrawString fail");
 
 	return buffer_size;
@@ -231,7 +231,7 @@ static long dev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		pr_info("st7735: GET_TEXT_COLOR current color is %s\n", color_show(color_name, dev_font.text_color));
 		break;
 	case SET_TEXT_COLOR:
-				if (copy_from_user(&dev_font.text_color, (int16_t *)arg, sizeof(dev_font.text_color))) {
+		if (copy_from_user(&dev_font.text_color, (int16_t *)arg, sizeof(dev_font.text_color))) {
 			pr_err("st7735: SET_TEXT_COLOR err\n");
 			err = -ENOTTY;
 		}
@@ -273,47 +273,45 @@ static struct file_operations fops = {
 
 static int spi_init(void)
 {
-   int ret;
-   struct spi_master *master;
-   struct spi_board_info spi_device_info = {
-        .modalias = "my_st7735",
-        .max_speed_hz = 62000000,
-        .bus_num = 1,
-        .chip_select = 0,
-        .mode = SPI_MODE_0,  
-   };
+	int ret;
 
-   pr_info("st7735: spi basic driver init");
+	struct spi_master *master;
+	struct spi_board_info spi_device_info = {
+		.modalias = "my_st7735",
+		.max_speed_hz = 62000000,
+		.bus_num = 1,
+		.chip_select = 0,
+		.mode = SPI_MODE_0,
+	};
 
-   master = spi_busnum_to_master(spi_device_info.bus_num);
-   if (!master)
-     {
-        pr_err("st7735: Failed to create master device");
-        return -ENODEV;
-     }
-   spi = spi_new_device(master, &spi_device_info);
-   if (!spi)
-     {
-        pr_err("st7735: Failed to create slave device");
-        return -ENODEV;
-     }
+	pr_info("st7735: spi basic driver init");
 
-   spi->bits_per_word = 8;
+	master = spi_busnum_to_master(spi_device_info.bus_num);
+	if (!master) {
+		pr_err("st7735: Failed to create master device");
+		return -ENODEV;
+	}
+	spi = spi_new_device(master, &spi_device_info);
+	if (!spi) {
+		pr_err("st7735: Failed to create slave device");
+		return -ENODEV;
+	}
 
-   ret = spi_setup(spi);
-   if (ret)
-     {
-        pr_err("st7735: Failed to setup slave");
-        spi_unregister_device(spi);
-        return -ENODEV;
-     }
+	spi->bits_per_word = 8;
 
-   mdelay(100);
-   pr_info("st7735: init dispaly");
-   _init_display(spi);
-   clear_display(dev_font.bg_color, spi);
+	ret = spi_setup(spi);
+	if (ret) {
+		pr_err("st7735: Failed to setup slave");
+		spi_unregister_device(spi);
+		return -ENODEV;
+	}
 
-   return 0;
+	mdelay(100);
+	pr_info("st7735: init dispaly");
+	_init_display(spi);
+	clear_display(dev_font.bg_color, spi);
+
+	return 0;
 }
 
 
@@ -326,10 +324,10 @@ static int __init chrdev_init(void)
 	major = alloc_chrdev_region(&dev, 0, 1, DEVICE_NAME);
 
 	dev_font.font_size = 3;
-	dev_font.text_color = WHITE; 
-    dev_font.bg_color = BLACK; 
-    dev_font.x = 1;
-    dev_font.y = 1;
+	dev_font.text_color = WHITE;
+	dev_font.bg_color = BLACK;
+	dev_font.x = 1;
+	dev_font.y = 1;
 
 	if (major < 0) {
 		pr_err("st7735: register_chrdev failed: %d\n", major);
@@ -395,24 +393,22 @@ static int __init chrdev_init(void)
 	}
 
 	pr_info("st7735: device driver insmod success\n");
-	
 
-	if (spi_init())
-	{
+
+	if (spi_init()) {
 		pr_info("st7735: spi_init(spi) failed");
 		goto spi_init_err;
 	}
 
 	if (gpio_request(RST, "RST") && gpio_request(DC, "DC"))
-	{
 		pr_info("st7735: failed in gpio request");
-	}
+
 	gpio_direction_output(RST, 1);
 	gpio_direction_output(DC, 1);
 
 	return 0;
 
-spi_init_err: 
+spi_init_err:
 	spi_unregister_device(spi);
 sysfs_write_count_err:
 	sysfs_remove_file(kernel_kobj, &font_size_attr.attr);
@@ -436,11 +432,11 @@ cdev_err:
 }
 
 static void __exit chrdev_exit(void)
-{	
+{
 	gpio_free(RST);
 	gpio_free(DC);
 	spi_unregister_device(spi);
-	
+
 	kobject_put(chrdev_kobj);
 	sysfs_remove_file(kernel_kobj, &font_size_attr.attr);
 	sysfs_remove_file(kernel_kobj, &data_text_color_attr.attr);
@@ -452,8 +448,6 @@ static void __exit chrdev_exit(void)
 	cdev_del(&chrdev_cdev);
 	unregister_chrdev_region(dev, 1);
 	pr_info("st7735: module exited\n");
-
-//	_spi_exit(spi);
 
 	proc_remove(proc_file);
 	proc_remove(proc_folder);
