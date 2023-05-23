@@ -4,24 +4,22 @@
 #include <stdint.h>
 #include <ncurses.h>
 #include "controlling_servo.h"
+#include "scaning_ultrasonic.h"
 
 int main()
 {
-    FILE *ultrasound_fd;
     open_dev_file_servo();
-    ultrasound_fd = fopen("/dev/ultrasound_control", "r+");
-    if (ultrasound_fd == NULL) {
-        perror("Error opening ultrasound_control");
-        return -1;
-    }
-
-	
+    open_dev_file_ultrasonic();
+    
+    check_description_ultrasonic();
+	get_distance_ultrasonic();
 
 	check_description_servo();
-    turn_servo(53);
+    turn_servo(44);
     get_angle_servo();
-    
+
     close_dev_file_servo();
-    fclose(ultrasound_fd);
+    close_dev_file_ultrasonic();
+
     return 0;
 }

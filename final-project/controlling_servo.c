@@ -8,7 +8,7 @@
 
 #define MAX_BUFFER 1024
 
-FILE *dev_file;
+static FILE *dev_file;
 
 struct servo_description check_description_servo(void) {
 	char buffer[MAX_BUFFER] = {0};
@@ -92,20 +92,22 @@ int32_t turn_servo(int32_t angle)
 
 	return 0;
 }
+
 int32_t get_angle_servo(void)
 {
 	char buffer[MAX_BUFFER] = {0};
-	uint32_t angle;
+	uint32_t angle, i;
 
-	fread(buffer, sizeof(char), strlen(buffer), dev_file);
+	fread(buffer, sizeof(char), MAX_BUFFER, dev_file);
 	if (ferror(dev_file)) {
-		perror("Cannot write to dev file");
+		perror("Cannot read to dev file");
 		return -1;
 	}
 
-	sscanf(buffer, "%d", &angle);
+	for (i = 0; buffer[i] != ']'; i++) {
+		if ((buffer[i] >= '0') && (buffer[i] <= '9'))
+			angle = (angle * 10) + (buffer[i] - '0');
+	}
 	
-	printf("gi: %d\n", angle);
-
 	return 0;
 }
