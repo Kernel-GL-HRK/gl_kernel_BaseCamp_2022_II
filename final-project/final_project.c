@@ -3,25 +3,25 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <ncurses.h>
+#include "controlling_servo.h"
 
-int main() {
-    int servo_fd, ultrasound_fd;
-
-    servo_fd = open("/dev/servo_control", O_RDWR);
-    if (servo_fd < 0) {
-        perror("Error opening servo_control");
-        return -1;
-    }
-
-    ultrasound_fd = open("/dev/ultrasound_control", O_RDWR);
-    if (ultrasound_fd < 0) {
+int main()
+{
+    FILE *ultrasound_fd;
+    open_dev_file_servo();
+    ultrasound_fd = fopen("/dev/ultrasound_control", "r+");
+    if (ultrasound_fd == NULL) {
         perror("Error opening ultrasound_control");
-        close(servo_fd);
         return -1;
     }
 
-    close(ultrasound_fd);
-    close(servo_fd);
+	
 
+	check_description_servo();
+    turn_servo(53);
+    get_angle_servo();
+    
+    close_dev_file_servo();
+    fclose(ultrasound_fd);
     return 0;
 }
