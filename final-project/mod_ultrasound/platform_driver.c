@@ -40,7 +40,7 @@ int32_t create_platform_driver(void)
 	err = platform_driver_register(&dev_ultrasound);
 	if (err) {
 		pr_err("ultrasound-dt: driver can not register\n");
-		return -err;
+		return err;
 	}
 	pr_info("ultrasound-dt: driver is registered\n");
 
