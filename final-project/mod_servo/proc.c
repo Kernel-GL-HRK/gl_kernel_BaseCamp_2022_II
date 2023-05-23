@@ -41,6 +41,13 @@ ssize_t proc_read(struct file *filep, char *to_user, size_t len, loff_t *offs)
 			to_copy = snprintf(buffer_for_copy, PROC_MAX_BUFFER_SIZE, "SERVO MODE = [%s]\n", servo_desc.mode);
 
 		goto ready_for_sending;
+	case SERVO_SPEED:
+		if (!strcmp(servo_desc.status, "disabled"))
+			to_copy = snprintf(buffer_for_copy, PROC_MAX_BUFFER_SIZE, "SERVO SPEED = [undefined]\n");
+		else
+			to_copy = snprintf(buffer_for_copy, PROC_MAX_BUFFER_SIZE, "SERVO SPEED = [%d]\n", servo_desc.speed);
+
+		goto ready_for_sending;
 	}
 	return 0;
 ready_for_sending:

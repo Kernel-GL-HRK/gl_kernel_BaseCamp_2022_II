@@ -38,6 +38,17 @@ static int dt_probe(struct platform_device *devp)
 
 		pr_info("servo-dt-property: pwm channel for servo: %d\n", servo_device.pwm_channel);
 	}
+	{//Reading speed for servo from device tree
+		error = device_property_present(node_of_servo, PR_SPEED);
+		if (!error) {
+			pr_err("servo-dt-property: %s property is not present\n", PR_SPEED);
+			return -ENOKEY;
+		}
+
+		device_property_read_u32(node_of_servo, PR_SPEED, &servo_device.speed);
+
+		pr_info("servo-dt-property: speed for servo: %d\n", servo_device.speed);
+	}
 	{//Reading servo mode from device tree
 		error = device_property_present(node_of_servo, PR_MODE);
 		if (!error) {
@@ -57,12 +68,8 @@ static int dt_probe(struct platform_device *devp)
 		strcpy(servo_device.status, "enabled");
 	}
 	{//Test
-		uint32_t i;
-		
-		for (i = 0; i < 5; i++) {
-			servo_set_angle_abs(MAX_ANGLE);
-			servo_set_angle_abs(MIN_ANGLE);
-		}
+		servo_set_angle_abs(MAX_ANGLE);
+		servo_set_angle_abs(MIN_ANGLE);
 	}
 	return 0;
 }

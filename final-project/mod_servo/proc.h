@@ -9,6 +9,7 @@
 #define FIRST_MESSAGE	0
 #define SERVO_CHANNEL	1
 #define SERVO_MODE		2
+#define SERVO_SPEED		3
 
 #define INTRODUCTION	"------------------------------------------------------------------------------------------------------------------\n"\
 						"- Servomotor work by PWM(frequency: 20ms; duty-cycle: 0.5ms>*<2.5ms).\n"\
@@ -18,6 +19,7 @@
 						"    2) servo mode:\n"\
 						"        2.1) absolute - the servo will scroll to the specified degree regardless of the previous location\n"\
 						"        2.2) relative - the servo will scroll the specified number of degrees depending on the previous location\n"\
+						"    3) speed - speed of rotating servo for 1 degree\n"\
 						"------------------------------------------------------------------------------------------------------------------\n"\
 
 int32_t create_procFS(void);

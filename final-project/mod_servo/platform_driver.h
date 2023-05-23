@@ -4,11 +4,12 @@
 #define NAME_OF_DT_NODE	"servo"
 #define PR_CHANNEL		"pwm-channel"
 #define PR_MODE			"mode"
+#define PR_SPEED		"speed"
 
 struct servo_params {
 	uint32_t pwm_channel;
 	char *mode;
-	uint32_t angle;
+	uint32_t speed;
 	int8_t status[256];
 };
 
