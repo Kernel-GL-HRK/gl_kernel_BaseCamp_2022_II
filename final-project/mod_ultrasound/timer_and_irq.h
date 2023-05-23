@@ -3,6 +3,7 @@
 
 #define	NAME_OF_INTERRUPT_IRQ		"interrupt_for_ultrasound"
 #define	PERIOD_FOR_ULTRASOUND_MSEC	60
+#define NOISE_DISTANCE	1
 #define ON	1
 #define OFF	0
 

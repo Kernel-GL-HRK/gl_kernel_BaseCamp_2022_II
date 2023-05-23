@@ -18,7 +18,7 @@ MODULE_LICENSE("GPL");
 static struct timer_list trigger_running;
 static struct ultrasound_desc gpio_of_ultrasound;
 static ktime_t start_echo, end_echo;
-static int32_t distance, isToggled = 0;
+static int32_t distance, isToggled = 0, lastDistance;
 
 irqreturn_t irq_handler_echo(int irq, void *dev_id)
 {
@@ -42,7 +42,10 @@ irqreturn_t irq_handler_echo(int irq, void *dev_id)
             do_div(duration, 58);
             distance = (duration <= 400) ? duration : 401;
         }
-
+		if (((distance - lastDistance) > NOISE_DISTANCE) || (((lastDistance - distance) > NOISE_DISTANCE)))
+			lastDistance = distance;
+		else
+		 	distance = lastDistance;
         break;
     }
 	isToggled = gpio_status;
@@ -83,6 +86,7 @@ int32_t run_ultrasound(void)
 			return error;
 		}
 	}
+	pr_alert("HI\n");
 	{//Running timer for trigger of ultrasound
 		timer_setup(&trigger_running, send_trig_signal, 0);
 		mod_timer(&trigger_running, jiffies + msecs_to_jiffies(PERIOD_FOR_ULTRASOUND_MSEC));
