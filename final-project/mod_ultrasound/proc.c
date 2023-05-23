@@ -7,10 +7,12 @@
 #include "platform_driver.h"
 
 ssize_t proc_read (struct file *filep, char *to_user, size_t len, loff_t *offs);
+loff_t proc_seek(struct file *filp, loff_t off, int whence);
 
 struct proc_dir_entry *proc_file;
 struct proc_ops proc_fops = {
 	.proc_read = proc_read,
+	.proc_lseek = proc_seek,
 };
 
 MODULE_LICENSE("GPL");
@@ -70,4 +72,25 @@ ready_for_sending:
 	}
 	*offs = *offs + 1;
 	return to_copy;
+}
+
+loff_t proc_seek(struct file *filp, loff_t off, int whence)
+{
+    loff_t new_pos;
+
+    switch(whence) {
+      case SEEK_SET:
+        new_pos = off;
+        break;
+
+      case SEEK_CUR:
+        new_pos = filp->f_pos + off;
+        break;
+
+      default: // can't happen
+        return -EINVAL;
+    }
+    if (new_pos < 0) return -EINVAL;
+    filp->f_pos = new_pos;
+    return new_pos;
 }

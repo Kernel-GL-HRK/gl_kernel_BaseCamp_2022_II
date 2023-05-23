@@ -86,7 +86,6 @@ int32_t run_ultrasound(void)
 			return error;
 		}
 	}
-	pr_alert("HI\n");
 	{//Running timer for trigger of ultrasound
 		timer_setup(&trigger_running, send_trig_signal, 0);
 		mod_timer(&trigger_running, jiffies + msecs_to_jiffies(PERIOD_FOR_ULTRASOUND_MSEC));

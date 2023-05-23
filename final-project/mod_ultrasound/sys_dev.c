@@ -11,6 +11,7 @@
 #include "timer_and_irq.h"
 
 ssize_t dev_read (struct file *filep, char *to_user, size_t len, loff_t *offs);
+loff_t dev_seek(struct file *filp, loff_t off, int whence);
 int access_to_dev(struct device *dev, struct kobj_uevent_env *env);
 
 dev_t MM;
@@ -19,6 +20,7 @@ struct class *class_folder;
 struct device *dev_file;
 struct file_operations dev_fs = {
 	.read = dev_read,
+	.llseek = dev_seek
 };
 
 MODULE_LICENSE("GPL");
@@ -108,6 +110,27 @@ ssize_t dev_read(struct file *filep, char *to_user, size_t len, loff_t *offs)
 	}
 
 	return to_copy;
+}
+
+loff_t dev_seek(struct file *filp, loff_t off, int whence)
+{
+    loff_t new_pos;
+
+    switch(whence) {
+      case SEEK_SET:
+        new_pos = off;
+        break;
+
+      case SEEK_CUR:
+        new_pos = filp->f_pos + off;
+        break;
+
+      default: // can't happen
+        return -EINVAL;
+    }
+    if (new_pos < 0) return -EINVAL;
+    filp->f_pos = new_pos;
+    return new_pos;
 }
 
 int access_to_dev(struct device *dev, struct kobj_uevent_env *env)
