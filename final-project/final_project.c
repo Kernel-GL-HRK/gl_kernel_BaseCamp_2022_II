@@ -5,21 +5,47 @@
 #include <ncurses.h>
 #include "controlling_servo.h"
 #include "scaning_ultrasonic.h"
+#include "out_on_display.h"
 
-int main()
+int main(void)
 {
-    open_dev_file_servo();
-    open_dev_file_ultrasonic();
-    
-    check_description_ultrasonic();
-	get_distance_ultrasonic();
+	struct servo_description servo;
+	struct ultrasonic_description ultrasonic;
 
-	check_description_servo();
-    turn_servo(44);
-    get_angle_servo();
+	{//ULTRASONIC INIT
+		if (open_dev_file_ultrasonic() < 0)
+			return -1;
 
-    close_dev_file_servo();
-    close_dev_file_ultrasonic();
+		ultrasonic = check_description_ultrasonic();
+		if (ultrasonic.error < 0) {
+			close_dev_file_ultrasonic();
+			return -1;
+		}
+	}
+	{//SERVO INIT
+		if (open_dev_file_servo() < 0) {
+			close_dev_file_ultrasonic();
+			return -1;
+		}
 
-    return 0;
+		servo = check_description_servo();
+		if (servo.error < 0) {
+			close_dev_file_servo();
+			close_dev_file_ultrasonic();
+			return -1;
+		}
+	}
+	{//INIT SCREEN
+		initscr();
+		init_color_screen();
+	}
+	{//START WORKING
+		menu();
+	}
+	{//END
+		endwin();
+		close_dev_file_servo();
+		close_dev_file_ultrasonic();
+	}
+	return 0;
 }

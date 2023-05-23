@@ -5,6 +5,9 @@
 #define SERVO_PROC	"/proc/FP-servo"
 #define MAX_BUFFER	1024
 
+#define SERVO_PIN_NAME		"SERVO_PWM"
+#define SERVO_PIN_CHANNEL	18
+
 #define MAX_ANGLE	170
 #define MIN_ANGLE	0
 enum {

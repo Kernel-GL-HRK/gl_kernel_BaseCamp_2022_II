@@ -8,87 +8,80 @@
 
 #define MAX_BUFFER 1024
 
-static FILE *dev_file;
+static int32_t dev_file;
 
-struct servo_description check_description_servo(void) {
-	char buffer[MAX_BUFFER] = {0};
-	struct servo_description description = {0,0,{0},0}; // инициализируем все поля нулями
+struct servo_description check_description_servo(void)
+{
+	struct servo_description description = {0, 0, {0}, 0}; // инициализируем все поля нулями
 
-	FILE *proc_file = fopen(SERVO_PROC, "r");
-	if (proc_file == NULL) {
+	int32_t proc_file = open(SERVO_PROC, O_RDONLY);
+	if (proc_file < 0) {
 		perror("can not open proc file of servo\n");
 		description.error = -1;
 		return description;
 	}
-	if (fseek(proc_file, CHANNEL_SERVO, SEEK_SET) != 0) {
-		perror("fseek error\n");
-		description.error = -1;
-		fclose(proc_file);
-		return description;
-	}
-	fread(buffer, sizeof(char), MAX_BUFFER-1, proc_file);
 
-	for (int32_t i = 1, j = 0; i < MAX_PARAMS_SERVO; i++) {
+	for (int32_t i = 1; i < MAX_PARAMS_SERVO; i++) {
+		int32_t temp = 0;
 		int16_t need_copy = -1;
+		char buffer[MAX_BUFFER] = {0};
 
-		while (buffer[j] != ']') {
-		switch (i) {
-		case CHANNEL_SERVO:
-			if ((buffer[j] >= '0') && (buffer[j] <= '9'))
-				description.pwm_channel = (description.pwm_channel * 10) + (buffer[j] - '0');
-			break;
-		case SPEED_SERVO:
-			if ((buffer[j] >= '0') && (buffer[j] <= '9'))
-				description.speed = (description.speed * 10) + (buffer[j] - '0');
-			break;
-		case MODE_SERVO:
-			if (need_copy >= 0)
-				description.mode[need_copy++] = buffer[j];
-			if (buffer[j] == '[')
-				need_copy++;
-			break;
+		if (lseek(proc_file, i, SEEK_SET) < 0) {
+			perror("lseek error\n");
+			description.error = -1;
+			close(proc_file);
+			return description;
 		}
-		buffer[j++] = ' ';
+		read(proc_file, buffer, MAX_BUFFER);
+
+		for (int j = 0; buffer[j] != ']'; j++) {
+			if ((buffer[j] >= '0') && (buffer[j] <= '9'))
+				temp = (temp * 10) + (buffer[j] - '0');
+
+			switch (i) {
+			case CHANNEL_SERVO:
+				description.pwm_channel = temp;
+				break;
+			case SPEED_SERVO:
+				description.speed = temp;
+				break;
+			case MODE_SERVO:
+				if (need_copy >= 0)
+					description.mode[need_copy++] = buffer[j];
+				if (buffer[j] == '[')
+					need_copy++;
+				break;
+			}
 		}
-		buffer[j++] = ' ';
 	}
-	printf("channel of servo: %d\n", description.pwm_channel);
-	printf("speed of servo: %d\n", description.speed);
-	printf("mode of servo: %s\n", description.mode);
-
-
-
-	fclose(proc_file);
+	close(proc_file);
 	return description;
 }
 
 int32_t open_dev_file_servo(void)
 {
-    dev_file = fopen(SERVO_DEV, "r+");
-    if (dev_file == NULL) {
-        perror("Error opening servo_control");
-        return -1;
-    }
+	dev_file = open(SERVO_DEV, O_RDWR);
+	if (dev_file < 0) {
+		perror("Error opening servo_control");
+		return -1;
+	}
 	return 0;
 }
 int32_t close_dev_file_servo(void)
 {
-	fclose(dev_file);
+	close(dev_file);
 }
 
 int32_t turn_servo(int32_t angle)
 {
 	char buffer[MAX_BUFFER] = {0};
-	
+
 	if (angle > MAX_ANGLE)
 		angle = MAX_ANGLE;
 	sprintf(buffer, "%d", angle);
-	
-	fwrite(buffer, sizeof(char), strlen(buffer), dev_file);
-	if (ferror(dev_file)) {
-		perror("Cannot write to dev file");
-		return -1;
-	}
+
+	if (write(dev_file, buffer, strlen(buffer)) < 0)
+		perror("cannot write to servo\n");
 
 	return 0;
 }
@@ -96,10 +89,9 @@ int32_t turn_servo(int32_t angle)
 int32_t get_angle_servo(void)
 {
 	char buffer[MAX_BUFFER] = {0};
-	uint32_t angle, i;
+	uint32_t angle = 0, i;
 
-	fread(buffer, sizeof(char), MAX_BUFFER, dev_file);
-	if (ferror(dev_file)) {
+	if (read(dev_file, buffer, MAX_BUFFER) < 0) {
 		perror("Cannot read to dev file");
 		return -1;
 	}
@@ -108,6 +100,5 @@ int32_t get_angle_servo(void)
 		if ((buffer[i] >= '0') && (buffer[i] <= '9'))
 			angle = (angle * 10) + (buffer[i] - '0');
 	}
-	
-	return 0;
+	return angle;
 }

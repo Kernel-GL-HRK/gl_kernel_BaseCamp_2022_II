@@ -1,12 +1,15 @@
-libs=controlling_servo.c scaning_ultrasonic.c
-main_file=final_project.c
-output=FP
+LIBS=controlling_servo.c scaning_ultrasonic.c out_on_display.c
+MAIN=final_project.c
+OUTPUT=FP
 
 
-default: $(main_file) $(libs)
-	gcc $^ -lncurses -o $(output) 
+default: $(MAIN) $(LIBS)
+	gcc $^ -lncurses -o $(OUTPUT).out 
 
 run: default
-	./$(output)
+	./$(OUTPUT).out
+
+clean:
+	rm *.out *.o
 
 .PHONY: default run  

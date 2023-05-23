@@ -4,6 +4,8 @@
 #define ULTRASONIC_DEV	"/dev/ultrasound_control"
 #define ULTRASONIC_PROC	"/proc/FP-ultrasound"
 #define MAX_BUFFER	1024
+#define ULTRASONIC_ECHO_PIN	"-ECHO_US-"
+#define ULTRASONIC_TRIG_PIN "-TRIG_US-"
 
 enum {
 	ECHO = 1,
