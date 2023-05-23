@@ -58,8 +58,31 @@ ready_for_sending:
 	*offs = *offs + 1;
 	return to_copy;
 }
+
+loff_t proc_seek(struct file *filp, loff_t off, int whence)
+{
+    loff_t new_pos;
+
+    switch(whence) {
+      case SEEK_SET:
+        new_pos = off;
+        break;
+
+      case SEEK_CUR:
+        new_pos = filp->f_pos + off;
+        break;
+
+      default: // can't happen
+        return -EINVAL;
+    }
+    if (new_pos < 0) return -EINVAL;
+    filp->f_pos = new_pos;
+    return new_pos;
+}
+
 static struct proc_ops proc_fops = {
 	.proc_read = proc_read,
+	.proc_lseek = proc_seek,
 };
 
 int32_t create_procFS(void)

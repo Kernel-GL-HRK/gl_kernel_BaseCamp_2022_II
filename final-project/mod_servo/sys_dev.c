@@ -85,9 +85,32 @@ static ssize_t dev_write(struct file *filep, const char *from_user, size_t len, 
 	}
 	return len;
 }
+
+loff_t dev_seek(struct file *filp, loff_t off, int whence)
+{
+    loff_t new_pos;
+
+    switch(whence) {
+      case SEEK_SET:
+        new_pos = off;
+        break;
+
+      case SEEK_CUR:
+        new_pos = filp->f_pos + off;
+        break;
+
+      default: // can't happen
+        return -EINVAL;
+    }
+    if (new_pos < 0) return -EINVAL;
+    filp->f_pos = new_pos;
+    return new_pos;
+}
+
 static struct file_operations dev_fs = {
 	.read = dev_read,
 	.write = dev_write,
+	.llseek = dev_seek,
 };
 
 static int access_to_dev(struct device *dev, struct kobj_uevent_env *env)

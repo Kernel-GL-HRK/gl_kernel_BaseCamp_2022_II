@@ -22,10 +22,6 @@ static void servo_turn(uint32_t angle)
 
 	delay = (servo_description.speed < MIN_DELAY_FOR_DEG) ? MIN_DELAY_FOR_DEG : servo_description.speed;
 
-	//converted = (((MAX_DUTY_CYCLE - MIN_DUTY_CYCLE) / 170) * angle) + MIN_DUTY_CYCLE;
-	//pwm_config(servo, converted, FREQ_FOR_SERVO);
-	//pwm_enable(servo);
-
 	while (currentAngle != angle) {
 		pwm_disable(servo);
 
