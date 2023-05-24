@@ -7,6 +7,7 @@
 #include <linux/gpio.h>
 #include <linux/time.h>
 #include <linux/jiffies.h>
+#include <linux/cdev.h>
 
 #define TIMEOUT		(100)		/* milliseconds */
 
@@ -25,6 +26,31 @@
 #define ROW2		(24)
 #define ROW3		(23)
 
+/* devfs */
+#define	BUFFER_SIZE	1024
+#define	CLASS_NAME	"keyb"
+#define DEVICE_NAME	"gl_keyb"
+
+static dev_t dev;
+static int major;
+static int is_open;
+static int data_size;
+static unsigned char data_buffer[BUFFER_SIZE];
+
+static int dev_open(struct inode *inodep, struct file *filep);
+static int dev_release(struct inode *inodep, struct file *filep);
+static ssize_t dev_read(struct file *filep, char *buffer,
+			size_t len, loff_t *offset);
+static int keyb_chardev_uevent(struct device *dev, struct kobj_uevent_env *env)
+{
+	add_uevent_var(env, "DEVMODE=%#o", 0444);
+	return 0;
+}
+
+static struct class *pclass;
+static struct device *pdev;
+static struct cdev chrdev_cdev;
+
 static struct gpio col_gpios[] = {
 	{ COL0, GPIOF_OUT_INIT_HIGH, "col0" },
 	{ COL1, GPIOF_OUT_INIT_HIGH, "col1" },
@@ -41,13 +67,68 @@ static struct gpio row_gpios[] = {
 
 static struct timer_list etx_timer;
 
+static const struct file_operations fops = {
+	.owner = THIS_MODULE,
+	.open = dev_open,
+	.release = dev_release,
+	.read  = dev_read,
+	//.write = dev_write,
+};
+
 void timer_callback(struct timer_list *data)
 {
 
 	/* toggle LED */
 	gpio_get_value(LED) ? gpio_set_value(LED, 0) : gpio_set_value(LED, 1);
 
+	if (gpio_get_value(LED)) {
+		sprintf(data_buffer, "%s\n", "LED on");
+	} else {
+		sprintf(data_buffer, "%s\n", "LED off");
+	}
+
+	data_size = strlen(data_buffer);
 	mod_timer(&etx_timer, jiffies + msecs_to_jiffies(TIMEOUT));
+}
+
+static int dev_open(struct inode *inodep, struct file *filep)
+{
+	if (is_open) {
+		pr_err("keyb: character device already open\n");
+		return -EBUSY;
+	}
+
+	is_open = 1;
+	pr_info("keyb: character device opened\n");
+	return 0;
+}
+
+static int dev_release(struct inode *inodep, struct file *filep)
+{
+	is_open = 0;
+	pr_info("keyb: character device closed\n");
+	return 0;
+}
+
+static ssize_t dev_read(struct file *filep, char *buffer,
+			size_t len, loff_t *offset)
+{
+	int ret;
+
+	if (len > data_size) {
+		len = data_size;
+	}
+
+	ret = copy_to_user(buffer, data_buffer, len);
+	if (ret) {
+		pr_err("keyb: character device copy_to_user failed: %d\n", ret);
+		return -EFAULT;
+	}
+
+	data_size = 0;		/* eof for cat */
+	pr_debug("keyb: characte device %zu bytes read\n", len);
+
+	return len;
 }
 
 /**
@@ -178,9 +259,60 @@ static int __init gl_keyb_init(void)
 	gpio_direction_input(ROW3);
 	gpio_export(ROW3, false);
 
+	/* chardev init */
+	is_open = 0;
+	data_size = 0;
+
+	major = alloc_chrdev_region(&dev, 0, 1, DEVICE_NAME);
+	if (major < 0) {
+		pr_err("keyb: character device register failed %d\n", major);
+		res = -EEXIST;
+		goto out_major_err;
+	}
+	pr_debug("keyb: character device register, major = %d, minor = %d\n",
+		 MAJOR(dev), MINOR(dev));
+
+	cdev_init(&chrdev_cdev, &fops);
+	if (cdev_add(&chrdev_cdev, dev, 1) < 0) {
+		pr_err("keyb: cannot add the device to the system\n");
+		res = -ENODEV;
+		goto out_cdev_err;
+	}
+	pr_debug("keyb: character device created successfully\n");
+
+	pclass = class_create(THIS_MODULE, CLASS_NAME);
+	if (IS_ERR(pclass)) {
+		res = -EBADF;
+		goto out_class_err;
+	}
+	pclass->dev_uevent = keyb_chardev_uevent;
+	pr_debug("keyb: character device class created successfully\n");
+
+	pdev = device_create(pclass, NULL, dev, NULL, DEVICE_NAME);
+	if (IS_ERR(pdev)) {
+		res = -EBUSY;
+		goto out_device_err;
+	}
+	pr_debug("keyb: character device /dev/%s created\n", DEVICE_NAME);
+
 	pr_info("keyb: module loaded\n");
 	return res;
 
+out_device_err:
+	class_destroy(pclass);
+out_class_err:
+	cdev_del(&chrdev_cdev);
+out_cdev_err:
+	unregister_chrdev_region(dev, 1);
+out_major_err:
+	gpio_unexport(ROW3);
+	gpio_free(ROW3);
+	gpio_unexport(ROW2);
+	gpio_free(ROW2);
+	gpio_unexport(ROW1);
+	gpio_free(ROW1);
+	gpio_unexport(ROW0);
+	gpio_free(ROW0);
 out_row1:
 	gpio_free_array(row_gpios, ARRAY_SIZE(row_gpios));
 out_row:
@@ -200,12 +332,20 @@ out_col:
 out_led:
 	gpio_free(LED);
 out:
+	del_timer(&etx_timer);
 	pr_err("keyb: GPIO initialization failed\n");
 	return res;
 }
 
 static void __exit gl_keyb_exit(void)
 {
+	/* character device */
+	device_destroy(pclass, dev);
+	class_destroy(pclass);
+	cdev_del(&chrdev_cdev);
+	unregister_chrdev_region(dev, 1);
+	pr_debug("keyb: character device /dev/%s removed\n", DEVICE_NAME);
+
 	/* timer */
 	del_timer(&etx_timer);
 	pr_debug("keyb: timer de-initialized\n");
