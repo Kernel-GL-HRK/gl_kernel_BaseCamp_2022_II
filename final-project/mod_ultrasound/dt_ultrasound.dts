@@ -1,0 +1,16 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm, bcm2835";
+	fragment@0 {
+		target-path = "/";
+		__overlay__ {
+			ultrasound {
+				compatible = "ultrasound, SG-90";
+				echo_pin = <3>;
+				trig_pin = <4>;
+			};
+		};
+	};
+};
