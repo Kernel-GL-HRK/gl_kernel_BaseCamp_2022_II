@@ -52,4 +52,9 @@
     The keyboard is polled every 100 ms.  
     The algorithm does not track long presses or presses of several keys  
     at the same time.  
-    
+    Reading from /dev/gl_keyb returns only direction commands:  
+    2 - forward,  
+    8 - back,  
+    4 - left,  
+    6 - right.  
+  

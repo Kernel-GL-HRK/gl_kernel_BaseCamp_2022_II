@@ -43,6 +43,9 @@ static int dev_open(struct inode *inodep, struct file *filep);
 static int dev_release(struct inode *inodep, struct file *filep);
 static ssize_t dev_read(struct file *filep, char *buffer,
 			size_t len, loff_t *offset);
+/*
+ * @0444: chardev permissions (all read).
+ */
 static int keyb_chardev_uevent(struct device *dev, struct kobj_uevent_env *env)
 {
 	add_uevent_var(env, "DEVMODE=%#o", 0444);
@@ -88,6 +91,11 @@ static const struct file_operations fops = {
 
 void timer_callback(struct timer_list *data)
 {
+#define	FORWARD		'2'
+#define	BACK		'8'
+#define LEFT		'4'
+#define RIGHT		'6'
+
 	int i, j;
 	bool keyb_current_state = false;
 
@@ -110,20 +118,15 @@ void timer_callback(struct timer_list *data)
 		gpio_set_value(col[i], 1);
 	}
 
-	if ((keyb_prev_state == 0) && (keyb_current_state == 0)) {
-		// TODO:
-		// not pressed
-	} else if ((keyb_prev_state == 0) && (keyb_current_state == 1)) {
-		// TODO:
-		// key pressed
-	} else if ((keyb_prev_state == 1) && (keyb_current_state == 0)) {
+	if ((keyb_prev_state == 1) && (keyb_current_state == 0)) {
 		// key release
 		gpio_set_value(LED, 0);
-		sprintf(data_buffer, "%c\n", symb_pres);
-		data_size = strlen(data_buffer);
-	} else if ((keyb_prev_state == 1) && (keyb_current_state == 1)) {
-		// TODO:
-		// key hold
+		if ((symb_pres == FORWARD) || (symb_pres == BACK)
+		    || (symb_pres == LEFT) || (symb_pres == RIGHT)) {
+			// save direction
+			sprintf(data_buffer, "%c\n", symb_pres);
+			data_size = strlen(data_buffer);
+		}
 	}
 	keyb_prev_state = keyb_current_state;
 
