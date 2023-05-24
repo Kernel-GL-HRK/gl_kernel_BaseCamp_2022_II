@@ -40,4 +40,16 @@
     and turning it off after exiting the module.  
 ### 2.2 Timer added.  
     An LED is used for testing, the ON/OFF period is 100ms.  
-      
+### 2.3 Keypad connection:      
+    Keypad pinout:  1 <-> ROW3    (GPIO16) Raspberry pi.  
+                    2 <-> ROW2    (GPIO25)  
+                    3 <-> ROW1    (GPIO24)  
+                    4 <-> ROW0    (GPIO23)  
+                    5 <-> COL3    (GPIO 5)  
+                    6 <-> COL2    (GPIO22)  
+                    7 <-> COL1    (GPIO27)  
+                    8 <-> COL0    (GPIO17)  
+    The keyboard is polled every 100 ms.  
+    The algorithm does not track long presses or presses of several keys  
+    at the same time.  
+    

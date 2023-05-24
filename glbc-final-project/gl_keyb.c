@@ -15,16 +15,16 @@
 #define	LED		(6)
 
 /* column gpio OUT */
-#define COL0		(5)
-#define COL1		(22)
-#define COL2		(27)
-#define COL3		(17)
+#define COL0		(17)
+#define COL1		(27)
+#define COL2		(22)
+#define COL3		(5)
 
 /* row gpio IN */
-#define ROW0		(16)
-#define ROW1		(25)
-#define ROW2		(24)
-#define ROW3		(23)
+#define ROW0		(23)
+#define ROW1		(24)
+#define ROW2		(25)
+#define ROW3		(16)
 
 /* devfs */
 #define	BUFFER_SIZE	1024
@@ -36,6 +36,8 @@ static int major;
 static int is_open;
 static int data_size;
 static unsigned char data_buffer[BUFFER_SIZE];
+static char symb_pres;
+static bool keyb_prev_state;
 
 static int dev_open(struct inode *inodep, struct file *filep);
 static int dev_release(struct inode *inodep, struct file *filep);
@@ -50,6 +52,16 @@ static int keyb_chardev_uevent(struct device *dev, struct kobj_uevent_env *env)
 static struct class *pclass;
 static struct device *pdev;
 static struct cdev chrdev_cdev;
+
+static int col[] = {COL0, COL1, COL2, COL3};
+static int row[] = {ROW0, ROW1, ROW2, ROW3};
+
+static char symbol[][4] = {
+	{'1', '2', '3', 'A'},
+	{'4', '5', '6', 'B'},
+	{'7', '8', '9', 'C'},
+	{'*', '0', '#', 'D'}
+};
 
 static struct gpio col_gpios[] = {
 	{ COL0, GPIOF_OUT_INIT_HIGH, "col0" },
@@ -72,22 +84,49 @@ static const struct file_operations fops = {
 	.open = dev_open,
 	.release = dev_release,
 	.read  = dev_read,
-	//.write = dev_write,
 };
 
 void timer_callback(struct timer_list *data)
 {
+	int i, j;
+	bool keyb_current_state = false;
 
-	/* toggle LED */
-	gpio_get_value(LED) ? gpio_set_value(LED, 0) : gpio_set_value(LED, 1);
-
-	if (gpio_get_value(LED)) {
-		sprintf(data_buffer, "%s\n", "LED on");
-	} else {
-		sprintf(data_buffer, "%s\n", "LED off");
+	/*
+	 * Set each column to 0 and read the row.
+	 * If the row is 0 - the button is pressed.
+	 */
+	for (i = 0; i < ARRAY_SIZE(col); ++i) {
+		// set column to 0
+		gpio_set_value(col[i], 0);
+		for (j = 0; j < ARRAY_SIZE(row); ++j) {
+			if (gpio_get_value(row[j]) == 0) {
+				keyb_current_state = true;
+				symb_pres = symbol[i][j];
+				gpio_set_value(LED, 1);
+				pr_debug("keyb: the pressed key is %c\n", symb_pres);
+			}
+		}
+		// set column to 1
+		gpio_set_value(col[i], 1);
 	}
 
-	data_size = strlen(data_buffer);
+	if ((keyb_prev_state == 0) && (keyb_current_state == 0)) {
+		// TODO:
+		// not pressed
+	} else if ((keyb_prev_state == 0) && (keyb_current_state == 1)) {
+		// TODO:
+		// key pressed
+	} else if ((keyb_prev_state == 1) && (keyb_current_state == 0)) {
+		// key release
+		gpio_set_value(LED, 0);
+		sprintf(data_buffer, "%c\n", symb_pres);
+		data_size = strlen(data_buffer);
+	} else if ((keyb_prev_state == 1) && (keyb_current_state == 1)) {
+		// TODO:
+		// key hold
+	}
+	keyb_prev_state = keyb_current_state;
+
 	mod_timer(&etx_timer, jiffies + msecs_to_jiffies(TIMEOUT));
 }
 
@@ -99,14 +138,14 @@ static int dev_open(struct inode *inodep, struct file *filep)
 	}
 
 	is_open = 1;
-	pr_info("keyb: character device opened\n");
+	pr_debug("keyb: character device opened\n");
 	return 0;
 }
 
 static int dev_release(struct inode *inodep, struct file *filep)
 {
 	is_open = 0;
-	pr_info("keyb: character device closed\n");
+	pr_debug("keyb: character device closed\n");
 	return 0;
 }
 
@@ -124,9 +163,7 @@ static ssize_t dev_read(struct file *filep, char *buffer,
 		pr_err("keyb: character device copy_to_user failed: %d\n", ret);
 		return -EFAULT;
 	}
-
 	data_size = 0;		/* eof for cat */
-	pr_debug("keyb: characte device %zu bytes read\n", len);
 
 	return len;
 }
