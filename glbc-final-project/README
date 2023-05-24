@@ -35,4 +35,5 @@ GlobalLogic BaseCamp final project
 2. 4x4 matrix keyboard
 2.1 A simple test was used by turning on the LED when the module was loading
     and turning it off after exiting the module.
+2.2 Timer added. An LED is used for testing, the ON/OFF period is 100ms.
 

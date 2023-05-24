@@ -8,7 +8,7 @@
 #include <linux/time.h>
 #include <linux/jiffies.h>
 
-#define TIMEOUT		(200)		/* milliseconds */
+#define TIMEOUT		(100)		/* milliseconds */
 
 /* LED - used for test only!!! */
 #define	LED		(6)
@@ -39,6 +39,17 @@ static struct gpio row_gpios[] = {
 	{ ROW3, GPIOF_IN, "row3" },
 };
 
+static struct timer_list etx_timer;
+
+void timer_callback(struct timer_list *data)
+{
+
+	/* toggle LED */
+	gpio_get_value(LED) ? gpio_set_value(LED, 0) : gpio_set_value(LED, 1);
+
+	mod_timer(&etx_timer, jiffies + msecs_to_jiffies(TIMEOUT));
+}
+
 /**
  * gl_keyb
  * @:
@@ -50,6 +61,14 @@ static struct gpio row_gpios[] = {
 static int __init gl_keyb_init(void)
 {
 	int res = 0;
+
+	/* timer init */
+	/* setup timer to call timer_callback */
+	timer_setup(&etx_timer, timer_callback, 0);
+
+	/* setup timer interval to based on TIMEOUT macro */
+	mod_timer(&etx_timer, jiffies + msecs_to_jiffies(TIMEOUT));
+	pr_debug("keyb: timer initialized\n");
 
 	/* gpio */
 	/* gpio LED init */
@@ -187,6 +206,10 @@ out:
 
 static void __exit gl_keyb_exit(void)
 {
+	/* timer */
+	del_timer(&etx_timer);
+	pr_debug("keyb: timer de-initialized\n");
+
 	/* ROW0..3 */
 	gpio_unexport(ROW3);
 	gpio_free(ROW3);
