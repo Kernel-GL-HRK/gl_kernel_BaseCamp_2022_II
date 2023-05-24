@@ -12,3 +12,11 @@
     the raspberry pi /boot/overlays.  
     To enable the overlay in the system, add dtoverlay=gl_mpu6050 to config.txt.  
 
+### 1.3 Implemented sysfs, read only.  
+    Raw accelerometer data is stored in the /sys/devices/mpu6050/accel/accel_x,  
+    .../accel_y or .../accel_z.     
+    Raw gyroscope data is stored in the /sys/devices/mpu6050/gyro/gyro_x,     
+    .../gyro_y or .../gyro_z.     
+    Temperature data is stored in the /sys/devices/mpu6050/temp - in degrees     
+    Celsius.     
+

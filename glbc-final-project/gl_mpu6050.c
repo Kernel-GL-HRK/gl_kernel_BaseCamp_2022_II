@@ -15,7 +15,20 @@
  */
 
 #include <linux/module.h>
+#include <linux/device.h>
 #include <linux/i2c.h>
+
+#define SYSFS_DIR		"mpu6050"
+#define SYSFS_ACCEL		"accel"
+#define SYSFS_GYRO		"gyro"
+#define SYSFS_TEMP		"temp"
+#define ACCEL_X			accel_x
+#define ACCEL_Y			accel_y
+#define ACCEL_Z			accel_z
+#define GYRO_X			gyro_x
+#define GYRO_Y			gyro_y
+#define GYRO_Z			gyro_z
+#define TEMP			temp
 
 /* mpu6050 used register's */
 #define MPU6050_CONFIG		0x1A
@@ -43,14 +56,211 @@
 /* MPU-6050 GY-521 with RED power LED have DEVICE ID 0x98 */
 #define MPU6050_DEVICE_ID_1	0x98
 
-/*
+/* data structure for gyro */
+static struct gyro {
+	struct i2c_client *drv_client;
+	s32 temperature;
+	s32 accel[3];
+	s32 gyro[3];
+} gyro;
+
+static struct gyro *mpu6050_data = &gyro;
+static struct device *dev;
+static struct kobject *root_kobj;
+static struct kobject *accel_kobj;
+static struct kobject *gyro_kobj;
+
+/**
+ * mpu6050_get_raw - getting raw data from the gyroscope.
+ * @:	No input argument.
+ *
+ * This function reads accelerometer (x, y, z), gyroscope (x, y, z) and
+ * temperature data. Accelerometer and gyroscope data are stored in the
+ * mpu6050_data structure in raw form. The raw temperature data is
+ * converted to degrees Celsius using the formula temp/340 + 36.53 and
+ * stored in the mpu6050_data structure.
+ *
+ * Retrun:
+ * 0 - OK
+ * -ENODEV - Device not found or not responding.
+ */
+static int mpu6050_get_raw(void)
+{
+	s32 temp;
+	struct i2c_client *drv = mpu6050_data->drv_client;
+
+	if (drv == 0) {
+		dev_err(&drv->dev, "mpu6050 i2c client fail\n");
+		return -ENODEV;
+	}
+
+	/* read accel */
+	mpu6050_data->accel[0] = (s16)((u16)(i2c_smbus_read_word_swapped(
+		drv, MPU6050_ACCEL_XOUT_H)));
+	mpu6050_data->accel[1] = (s16)((u16)(i2c_smbus_read_word_swapped(
+		drv, MPU6050_ACCEL_YOUT_H)));
+	mpu6050_data->accel[2] = (s16)((u16)(i2c_smbus_read_word_swapped(
+		drv, MPU6050_ACCEL_ZOUT_H)));
+
+	/* read gyro */
+	mpu6050_data->gyro[0] = (s16)((u16)(i2c_smbus_read_word_swapped(
+		drv, MPU6050_GYRO_XOUT_H)));
+	mpu6050_data->gyro[1] = (s16)((u16)(i2c_smbus_read_word_swapped(
+		drv, MPU6050_GYRO_YOUT_H)));
+	mpu6050_data->gyro[2] = (s16)((u16)(i2c_smbus_read_word_swapped(
+		drv, MPU6050_GYRO_ZOUT_H)));
+
+	/* read temperature */
+	/* T(c) = temp / 340 + 36.53 = (temp + 12420) / 340 */
+	temp = (s16)((u16)(i2c_smbus_read_word_swapped(drv, MPU6050_TEMP_OUT_H)));
+	mpu6050_data->temperature = (temp + 12420) / 340;
+
+	return 0;
+}
+
+static ssize_t accel_x_show(struct device *dev,
+			    struct device_attribute *attr,
+			    char *buf)
+{
+	int res;
+
+	res = mpu6050_get_raw();
+	if (res) {
+		pr_err("mpu6050: Error reading accel x data from mpu6050\n");
+		return res;
+	}
+	sprintf(buf, "%d\n", mpu6050_data->accel[0]);
+	return strlen(buf);
+}
+
+static ssize_t accel_y_show(struct device *dev,
+			    struct device_attribute *attr,
+			    char *buf)
+{
+	int res;
+
+	res = mpu6050_get_raw();
+	if (res) {
+		pr_err("mpu6050: Error reading accel y data from mpu6050\n");
+		return res;
+	}
+	sprintf(buf, "%d\n", mpu6050_data->accel[1]);
+	return strlen(buf);
+}
+
+static ssize_t accel_z_show(struct device *dev,
+			    struct device_attribute *attr,
+			    char *buf)
+{
+	int res;
+
+	res = mpu6050_get_raw();
+	if (res) {
+		pr_err("mpu6050: Error reading accel z data from mpu6050\n");
+		return res;
+	}
+	sprintf(buf, "%d\n", mpu6050_data->accel[2]);
+	return strlen(buf);
+}
+
+static ssize_t gyro_x_show(struct device *dev,
+			   struct device_attribute *attr,
+			   char *buf)
+{
+	int res;
+
+	res = mpu6050_get_raw();
+	if (res) {
+		pr_err("mpu6050: Error reading gyro x data from mpu6050\n");
+		return res;
+	}
+	sprintf(buf, "%d\n", mpu6050_data->gyro[0]);
+	return strlen(buf);
+}
+
+static ssize_t gyro_y_show(struct device *dev,
+			   struct device_attribute *attr,
+			   char *buf)
+{
+	int res;
+
+	res = mpu6050_get_raw();
+	if (res) {
+		pr_err("mpu6050: Error reading gyro y data from mpu6050\n");
+		return res;
+	}
+	sprintf(buf, "%d\n", mpu6050_data->gyro[1]);
+	return strlen(buf);
+}
+
+static ssize_t gyro_z_show(struct device *dev,
+			   struct device_attribute *attr,
+			   char *buf)
+{
+	int res;
+
+	res = mpu6050_get_raw();
+	if (res) {
+		pr_err("mpu6050: Error reading gyro z data from mpu6050\n");
+		return res;
+	}
+	sprintf(buf, "%d\n", mpu6050_data->gyro[2]);
+	return strlen(buf);
+}
+
+static ssize_t temp_show(struct device *dev,
+			 struct device_attribute *attr,
+			 char *buf)
+{
+	int res;
+
+	res = mpu6050_get_raw();
+	if (res != 0) {
+		pr_err("mpu6050: Error reading temperature from mpu6050\n");
+		return res;
+	}
+	sprintf(buf, "%d\n", mpu6050_data->temperature);
+	return strlen(buf);
+}
+
+/**
+ * struct device_attribute - mpu6050 sysfs device attributes.
+ * @NAME: attribure name.
+ * @0444: permissions (all read).
+ * @show: show function.
+ */
+static struct device_attribute accel_x_attr = __ATTR(ACCEL_X, 0444,
+						     accel_x_show, NULL);
+static struct device_attribute accel_y_attr = __ATTR(ACCEL_Y, 0444,
+						     accel_y_show, NULL);
+static struct device_attribute accel_z_attr = __ATTR(ACCEL_Z, 0444,
+						     accel_z_show, NULL);
+static struct device_attribute gyro_x_attr  = __ATTR(GYRO_X, 0444,
+						     gyro_x_show, NULL);
+static struct device_attribute gyro_y_attr  = __ATTR(GYRO_Y, 0444,
+						     gyro_y_show, NULL);
+static struct device_attribute gyro_z_attr  = __ATTR(GYRO_Z, 0444,
+						     gyro_z_show, NULL);
+static struct device_attribute temp_attr    = __ATTR(TEMP, 0444,
+						     temp_show, NULL);
+
+/**
+ * mpu6050_probe - probe mpu6050 device presence.
+ * @*client - struct i2c_client.
+ *
  * An easy way to check a connected gyroscope is to check its ID.
  * The gyro register "WHO_AM_I" - contains 0x68 data.
+ * But some mpu6050 GY-521 gyro modules wit RED power led have
+ * DEVICE ID - 0x98!
+ *
+ * Return:
+ * 0 - OK
+ * -ENODEV - Device not responding
+ * -ENIVAL - Wrong device ID.
  */
 static int mpu6050_probe(struct i2c_client *client)
 {
 	int res;
-	s32 temp;
 
 	res = i2c_smbus_read_byte_data(client, MPU6050_WHO_AM_I);
 	if (IS_ERR_VALUE(res)) {
@@ -76,18 +286,15 @@ static int mpu6050_probe(struct i2c_client *client)
 	i2c_smbus_write_byte_data(client, MPU6050_PWR_MGMT_1, 0);
 	i2c_smbus_write_byte_data(client, MPU6050_PWR_MGMT_2, 0);
 
+	/* save i2c_client */
+	mpu6050_data->drv_client = client;
 	pr_debug("mpu6050: i2c driver probed\n");
-
-	/* read temperature for test only */
-	/* T(C) = temp / 340 + 36.53 = (temp + 12420) / 340 */
-	temp = (s16)((u16)(i2c_smbus_read_word_swapped(client, MPU6050_TEMP_OUT_H)));
-	pr_debug("mpu6050: temp = %dC\n", (temp + 12420) / 340);
-
 	return 0;
 }
 
 static int mpu6050_remove(struct i2c_client *client)
 {
+	mpu6050_data->drv_client = 0;
 	pr_info("mpu6050: i2c driver removed\n");
 	return 0;
 }
@@ -120,9 +327,66 @@ static int __init gl_mpu6050_init(void)
 		goto out;
 	}
 	pr_debug("mpu6050: i2c driver created\n");
+
+	/* sysfs */
+	/* Create /sys/devices/SYSFS_DIR */
+	dev = root_device_register(SYSFS_DIR);
+	root_kobj = &dev->kobj;
+
+	/* Create /sys/devices/SYSFS_DIR/SYSFS_ACCEL/ */
+	accel_kobj = kobject_create_and_add(SYSFS_ACCEL, root_kobj);
+
+	/* Create sysfs file /sys/devices/SYSFS_DIR/SYSFS_ACCEL/accel_x */
+	if (sysfs_create_file(accel_kobj, &accel_x_attr.attr))
+		goto out_unreg_i2c;
+
+	/* Create sysfs file /sys/devices/SYSFS_DIR/SYSFS_ACCEL/accel_y */
+	if (sysfs_create_file(accel_kobj, &accel_y_attr.attr))
+		goto out_unreg_accel_x;
+
+	/* Create sysfs file /sys/devices/SYSFS_DIR/SYSFS_ACCEL/accel_z */
+	if (sysfs_create_file(accel_kobj, &accel_z_attr.attr))
+		goto out_unreg_accel_y;
+
+	/* Create /sys/devices/SYSFS_DIR/SYSFS_GYRO/ */
+	gyro_kobj = kobject_create_and_add(SYSFS_GYRO, root_kobj);
+
+	/* Create sysfs file /sys/devices/SYSFS_DIR/SYSFS_GYRO/gyro_x */
+	if (sysfs_create_file(gyro_kobj, &gyro_x_attr.attr))
+		goto out_unreg_accel_z;
+
+	/* Create sysfs file /sys/devices/SYSFS_DIR/SYSFS_GYRO/gyro_y */
+	if (sysfs_create_file(gyro_kobj, &gyro_y_attr.attr))
+		goto out_unreg_gyro_x;
+
+	/* Create sysfs file /sys/devices/SYSFS_DIR/SYSFS_GYRO/gyro_z */
+	if (sysfs_create_file(gyro_kobj, &gyro_z_attr.attr))
+		goto out_unreg_gyro_y;
+
+	/* Create sysfs file /sys/devices/TEMP */
+	if (sysfs_create_file(root_kobj, &temp_attr.attr))
+		goto out_unreg_gyro_z;
+
 	pr_info("mpu6050: module loaded\n");
 	return 0;
 
+out_unreg_gyro_z:
+	sysfs_remove_file(gyro_kobj, &gyro_z_attr.attr);
+out_unreg_gyro_y:
+	sysfs_remove_file(gyro_kobj, &gyro_y_attr.attr);
+out_unreg_gyro_x:
+	sysfs_remove_file(gyro_kobj, &gyro_x_attr.attr);
+out_unreg_accel_z:
+	kobject_put(gyro_kobj);
+	sysfs_remove_file(accel_kobj, &accel_z_attr.attr);
+out_unreg_accel_y:
+	sysfs_remove_file(accel_kobj, &accel_y_attr.attr);
+out_unreg_accel_x:
+	sysfs_remove_file(accel_kobj, &accel_x_attr.attr);
+out_unreg_i2c:
+	kobject_put(accel_kobj);
+	root_device_unregister(dev);
+	i2c_del_driver(&mpu6050_driver);
 out:
 	pr_err("mpu6050: Driver initialization failed\n");
 	return res;
@@ -130,6 +394,18 @@ out:
 
 static void __exit gl_mpu6050_exit(void)
 {
+	/* sysfs */
+	sysfs_remove_file(root_kobj, &temp_attr.attr);
+	sysfs_remove_file(gyro_kobj, &gyro_z_attr.attr);
+	sysfs_remove_file(gyro_kobj, &gyro_y_attr.attr);
+	sysfs_remove_file(gyro_kobj, &gyro_x_attr.attr);
+	kobject_put(gyro_kobj);
+	sysfs_remove_file(accel_kobj, &accel_z_attr.attr);
+	sysfs_remove_file(accel_kobj, &accel_y_attr.attr);
+	sysfs_remove_file(accel_kobj, &accel_x_attr.attr);
+	kobject_put(accel_kobj);
+	root_device_unregister(dev);
+
 	/* i2c */
 	i2c_del_driver(&mpu6050_driver);
 	pr_info("mpu6050: module exited\n");
