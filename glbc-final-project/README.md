@@ -34,3 +34,8 @@
     6 - right,  
     0 - no moving.  
   
+## **2. 4x4 matrix keyboard**  
+### 2.1 Initialization the gpio's column (output) and row (input) for keyboard.  
+    A simple test was used by turning on the LED when the module was loading  
+    and turning it off after exiting the module.  
+      

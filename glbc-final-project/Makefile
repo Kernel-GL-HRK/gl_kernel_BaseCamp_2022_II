@@ -1,7 +1,9 @@
 ifneq ($(KERNELRELEASE),)
 # Kbuild part of makefile
-obj-m := gl_mpu6050.o
-CFLAGS_gl_mpu6050.o := -DDEBUG
+obj-m += gl_mpu6050.o
+obj-m += gl_keyb.o
+CFLAGS_gl_mpu6050.o += -DDEBUG
+CFLAGS_gl_keyb.o += -DDEBUG
 else
 
 export ARCH = arm
