@@ -231,7 +231,7 @@ static ssize_t temp_show(struct device *dev,
  *
  * The function uses a simple algorithm for determining the position
  * by two coordinates (x, y).
- * We use n = SAMPLES accelerometer measurements with a delay ms.
+ * We use n = SAMPLES accelerometer measurements with a delay.
  * Then we get the average value for each coordinate.
  * If the value of the [x] coordinate is less than the threshold value
  * (SENSETIVE), we assume that it is a forward [F] movement, if it is
@@ -253,7 +253,7 @@ static ssize_t direct_show(struct device *dev,
 {
 #define SAMPLES		(16)
 #define SENSETIVE	(8000)
-#define DELAY_MS	(1)
+#define DELAY_USEC	(250)
 #define NODIRECT	(0)
 #define FORWARD		(2)
 #define	BACK		(8)
@@ -275,7 +275,7 @@ static ssize_t direct_show(struct device *dev,
 		average[0] += mpu6050_data->accel[0];
 		average[1] += mpu6050_data->accel[1];
 		average[2] += mpu6050_data->accel[2];
-		msleep(DELAY_MS);
+		udelay(DELAY_USEC);
 	}
 
 	average[0] /= SAMPLES;

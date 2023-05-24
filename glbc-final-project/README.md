@@ -57,4 +57,25 @@
     8 - back,  
     4 - left,  
     6 - right.  
-  
+
+## **3. ITDB02-1.8SP (ST7735) display 160x128 65k colors**
+### 3.1 To connect the display, we use the driver from the Linux kernel.  
+     Add to /boot/config.txt  
+     dtoverlay=adafruit-st7735r,160x128,reset_pin=21,dc_pin=20  
+     pinouts:  
+                 CS      <->     SPI0 CE0        (GPIO8)    
+                 SCL     <->     SPI0 CLK        (GPIO11)   
+                 SDA     <->     SPIO MOSI       (GPIO10)   
+                 RS      <->     DATA/COMD       (GPIO20)   
+                 RST     <->     RESET           (GPIO21)   
+                 GND  
+                 +5V/+3.3V  
+    To work with the display, we use the frame buffer and memory mapping.  
+ 
+## **4. User space (main.c)**
+    This is a simple program to demonstrate the operation of Linux kernel  
+    drivers - display, gyroscope and matrix keyboard.  
+    We get the direction of movement from the gyroscope and the 4x4 matrix  
+    keyboard. By direction - we move the "head" on the display.  
+    TODO: implement the snake game.  
+   
