@@ -17,6 +17,7 @@
 #include <linux/module.h>
 #include <linux/device.h>
 #include <linux/i2c.h>
+#include <linux/delay.h>
 
 #define SYSFS_DIR		"mpu6050"
 #define SYSFS_ACCEL		"accel"
@@ -29,6 +30,7 @@
 #define GYRO_Y			gyro_y
 #define GYRO_Z			gyro_z
 #define TEMP			temp
+#define DIRECT			direct
 
 /* mpu6050 used register's */
 #define MPU6050_CONFIG		0x1A
@@ -224,6 +226,78 @@ static ssize_t temp_show(struct device *dev,
 }
 
 /**
+ * direct_show - sysfs show function to get direction.
+ * @: standard input argument for sysfs show.
+ *
+ * The function uses a simple algorithm for determining the position
+ * by two coordinates (x, y).
+ * We use n = SAMPLES accelerometer measurements with a delay ms.
+ * Then we get the average value for each coordinate.
+ * If the value of the [x] coordinate is less than the threshold value
+ * (SENSETIVE), we assume that it is a forward [F] movement, if it is
+ * more - backward , similarly for the [y] coordinate - if it is less,
+ * then it is a movement to the left, if more - to the right.
+ * Otherwise, movements in the coordinates [x, y] are not recorded - [0].
+ *
+ *		2[FORWARD]
+ *	4[LEFT]		6[RIGHT]
+ *		8[BACK]
+ *
+ * Return:
+ * bufer size	- OK
+ * -ENODEV	- No such device.
+ */
+static ssize_t direct_show(struct device *dev,
+			   struct device_attribute *attr,
+			   char *buf)
+{
+#define SAMPLES		(16)
+#define SENSETIVE	(8000)
+#define DELAY_MS	(1)
+#define NODIRECT	(0)
+#define FORWARD		(2)
+#define	BACK		(8)
+#define	LEFT		(4)
+#define RIGHT		(6)
+
+	int res;
+	u32 direction;
+	size_t i;
+	s32 average[3] = {0, 0, 0};
+
+	for (i = 0; i < SAMPLES; ++i) {
+		res = mpu6050_get_raw();
+		if (res) {
+			pr_err("mpu6050: Error reading data from mpu6050!\n");
+			return -ENODEV;
+		}
+		/* save accel_x/y/z */
+		average[0] += mpu6050_data->accel[0];
+		average[1] += mpu6050_data->accel[1];
+		average[2] += mpu6050_data->accel[2];
+		msleep(DELAY_MS);
+	}
+
+	average[0] /= SAMPLES;
+	average[1] /= SAMPLES;
+
+	if (average[0] < -SENSETIVE) {
+		direction = FORWARD;
+	} else if (average[0] > SENSETIVE) {
+		direction = BACK;
+	} else if (average[1] < -SENSETIVE) {
+		direction = LEFT;
+	} else if (average[1] > SENSETIVE) {
+		direction = RIGHT;
+	} else {
+		direction = NODIRECT;
+	}
+
+	sprintf(buf, "%d\n", direction);
+	return strlen(buf);
+}
+
+/**
  * struct device_attribute - mpu6050 sysfs device attributes.
  * @NAME: attribure name.
  * @0444: permissions (all read).
@@ -243,6 +317,8 @@ static struct device_attribute gyro_z_attr  = __ATTR(GYRO_Z, 0444,
 						     gyro_z_show, NULL);
 static struct device_attribute temp_attr    = __ATTR(TEMP, 0444,
 						     temp_show, NULL);
+static struct device_attribute direct_attr  = __ATTR(DIRECT, 0444,
+						     direct_show, NULL);
 
 /**
  * mpu6050_probe - probe mpu6050 device presence.
@@ -308,6 +384,7 @@ MODULE_DEVICE_TABLE(i2c, mpu6050_idtable);
 
 static struct i2c_driver mpu6050_driver = {
 	.driver = {
+		.owner	= THIS_MODULE,
 		.name	= "gl_mpu6050",
 	},
 
@@ -367,9 +444,15 @@ static int __init gl_mpu6050_init(void)
 	if (sysfs_create_file(root_kobj, &temp_attr.attr))
 		goto out_unreg_gyro_z;
 
+	/* Create sysfs file for direction /sys/devices/DIRECT */
+	if (sysfs_create_file(root_kobj, &direct_attr.attr))
+		goto out_unreg_temp;
+
 	pr_info("mpu6050: module loaded\n");
 	return 0;
 
+out_unreg_temp:
+	sysfs_remove_file(root_kobj, &temp_attr.attr);
 out_unreg_gyro_z:
 	sysfs_remove_file(gyro_kobj, &gyro_z_attr.attr);
 out_unreg_gyro_y:
@@ -395,6 +478,7 @@ out:
 static void __exit gl_mpu6050_exit(void)
 {
 	/* sysfs */
+	sysfs_remove_file(root_kobj, &direct_attr.attr);
 	sysfs_remove_file(root_kobj, &temp_attr.attr);
 	sysfs_remove_file(gyro_kobj, &gyro_z_attr.attr);
 	sysfs_remove_file(gyro_kobj, &gyro_y_attr.attr);

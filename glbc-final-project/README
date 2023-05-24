@@ -18,4 +18,17 @@ GlobalLogic BaseCamp final project
     .../gyro_y or .../gyro_z.
     Temperature data is stored in the /sys/devices/mpu6050/temp - in degrees
     Celsius.
+1.4 Add simply motion detector.
+    Movement is tracked by two coordinates (x, y).
+    We use a simple method to determine the direction, it is based on the
+    position of the accelerometer. These coordinates are in the range
+    from 0 to +/- 16340, the sensitivity threshold for an example,
+    let's choose 8000. If the sensitivity threshold is exceeded, we register
+    the direction left, right, forward, backward.
+    /sys/devices/mpu6050/direct - is used to export data to user space
+    2 - moving forward,
+    8 - back,
+    4 - left,
+    6 - right,
+    0 - no moving.
 
