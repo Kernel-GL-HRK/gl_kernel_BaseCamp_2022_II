@@ -1,0 +1,106 @@
+/*
+ *  dts overlay
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,bcm2835";
+
+	/* disable spidev on spi0  */
+
+	fragment@0 {
+		target = <&spidev0>;
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	/* enable st7735fb tft panel spi  */
+
+	fragment@1 {
+		target = <&spi0>;
+		__overlay__ {
+			/* needed to avoid dtc warning */
+			#address-cells = <1>;
+			#size-cells = <0>;
+			/* needed to avoid dtc warning */
+
+			status = "okay";			
+		st7735fb@0 {
+				compatible = "smart-clock,st7735fb";
+				reg = <0>;
+				pinctrl-names = "default";
+				spi-max-frequency = <40000000>;
+				buswidth = <8>;
+				reset-gpios = <&gpio 24 0>;
+				dc-gpios = <&gpio 23 0>;
+
+			};
+		};
+	};
+
+  	/* enable our hardware button  */
+
+	fragment@2 {
+    		target-path = "/";
+    		__overlay__ {
+
+        	     	button {
+               			compatible = "smart-clock,button";
+				button_gpio  = <17>;
+        		};
+			    
+		 };
+
+	};
+
+	/* enable rtcclock ds3231  */
+
+	fragment@3 { 
+        	target = <&i2c>;
+        	__overlay__ {
+
+
+            		ds3231@68 {
+                		compatible = "smart-clock, ds3231";
+                		reg = <0x68>;
+            		};
+        	};
+    	};
+
+	/* enable accelerometer mpu6050  */
+
+	fragment@4 { 
+        	target = <&i2c>;
+        	__overlay__ {
+
+
+            		mpu6050@69 {
+                		compatible = "smart-clock, mpu6050";
+                		reg = <0x69>;
+            		};
+        	};
+    	};
+
+	/* enable temp&pressure sens bmp280 i2c  */
+
+	fragment@5 { 
+        	target = <&i2c>;
+        	__overlay__ {
+
+
+            		bmp280@76 {
+                		compatible = "smart-clock, bmp280";
+                		reg = <0x76>;
+            		};
+        	};
+    	};
+	
+
+	
+	
+};
+
+

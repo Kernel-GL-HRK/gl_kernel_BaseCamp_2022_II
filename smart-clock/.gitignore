@@ -1,0 +1,19 @@
+#Build sources
+
+*.cmd
+*.o
+*.o.d
+*.order
+*.mod*
+modules.order
+Module.symvers
+
+#Compiled
+
+*.ko
+*.dtbo
+*.dtb
+
+#etc
+
+checkpatch.pl
