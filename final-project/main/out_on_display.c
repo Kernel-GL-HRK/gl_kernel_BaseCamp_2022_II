@@ -50,8 +50,8 @@ void menu(void)
 		printw("MENU:\n");
 		printw("\t1 - SHOW HEADER RASSPBERRY PI FOR CONNECTION\n");
 		printw("\t2 - SCAN THIS AREA\n");
-		printw("\t3 - SHOW SERVO DESCRIPTION\n");
-		printw("\t4 - SHOW ULTRASONIC DESCRIPTION\n");
+		printw("\t3 - SHOW ULTRASONIC DESCRIPTION\n");
+		printw("\t4 - SHOW SERVO DESCRIPTION\n");
 		printw("\t5 - EXIT FROM PROGRAM\n");
 
 
@@ -221,45 +221,45 @@ void output_distance(uint32_t max_distance, uint32_t control)
 			printw("%s\n", right_region);
 		}
 		{//SHOWING SENSOR IMAGE
-		for (int32_t j = 0; j < left_right_line_len; j++) {
-			if (j == left_right_line_len / 2)
-				printw(SENS_IMG);
-			else if (j == 0)
-				for (int32_t i = 0; i < OFFSET_FROM_COORDINATE; i++)
+			for (int32_t j = 0; j < left_right_line_len; j++) {
+				if (j == left_right_line_len / 2)
+					printw(SENS_IMG);
+				else if (j == 0)
+					for (int32_t i = 0; i < OFFSET_FROM_COORDINATE; i++)
+						printw(" ");
+				else
 					printw(" ");
-			else
-				printw(" ");
-		}
+			}
 		}
 		printw("\n");
 		{//SHOW SERVO AND ANIMATION OF SERVO
-		for (int32_t j = 0; j < left_right_line_len; j++) {
-			if (j == left_right_line_len / 2)
-				if (last_angle == current_angle)
-					printw(SERVO_IMG, current_angle - 1, current_angle, current_angle + 1);
-				else if ((last_angle < current_angle) || (last_angle == SHIFT_SERVO_LEFT)) {
-					if (last_angle != SHIFT_SERVO_LEFT) {
-						printw(SERVO_IMG_SHIFT_LEFT, current_angle - 1, current_angle, current_angle + 1);
-						last_angle = SHIFT_SERVO_LEFT;
+			for (int32_t j = 0; j < left_right_line_len; j++) {
+				if (j == left_right_line_len / 2)
+					if (last_angle == current_angle)
+						printw(SERVO_IMG, current_angle - 1, current_angle, current_angle + 1);
+					else if ((last_angle < current_angle) || (last_angle == SHIFT_SERVO_LEFT)) {
+						if (last_angle != SHIFT_SERVO_LEFT) {
+							printw(SERVO_IMG_SHIFT_LEFT, current_angle - 1, current_angle, current_angle + 1);
+							last_angle = SHIFT_SERVO_LEFT;
+						} else {
+							printw(SERVO_IMG_SHIFT_RIGHT, current_angle - 1, current_angle, current_angle + 1);
+							last_angle = current_angle;
+						}
 					} else {
-						printw(SERVO_IMG_SHIFT_RIGHT, current_angle - 1, current_angle, current_angle + 1);
-						last_angle = current_angle;
+						if (last_angle != SHIFT_SERVO_RIGHT) {
+							printw(SERVO_IMG_SHIFT_RIGHT, current_angle - 1, current_angle, current_angle + 1);
+							last_angle = SHIFT_SERVO_RIGHT;
+						} else {
+							printw(SERVO_IMG_SHIFT_LEFT, current_angle - 1, current_angle, current_angle + 1);
+							last_angle = current_angle;
+						}
 					}
-				} else {
-					if (last_angle != SHIFT_SERVO_RIGHT) {
-						printw(SERVO_IMG_SHIFT_RIGHT, current_angle - 1, current_angle, current_angle + 1);
-						last_angle = SHIFT_SERVO_RIGHT;
-					} else {
-						printw(SERVO_IMG_SHIFT_LEFT, current_angle - 1, current_angle, current_angle + 1);
-						last_angle = current_angle;
-					}
-				}
-			else if (j == 0)
-				for (int32_t i = 0; i < OFFSET_FROM_COORDINATE - 6; i++)
+				else if (j == 0)
+					for (int32_t i = 0; i < OFFSET_FROM_COORDINATE - 6; i++)
+						printw(" ");
+				else
 					printw(" ");
-			else
-				printw(" ");
-		}
+			}
 		}
 		{//BORDER
 			int32_t lastX, lastY;
@@ -298,7 +298,7 @@ void output_distance(uint32_t max_distance, uint32_t control)
 
 			y += 2;
 			move(y, startX);
-			printw("\t\"ESC\" = EXIT");
+			printw("\t\"Q\" or \"ESC\" = EXIT");
 
 			lastY++;
 			move(++lastY, 0);
@@ -306,19 +306,25 @@ void output_distance(uint32_t max_distance, uint32_t control)
 		}
 
 		refresh();
-		if (control == MANUAL_CONTROL) {
+		 {//KEY READING TO CONTROL SCANNING 
 			while ((ch = getch()) != EOF) {
 				switch (ch) {
 				case KEY_LEFT_FOR_SERVO:
 				case 'a':
 				case 'A':
-					turn_servo(current_angle - 1);
+					if (control == MANUAL_CONTROL)
+						turn_servo(current_angle - 1);
 					break;
 				case KEY_RIGHT_FOR_SERVO:
 				case 'd':
 				case 'D':
-					turn_servo(current_angle + 1);
+					if (control == MANUAL_CONTROL)
+						turn_servo(current_angle + 1);
 					break;
+				case ESC_EXIT:
+				case 'q':
+				case 'Q':
+					exit = 1;
 				default:
 					break;
 				}
@@ -335,11 +341,6 @@ void output_distance(uint32_t max_distance, uint32_t control)
 				turn_servo(current_angle - 1);
 			if (direction == ROTATE_RIGHT)
 				turn_servo(current_angle + 1);
-		}
-		{//EXIT
-			while ((ch = getch()) != EOF)
-				if (ch == ESC_EXIT)
-					exit = 1;
 		}
 		usleep(servo.speed * ONE_MSEC_IN_USEC);
 	}
