@@ -12,6 +12,8 @@ enum chardev_ioctl {
 	SET_TEXT_COLOR,
 	GET_BG_COLOR,
 	SET_BG_COLOR,
+	SET_X,
+	SET_Y,
 	CDEV_IOC_MAXNR
 };
 
@@ -24,6 +26,9 @@ enum chardev_ioctl {
 
 #define CDEV_GET_BG_COLOR _IOR(CDEV_IOC_MAGIC, GET_BG_COLOR, int16_t*)
 #define CDEV_SET_BG_COLOR _IOW(CDEV_IOC_MAGIC, SET_BG_COLOR, int16_t*)
+
+#define CDEV_SET_X _IOW(CDEV_IOC_MAGIC, SET_X, int16_t*)
+#define CDEV_SET_Y _IOW(CDEV_IOC_MAGIC, SET_Y, int16_t*)
 
 enum encoder_ioctl {
 	GET_ENCODER,
@@ -41,14 +46,9 @@ enum encoder_ioctl {
 
 enum temp_ioctl {
 	GET_TEMP,
-	GET_TIMEOUT,
-	SET_TIMEOUT,
 	TEMP_IOC_MAXNR
 };
 
 #define CDEV_GET_TEMP _IOR(CDEV_IOC_MAGIC, GET_TEMP, int32_t*)
-#define CDEV_GET_TIMEOUT _IOR(CDEV_IOC_MAGIC, GET_TIMEOUT, int32_t*)
-#define CDEV_SET_TIMEOUT _IOW(CDEV_IOC_MAGIC, SET_TIMEOUT, int32_t*)
-
 
 #endif /* __cdev_ioctl_h__ */

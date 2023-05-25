@@ -17,7 +17,6 @@
 #include <linux/jiffies.h>
 #include "bme280.h"
 #include "bme280_defs.h"
-
 #include "temp_ioctl.h"
 
 MODULE_LICENSE("GPL");				  ///< The license type -- this affects runtime behavior
@@ -28,22 +27,16 @@ MODULE_VERSION("0.1");				  ///< The version of the module
 #define MAX_BUFFER_SIZE 1024
 #define SAMPLE_COUNT  UINT8_C(1)
 
-
 static struct class *pclass;
 static struct device *pdev;
 static struct cdev chrdev_cdev;
 dev_t dev;
-
 static int major;
 static int is_open;
-
 static size_t buffer_size;
-
 static struct timer_list  etx_timer;
-
 static uint32_t period;
 struct bme280_settings settings;
-
 static struct i2c_client *bme280_client;
 static struct bme280_dev bme280;
 static struct bme280_data comp_data;
@@ -58,9 +51,7 @@ static int8_t bme280_write(uint8_t reg_addr, const uint8_t *reg_data, uint32_t l
 		if (ret < 0)
 			break;
 	}
-
 	return ret;
-
 }
 
 static int8_t bme280_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr)
@@ -75,10 +66,7 @@ static int8_t bme280_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, voi
 			break;
 		}
 	}
-
 	return ret;
-
-
 }
 
 static void bme280_delay_us(uint32_t period, void *intf_ptr)
@@ -86,17 +74,16 @@ static void bme280_delay_us(uint32_t period, void *intf_ptr)
 	udelay(period);
 }
 
-
 static int bme280_device_init(void)
 {
 
 	uint8_t rslt = 0;
 
-	bme280.chip_id = BME280_I2C_ADDR_PRIM; // Задайте адрес I2C датчика
-	bme280.intf = BME280_I2C_INTF; // Установите интерфейс I2C
-	bme280.read = bme280_read; // Задайте функцию чтения I2C для вашего драйвера
-	bme280.write = bme280_write; // Задайте функцию записи I2C для вашего драйвера
-	bme280.delay_us = bme280_delay_us; // Задайте функцию задержки для вашего драйвера
+	bme280.chip_id = BME280_I2C_ADDR_PRIM;
+	bme280.intf = BME280_I2C_INTF;
+	bme280.read = bme280_read;
+	bme280.write = bme280_write;
+	bme280.delay_us = bme280_delay_us;
 
 	rslt = (bme280_init(&bme280) != BME280_OK);
 	if (rslt) {
@@ -140,7 +127,6 @@ static int bme280_device_init(void)
 		return -ENODEV;
 	}
 
-
 	return rslt;
 }
 
@@ -150,7 +136,6 @@ static int8_t get_temperature(uint32_t period, struct bme280_dev *dev)
 	int8_t idx = 0;
 	uint8_t status_reg;
 
-
 	while (idx < SAMPLE_COUNT) {
 		rslt = bme280_get_regs(BME280_REG_STATUS, &status_reg, 1, dev);
 		if (rslt) {
@@ -158,26 +143,19 @@ static int8_t get_temperature(uint32_t period, struct bme280_dev *dev)
 			return rslt;
 		}
 
-
 		if (status_reg & BME280_STATUS_MEAS_DONE) {
 			/* Measurement time delay given to read sample */
 			dev->delay_us(period, dev->intf_ptr);
-
 			/* Read compensated data */
 			rslt = bme280_get_sensor_data(BME280_TEMP, &comp_data, dev);
-
 			if (rslt)
 				pr_err("bme280: ERR bme280_get_sensor_data\n");
-
-			//pr_info("bme280: Temperature[%d]:  %ld deg C\n", idx, (long int)comp_data.temperature);
-
 			idx++;
 		}
 	}
 
 	return rslt;
 }
-
 
 static ssize_t temperature_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
@@ -186,9 +164,7 @@ static ssize_t temperature_show(struct kobject *kobj, struct kobj_attribute *att
 }
 
 static struct kobject *chrdev_kobj;
-
 struct kobj_attribute temperature_attr = __ATTR(chr_temperature, 0660, temperature_show, 0);
-
 
 static int dev_open(struct inode *inodep, struct file *filep)
 {
@@ -196,23 +172,24 @@ static int dev_open(struct inode *inodep, struct file *filep)
 		pr_err("bme280: already open\n");
 		return -EBUSY;
 	}
-
 	is_open = 1;
 	pr_info("bme280: device opened\n");
+
 	return 0;
 }
 
 static int dev_release(struct inode *inodep, struct file *filep)
 {
 	is_open = 0;
+
 	pr_info("bme280: device closed\n");
+
 	return 0;
 }
 
 static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *offset)
 {
 	char temp_value[16];
-
 	ssize_t num_bytes;
 
 	if (get_temperature(period, &bme280))
@@ -229,13 +206,11 @@ static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *of
 		return -EINVAL;
 	}
 
-
 	if (copy_to_user(buffer, temp_value, num_bytes))
 		return -EFAULT;
 
 	return num_bytes;
 }
-
 
 static long dev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
@@ -256,8 +231,10 @@ static long dev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 	if (_IOC_DIR(cmd) & _IOC_READ)
 		err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
+
 	if (_IOC_DIR(cmd) & _IOC_WRITE)
 		err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
+
 	if (err) {
 		pr_err("bme280:  _IOC_READ/_IOC_WRITE err\n");
 		err = -EFAULT;
@@ -281,14 +258,12 @@ static long dev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	return err;
 }
 
-
 static struct file_operations fops = {
 	.open = dev_open,
 	.release = dev_release,
 	.read = dev_read,
 	.unlocked_ioctl = dev_ioctl,
 };
-
 
 static int bme280_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
@@ -305,10 +280,8 @@ static int bme280_probe(struct i2c_client *client, const struct i2c_device_id *i
 	adapter = client->adapter;
 	tmp = i2c_check_functionality(adapter, I2C_FUNC_SMBUS_BYTE | I2C_FUNC_SMBUS_BYTE_DATA);
 	if (!tmp) {
-
 		pr_err("bme280: i2c_check_functionality failed:");
 		goto err_out;
-
 	}
 
 	/* Get chip_id */
@@ -319,11 +292,11 @@ static int bme280_probe(struct i2c_client *client, const struct i2c_device_id *i
 	}
 	bme280_client = client;
 
-
 	if (major < 0) {
 		pr_err("bme280: register_chrdev failed: %d\n", major);
 		return major;
 	}
+
 	pr_info("bme280: register_chrdev ok, major = %d minor = %d\n", MAJOR(dev), MINOR(dev));
 	cdev_init(&chrdev_cdev, &fops);
 
@@ -340,27 +313,22 @@ static int bme280_probe(struct i2c_client *client, const struct i2c_device_id *i
 	pr_info("bme280: device class created successfully\n");
 
 	pdev = device_create(pclass, NULL, dev, NULL, CLASS_NAME"0");
-
 	if (IS_ERR(pdev))
 		goto device_err;
 
 	pr_info("bme280: device created successfully\n");
-
 	chrdev_kobj = kobject_create_and_add("bme280_sysfs", kernel_kobj);
 
 		if (sysfs_create_file(chrdev_kobj, &temperature_attr.attr)) {
 			pr_err("bme280: cannot create sysfs file\n");
 			goto temperature_err;
 	}
-
 	pr_info("bme280: device driver insmod success\n");
-
 
 	if (bme280_device_init())
 		pr_err("bme280: bme280_device_init failed\n");
 	else
 		pr_info("bme280: period is %d\n", period);
-
 
 	pr_info("bme280: %s()\n", __func__);
 
@@ -375,9 +343,7 @@ class_err:
 cdev_err:
 	unregister_chrdev_region(dev, 1);
 err_out:
-
 	return -EFAULT;
-
 }
 
 static int bme280_remove(struct i2c_client *client)
@@ -393,7 +359,6 @@ static int bme280_remove(struct i2c_client *client)
 	pr_info("bme280: module exited\n");
 
 	return 0;
-
 }
 
 static struct i2c_device_id bme280_idtable[] = {
@@ -401,8 +366,6 @@ static struct i2c_device_id bme280_idtable[] = {
 	{ }
 };
 MODULE_DEVICE_TABLE(i2c, bme280_idtable);
-
-
 
 static struct i2c_driver bme280_driver = {
 	.driver = {
@@ -413,9 +376,6 @@ static struct i2c_driver bme280_driver = {
 	.remove = bme280_remove,
 	.id_table = bme280_idtable
 };
-
-
-
 
 static int __init chrdev_init(void)
 {

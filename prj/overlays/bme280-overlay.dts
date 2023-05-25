@@ -2,7 +2,7 @@
 /plugin/;
 
 / {
-    compatible = "my_board";
+    compatible = "bme280_board";
 
     fragment@0 {
 	target = <&i2c1>;
@@ -11,15 +11,14 @@
             #address-cells = <1>;
             #size-cells = <0>;
             
-
             bme280@76 {
-                compatible = "my_bme280";
+                compatible = "char_dev_my";
                 reg = <0x76>;
                 status = "okay";
-		        modalias = "my_bme280";
+		        modalias = "char_dev_my";
     
                 bme_bmp280_driver {
-                    compatible = "my_bme280";
+                    compatible = "char_dev_my";
     
                 };
             };

@@ -2,4 +2,4 @@ debug/
 script/
 task*/
 .*
-!/.gitignore
+.gitignore
