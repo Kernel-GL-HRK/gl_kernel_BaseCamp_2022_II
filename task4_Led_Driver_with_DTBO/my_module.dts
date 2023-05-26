@@ -1,0 +1,15 @@
+// Simple gpio-led driver dts overlay
+/dts-v1/;
+/plugin/;
+
+/ {
+	fragment@0 {
+		target-path = "/";
+		__overlay__ {
+			my_module {
+				compatible = "my_module";
+				gpio_pin_led = <4>;
+			};
+		};
+	};
+};
