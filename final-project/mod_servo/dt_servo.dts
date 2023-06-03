@@ -1,0 +1,17 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm, bcm2835";
+	fragment@0 {
+		target-path = "/";
+		__overlay__ {
+			servo {
+				compatible = "servo, SG-90";
+				pwm-channel = <0>;	//GPIO 18 OR 12
+				mode = "absolute";	//absolute or relative
+				speed = <60>;		//speed for rotating on degree
+			};
+		};
+	};
+};
