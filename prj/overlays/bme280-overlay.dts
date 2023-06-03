@@ -1,0 +1,27 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "bme280_board";
+
+    fragment@0 {
+	target = <&i2c1>;
+    
+	__overlay__ {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            
+            bme280@76 {
+                compatible = "char_dev_my";
+                reg = <0x76>;
+                status = "okay";
+		        modalias = "char_dev_my";
+    
+                bme_bmp280_driver {
+                    compatible = "char_dev_my";
+    
+                };
+            };
+        };
+    };
+};
