@@ -1,0 +1,10 @@
+Home work
+● Write Linux kernel module driver module: fill module author, description,
+  version e.t.c.
+● Write a driver that blinks an LED using a timer. 
+● In /proc (read handler) describe the state of the LED (1/0) and the
+  blink perion (in milliseconds).
+● Don’t forget to use checkpatch.pl – all not-corresponding drivers will be
+  rejected.
+● Github: module.c, module.ko, Makefile and short video of the work.
+● Deadline: EoD 10.03.2023
